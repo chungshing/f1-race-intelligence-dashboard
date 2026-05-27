@@ -2,6 +2,7 @@ import Sidebar from "@/components/Sidebar";
 import Topbar from "@/components/Topbar";
 import StatCard from "@/components/StatCard";
 import DriverTable from "@/components/DriverTable";
+import PointsChart from '@/components/PointsChart';
 
 export default function Home() {
   return (
@@ -21,6 +22,8 @@ export default function Home() {
           </section>
 
           <DriverTable />
+
+          <PointsChart />
         </div>
       </div>
     </main>
