@@ -44,16 +44,16 @@ To simulate a real-world motorsport analytics system with backend processing, AP
 - Championship battle charts
 - Component-based UI architecture
 
-## 🧭 Roadmap
-
-🟡 Phase 2 – Backend Development (In Progress)
+🟡 Phase 2 – Backend Development (✅)
 - Spring Boot API setup
 - OpenF1 API integration layer
 - Data models for drivers, races, standings
 - REST endpoints for frontend consumption
 - Basic race data processing logic
 
-🔵 Phase 3 – Frontend ↔ Backend Integration
+## 🧭 Roadmap
+
+🔵 Phase 3 – Frontend ↔ Backend Integration (In Progress)
 - Replace mock data with real API calls
 - Live data synchronization between backend and UI
 - Error handling + loading states
