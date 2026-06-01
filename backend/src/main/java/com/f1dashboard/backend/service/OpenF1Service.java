@@ -69,8 +69,8 @@ public class OpenF1Service {
                                 driver != null ? driver.getFullName() : "Driver " + s.getDriverNumber(),
                                 driver != null ? driver.getTeamName() : "Unknown",
                                 s.getPointsCurrent(),
+                                s.getDriverNumber(),
                                 driver != null ? driver.getTeamColour() : "#999999",
-                                driver != null ? driver.getCountryCode() : "UNK",
                                 driver != null ? driver.getHeadshotUrl() : null);
                     })
                     .sorted(Comparator.comparingInt(DriverStanding::getPosition))
@@ -88,10 +88,10 @@ public class OpenF1Service {
     // fallback if API fails
     private List<DriverStanding> fallbackStandings() {
         return List.of(
-                new DriverStanding(1, "Max Verstappen", "Red Bull", 25, "#0600EF", "NL", null),
-                new DriverStanding(2, "Charles Leclerc", "Ferrari", 18, "#DC0000", "MC", null),
-                new DriverStanding(3, "Lando Norris", "McLaren", 15, "#FF8700", "GB", null),
-                new DriverStanding(4, "Lewis Hamilton", "Mercedes", 12, "#00D2BE", "GB", null));
+                new DriverStanding(1, "Max Verstappen", "Red Bull", 25, 1, "#0600EF", null),
+                new DriverStanding(2, "Charles Leclerc", "Ferrari", 18, 16, "#DC0000", null),
+                new DriverStanding(3, "Lando Norris", "McLaren", 15, 4, "#FF8700", null),
+                new DriverStanding(4, "Lewis Hamilton", "Mercedes", 12, 44, "#00D2BE", null));
     }
 
     // fallback if driver metadata missing
@@ -102,8 +102,8 @@ public class OpenF1Service {
                         "Driver " + s.getDriverNumber(),
                         "Unknown",
                         s.getPointsCurrent(),
+                        s.getDriverNumber(),
                         "#999999",
-                        "UNK",
                         null))
                 .sorted(Comparator.comparingInt(DriverStanding::getPosition))
                 .toList();

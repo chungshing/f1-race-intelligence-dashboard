@@ -32,7 +32,4 @@ public class OpenF1DriverDto {
 
     @JsonProperty("headshot_url")
     private String headshotUrl;
-
-    @JsonProperty("country_code")
-    private String countryCode;
 }

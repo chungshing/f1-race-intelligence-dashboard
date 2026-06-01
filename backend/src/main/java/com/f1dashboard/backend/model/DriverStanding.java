@@ -11,8 +11,7 @@ public class DriverStanding {
     private String driverName;
     private String teamName;
     private int points;
-
+    private int driverNumber;
     private String teamColor;
-    private String countryCode;
     private String headshotUrl;
 }

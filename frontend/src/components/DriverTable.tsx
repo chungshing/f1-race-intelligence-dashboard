@@ -2,12 +2,16 @@
 
 //import { useLiveData } from '@/hook/useLiveData(mock)';
 import { useStandings } from "@/hooks/useStandings";
+import Image from "next/image";
 
 interface Driver {
+    driverNumber: number;
     position: number;
     driverName: string;
     teamName: string;
     points: number;
+    teamColor: string;
+    headshotUrl: string | null;
 }
 
 function getPositionColor(pos: number) {
@@ -63,6 +67,9 @@ export default function DriverTable() {
                         <tr
                             key={driver.position}
                             className="border-t border-zinc-800 hover:bg-zinc-800/60 transition"
+                            style={{
+                                borderLeft: `4px solid #${driver.teamColor}`,
+                            }}
                         >
                             {/* Position */}
                             <td
@@ -72,12 +79,37 @@ export default function DriverTable() {
                             </td>
 
                             {/* Driver */}
-                            <td className="p-4 text-white font-medium">
-                                {driver.driverName}
+                            <td className="p-4">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-zinc-400 font-mono w-8">
+                                        #{driver.driverNumber}
+                                    </span>
+
+                                    {driver.headshotUrl ? (
+                                        <Image
+                                            src={driver.headshotUrl}
+                                            alt={driver.driverName}
+                                            width={40}
+                                            height={40}
+                                            className="rounded-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-10 h-10 rounded-full bg-zinc-700" />
+                                    )}
+
+                                    <span className="text-white font-medium">
+                                        {driver.driverName}
+                                    </span>
+                                </div>
                             </td>
-                            
+
                             {/* Team */}
-                            <td className="p-4 text-zinc-400">
+                            <td
+                                className="p-4 font-medium"
+                                style={{
+                                    color: `#${driver.teamColor}`,
+                                }}
+                            >
                                 {driver.teamName}
                             </td>
 
