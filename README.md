@@ -51,15 +51,15 @@ To simulate a real-world motorsport analytics system with backend processing, AP
 - REST endpoints for frontend consumption
 - Basic race data processing logic
 
-## 🧭 Roadmap
-
-🔵 Phase 3 – Frontend ↔ Backend Integration (In Progress)
+🔵 Phase 3 – Frontend ↔ Backend Integration 
 - Replace mock data with real API calls
 - Live data synchronization between backend and UI
 - Error handling + loading states
 - API service layer in Next.js
 
-🟣 Phase 4 – Advanced Features & Expansion
+## 🧭 Roadmap
+
+🟣 Phase 4 – Advanced Features & Expansion (In Progress)
 - Driver profile pages
 - Race detail pages
 - Telemetry-style visualizations
