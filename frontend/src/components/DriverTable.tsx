@@ -3,16 +3,7 @@
 //import { useLiveData } from '@/hook/useLiveData(mock)';
 import { useStandings } from "@/hooks/useStandings";
 import Image from "next/image";
-
-interface Driver {
-    driverNumber: number;
-    position: number;
-    driverName: string;
-    teamName: string;
-    points: number;
-    teamColor: string;
-    headshotUrl: string | null;
-}
+import { DriverStanding } from "@/types/shared";
 
 function getPositionColor(pos: number) {
     if (pos === 1) return "text-yellow-400";
@@ -22,7 +13,7 @@ function getPositionColor(pos: number) {
 }
 
 export default function DriverTable() {
-    const { data: standings = [] as Driver[], loading, error } = useStandings();
+    const { data: standings = [] as DriverStanding[], loading, error } = useStandings();
     if (loading) {
         return (
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-white">

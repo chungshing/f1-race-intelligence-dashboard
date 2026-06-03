@@ -1,20 +1,20 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useEffect, useState } from "react";
-import { getStandings } from "@/lib/app";
-import { DriverStanding } from "@/types/shared";
+import { Team } from "@/types/shared";
+import { getTeamStandings } from "@/lib/app";
 
-export function useStandings() {
-    const [data, setData] = useState<DriverStanding[]>([]);
+export function useTeamStandings() {
+    const [data, setData] = useState<Team[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         async function load() {
             try {
-                const result = await getStandings();
+                const result = await getTeamStandings();
                 setData(result);
             } catch (err) {
-                setError("Failed to load standings");
+                setError("Failed to load team standings");
             } finally {
                 setLoading(false);
             }

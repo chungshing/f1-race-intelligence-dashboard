@@ -7,3 +7,13 @@ export async function getStandings() {
 
     return res.json();
 }
+
+export async function getTeamStandings() {
+    const res = await fetch("http://localhost:8080/api/teams");
+
+    if (!res.ok) {
+        throw new Error("Failed to fetch teams");
+    }
+
+    return res.json();
+}

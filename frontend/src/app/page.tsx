@@ -1,31 +1,70 @@
+"use client";
+
+import { useMemo } from "react";
 import Sidebar from "@/components/Sidebar";
 import Topbar from "@/components/Topbar";
 import StatCard from "@/components/StatCard";
 import DriverTable from "@/components/DriverTable";
-import PointsChart from '@/components/PointsChart';
+import TeamTable from "@/components/TeamTable";
+import { useStandings } from "@/hooks/useStandings";
+import { useTeamStandings } from "@/hooks/useTeamStandings";
 
 export default function Home() {
-  return (
-    <main className="min-h-screen bg-black text-white flex">
-      <Sidebar />
+    const { data: standings = [], loading: driverLoading } = useStandings();
+    const { data: teams = [], loading: teamLoading } = useTeamStandings();
 
-      <div className="flex-1">
-        <Topbar />
+    const sortedStandings = useMemo(() => {
+        return [...standings].sort((a, b) => b.points - a.points);
+    }, [standings]);
 
-        <div className="p-8 space-y-8">
-          <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <StatCard title="Championship Leader" value="Verstappen" />
+    const sortedTeams = useMemo(() => {
+        return [...teams].sort((a, b) => b.points - a.points);
+    }, [teams]);
 
-            <StatCard title="Total Races" value="24" />
+    const leader = sortedStandings[0];
+    const topTeam = sortedTeams[0];
 
-            <StatCard title="Constructors" value="10" />
-          </section>
+    return (
+        <main className="min-h-screen bg-black text-white flex">
+            <Sidebar />
 
-          <DriverTable />
+            <div className="flex-1">
+                <Topbar />
 
-          <PointsChart />
-        </div>
-      </div>
-    </main>
-  );
+                <div className="p-8 space-y-8">
+                    {/* STATS */}
+                    <StatCard
+                        title="Championship Leader"
+                        value={
+                            driverLoading
+                                ? "Loading..."
+                                : (leader?.driverName ?? "N/A")
+                        }
+                    />
+
+                    <StatCard
+                        title="Constructor Leader"
+                        value={
+                            teamLoading
+                                ? "Loading..."
+                                : (topTeam?.teamName ?? "-")
+                        }
+                    />
+
+                    <StatCard
+                        title="Title Fight Gap"
+                        value={
+                            sortedStandings.length > 1
+                                ? `+${sortedStandings[0].points - sortedStandings[1].points} pts`
+                                : "-"
+                        }
+                    />
+
+                    {/* TABLES */}
+                    <DriverTable />
+                    <TeamTable />
+                </div>
+            </div>
+        </main>
+    );
 }
