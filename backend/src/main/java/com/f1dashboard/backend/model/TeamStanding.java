@@ -5,13 +5,9 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class DriverStanding {
+public class TeamStanding {
 
     private int position;
-    private String driverName;
     private String teamName;
     private int points;
-    private int driverNumber;
-    private String teamColor;
-    private String headshotUrl;
 }

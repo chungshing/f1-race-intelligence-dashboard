@@ -1,6 +1,7 @@
 package com.f1dashboard.backend.controller;
 
 import com.f1dashboard.backend.model.DriverStanding;
+import com.f1dashboard.backend.model.TeamStanding;
 import com.f1dashboard.backend.service.StandingsService;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/standings")
+@RequestMapping("/api")
 public class StandingsController {
 
     private final StandingsService standingsService;
@@ -19,8 +20,13 @@ public class StandingsController {
         this.standingsService = standingsService;
     }
 
-    @GetMapping
+    @GetMapping("/standings")
     public List<DriverStanding> getStandings() {
         return standingsService.getStandings();
+    }
+
+    @GetMapping("/teams")
+    public List<TeamStanding> getTeamStandings() {
+        return standingsService.getTeamStandings();
     }
 }

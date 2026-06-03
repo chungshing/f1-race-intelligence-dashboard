@@ -2,7 +2,9 @@ package com.f1dashboard.backend.service;
 
 import com.f1dashboard.backend.dto.OpenF1ChampionshipDto;
 import com.f1dashboard.backend.dto.OpenF1DriverDto;
+import com.f1dashboard.backend.dto.OpenF1TeamChampionshipDto;
 import com.f1dashboard.backend.model.DriverStanding;
+import com.f1dashboard.backend.model.TeamStanding;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -62,19 +64,14 @@ public class OpenF1Service {
                     .map(s -> {
                         OpenF1DriverDto driver = driverMap.get(s.getDriverNumber());
 
-                        String name = driver != null
-                                ? driver.getFullName()
-                                : "Driver " + s.getDriverNumber();
-
-                        String team = driver != null
-                                ? driver.getTeamName()
-                                : "Unknown";
-
                         return new DriverStanding(
                                 s.getPositionCurrent(),
-                                name,
-                                team,
-                                s.getPointsCurrent());
+                                driver != null ? driver.getFullName() : "Driver " + s.getDriverNumber(),
+                                driver != null ? driver.getTeamName() : "Unknown",
+                                s.getPointsCurrent(),
+                                s.getDriverNumber(),
+                                driver != null ? driver.getTeamColour() : "#999999",
+                                driver != null ? driver.getHeadshotUrl() : null);
                     })
                     .sorted(Comparator.comparingInt(DriverStanding::getPosition))
                     .toList();
@@ -91,10 +88,10 @@ public class OpenF1Service {
     // fallback if API fails
     private List<DriverStanding> fallbackStandings() {
         return List.of(
-                new DriverStanding(1, "Max Verstappen", "Red Bull", 25),
-                new DriverStanding(2, "Charles Leclerc", "Ferrari", 18),
-                new DriverStanding(3, "Lando Norris", "McLaren", 15),
-                new DriverStanding(4, "Lewis Hamilton", "Mercedes", 12));
+                new DriverStanding(1, "Max Verstappen", "Red Bull", 25, 1, "#0600EF", null),
+                new DriverStanding(2, "Charles Leclerc", "Ferrari", 18, 16, "#DC0000", null),
+                new DriverStanding(3, "Lando Norris", "McLaren", 15, 4, "#FF8700", null),
+                new DriverStanding(4, "Lewis Hamilton", "Mercedes", 12, 44, "#00D2BE", null));
     }
 
     // fallback if driver metadata missing
@@ -104,8 +101,50 @@ public class OpenF1Service {
                         s.getPositionCurrent(),
                         "Driver " + s.getDriverNumber(),
                         "Unknown",
-                        s.getPointsCurrent()))
+                        s.getPointsCurrent(),
+                        s.getDriverNumber(),
+                        "#999999",
+                        null))
                 .sorted(Comparator.comparingInt(DriverStanding::getPosition))
                 .toList();
+    }
+
+    public List<TeamStanding> fetchTeamStandings() {
+
+        try {
+
+            String url = openF1BaseUrl + "/championship_teams?session_key=latest";
+
+            OpenF1TeamChampionshipDto[] teams = restTemplate.getForObject(
+                    url,
+                    OpenF1TeamChampionshipDto[].class);
+
+            if (teams == null || teams.length == 0) {
+                return fallbackTeamStandings();
+            }
+
+            return Arrays.stream(teams)
+                    .map(team -> new TeamStanding(
+                            team.getPosition_current(),
+                            team.getTeam_name(),
+                            team.getPoints_current()))
+                    .sorted(Comparator.comparingInt(TeamStanding::getPosition))
+                    .toList();
+
+        } catch (Exception e) {
+
+            log.error("Failed to fetch team standings", e);
+
+            return fallbackTeamStandings();
+        }
+    }
+
+    private List<TeamStanding> fallbackTeamStandings() {
+
+        return List.of(
+                new TeamStanding(1, "McLaren", 833),
+                new TeamStanding(2, "Ferrari", 652),
+                new TeamStanding(3, "Mercedes", 589),
+                new TeamStanding(4, "Red Bull", 512));
     }
 }

@@ -1,6 +1,8 @@
 package com.f1dashboard.backend.service;
 
 import com.f1dashboard.backend.model.DriverStanding;
+import com.f1dashboard.backend.model.TeamStanding;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -18,24 +20,10 @@ public class StandingsService {
 
     public List<DriverStanding> getStandings() {
         log.info("Fetching driver standings");
-
-        List<DriverStanding> standings = openF1Service.fetchDriverStandings();
-
-        if (standings != null && !standings.isEmpty()) {
-            log.info("Successfully retrieved {} drivers from OpenF1 API", standings.size());
-            return standings;
-        }
-
-        log.warn("Failed to fetch standings from OpenF1 API, returning fallback mock data");
-        return getStandingsFallback();
+        return openF1Service.fetchDriverStandings();
     }
 
-    // Fallback data in case of API failure (MOCK)
-    private List<DriverStanding> getStandingsFallback() {
-        return List.of(
-                new DriverStanding(1, "Max Verstappen", "Red Bull Racing", 0),
-                new DriverStanding(2, "Charles Leclerc", "Ferrari", 0),
-                new DriverStanding(3, "Lando Norris", "McLaren", 0),
-                new DriverStanding(4, "Lewis Hamilton", "Mercedes", 0));
+    public List<TeamStanding> getTeamStandings() {
+        return openF1Service.fetchTeamStandings();
     }
 }
