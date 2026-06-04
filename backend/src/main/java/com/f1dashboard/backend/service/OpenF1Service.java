@@ -2,8 +2,11 @@ package com.f1dashboard.backend.service;
 
 import com.f1dashboard.backend.dto.OpenF1ChampionshipDto;
 import com.f1dashboard.backend.dto.OpenF1DriverDto;
+import com.f1dashboard.backend.dto.OpenF1SessionDto;
 import com.f1dashboard.backend.dto.OpenF1TeamChampionshipDto;
 import com.f1dashboard.backend.model.DriverStanding;
+import com.f1dashboard.backend.model.RaceSession;
+import com.f1dashboard.backend.model.RaceWeekend;
 import com.f1dashboard.backend.model.TeamStanding;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +21,7 @@ import java.util.stream.Collectors;
 @Service
 public class OpenF1Service {
 
+    // Base URL with fallback to default if not set in application.properties
     @Value("${openf1.api.baseUrl:https://api.openf1.org/v1}")
     private String openF1BaseUrl;
 
@@ -27,6 +31,7 @@ public class OpenF1Service {
         this.restTemplate = restTemplate;
     }
 
+    // Fetch driver standings with fallback
     public List<DriverStanding> fetchDriverStandings() {
         try {
             log.info("Fetching championship standings from OpenF1...");
@@ -109,6 +114,7 @@ public class OpenF1Service {
                 .toList();
     }
 
+    // Fetch team standings with fallback
     public List<TeamStanding> fetchTeamStandings() {
 
         try {
@@ -139,6 +145,7 @@ public class OpenF1Service {
         }
     }
 
+    //  fallback if API fails or returns empty data
     private List<TeamStanding> fallbackTeamStandings() {
 
         return List.of(
@@ -146,5 +153,65 @@ public class OpenF1Service {
                 new TeamStanding(2, "Ferrari", 652),
                 new TeamStanding(3, "Mercedes", 589),
                 new TeamStanding(4, "Red Bull", 512));
+    }
+
+    // Fetch all sessions for a given year, grouped by race weekend
+    public List<RaceWeekend> fetchRaceWeekends(int year) {
+
+        try {
+            log.info("Fetching race sessions from OpenF1...");
+
+            String url = openF1BaseUrl + "/sessions?year=" + year;
+
+            OpenF1SessionDto[] sessions = restTemplate.getForObject(
+                    url,
+                    OpenF1SessionDto[].class);
+
+            if (sessions == null || sessions.length == 0) {
+                log.warn("No session data found");
+                return List.of();
+            }
+
+            // 1. Group by meeting_key
+            Map<Integer, List<OpenF1SessionDto>> grouped = Arrays.stream(sessions)
+                    .collect(Collectors.groupingBy(OpenF1SessionDto::getMeeting_key));
+
+            // 2. Build RaceWeekends
+            List<RaceWeekend> result = grouped.entrySet().stream()
+                    .map(entry -> {
+
+                        Integer meetingKey = entry.getKey();
+                        List<OpenF1SessionDto> sessionList = entry.getValue();
+
+                        OpenF1SessionDto first = sessionList.get(0);
+
+                        List<RaceSession> mappedSessions = sessionList.stream()
+                                .map(s -> new RaceSession(
+                                        s.getSession_name(),
+                                        s.getSession_type(),
+                                        s.getDate_start(),
+                                        s.getDate_end()))
+                                .sorted(Comparator.comparing(RaceSession::getDateStart))
+                                .toList();
+
+                        return new RaceWeekend(
+                                meetingKey,
+                                first.getCountry_name(),
+                                first.getCircuit_short_name(),
+                                mappedSessions);
+                    })
+                    .sorted(Comparator.comparing(w -> w.getSessions().stream()
+                            .map(RaceSession::getDateStart)
+                            .min(String::compareTo)
+                            .orElse("")))
+                    .toList();
+
+            log.info("Built {} race weekends", result.size());
+            return result;
+
+        } catch (Exception e) {
+            log.error("Failed to fetch race sessions", e);
+            return List.of();
+        }
     }
 }
