@@ -55,3 +55,21 @@ export function getWeekendRange(sessions: RaceSession[]) {
         end: new Date(sorted[sorted.length - 1].dateEnd),
     };
 }
+
+export function formatWeekendDisplay(start: Date, end: Date) {
+    const dateRange = `${start.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+    })} - ${end.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+    })}`;
+
+    const dayRange = `${start.toLocaleDateString("en-GB", {
+        weekday: "short",
+    })} - ${end.toLocaleDateString("en-GB", {
+        weekday: "short",
+    })}`;
+
+    return `${dateRange} (${dayRange})`;
+}
