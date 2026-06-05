@@ -10,8 +10,7 @@ export function useRaceWeekends() {
     useEffect(() => {
         getRaces()
             .then((res) => {
-                console.log("RACES API RESPONSE:", res);
-
+                //console.log("RACES API RESPONSE:", res);
                 if (!Array.isArray(res)) {
                     throw new Error("Invalid race data format");
                 }
