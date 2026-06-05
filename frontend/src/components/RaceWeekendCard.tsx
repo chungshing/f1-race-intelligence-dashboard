@@ -2,11 +2,8 @@
 
 import { useRaceWeekends } from "@/hooks/useRaceWeekends";
 import {
-    calculateDaysLeft,
     getNextRaceWeekend,
-    getRaceDate,
-    getWeekendRange,
-    formatWeekendDisplay,
+    getNextSession,
     getTimeRemaining,
 } from "@/utils/race";
 
@@ -29,9 +26,9 @@ export default function RaceWeekendCard() {
         );
     }
 
-    const next = getNextRaceWeekend(data);
+    const nextWeekend = getNextRaceWeekend(data);
 
-    if (!next || !Array.isArray(next.sessions)) {
+    if (!nextWeekend) {
         return (
             <div className="bg-gray-900 p-4 rounded-xl">
                 No upcoming races found
@@ -39,88 +36,115 @@ export default function RaceWeekendCard() {
         );
     }
 
-    const sessions = next.sessions;
+    const sessions = nextWeekend.sessions;
 
-    const raceDate = getRaceDate(sessions);
-    const { start, end } = getWeekendRange(sessions);
-    const daysLeft = raceDate ? calculateDaysLeft(raceDate) : null;
-    const timeLeft = raceDate ? getTimeRemaining(raceDate) : null;
+    const nextSession = getNextSession(sessions);
+
+    const timeLeft = nextSession
+        ? getTimeRemaining(new Date(nextSession.dateStart))
+        : null;
+
+    const getStatus = (sessionName: string) => {
+        if (!nextSession) return "upcoming";
+
+        const order = sessions.findIndex((s) => s.sessionName === sessionName);
+
+        const nextIndex = sessions.findIndex(
+            (s) => s.sessionName === nextSession.sessionName,
+        );
+
+        if (order < nextIndex) return "done";
+        if (order === nextIndex) return "next";
+        return "upcoming";
+    };
 
     return (
-        <div className="bg-gray-900 border border-red-500 p-4 rounded-xl">
-            {/* Header */}
-            <div className="flex justify-between items-start">
-                {/* Left: Title */}
-                <div>
-                    <p className="text-gray-400 text-sm">Next Race Weekend</p>
+        <div className="bg-gray-900 border border-red-500 p-5 rounded-xl space-y-4">
+            {/* HEADER */}
+            <div>
+                <p className="text-gray-400 text-sm">Next Grand Prix</p>
 
-                    <h2 className="text-xl font-bold text-white mt-1">
-                        {next.country}
-                    </h2>
+                <h2 className="text-xl font-bold text-white">
+                    {nextWeekend.country}
+                </h2>
 
-                    <p className="text-gray-300">{next.circuit}</p>
-                </div>
-
-                {/* Right: Countdown Badge */}
-                {timeLeft && (
-                    <div className="bg-red-500/10 border border-red-500 text-red-400 px-3 py-2 rounded-lg text-right">
-                        <p className="text-xs uppercase tracking-wide">
-                            Starts in
-                        </p>
-
-                        <p className="font-bold">
-                            {timeLeft.days}d {timeLeft.hours}h{" "}
-                            {timeLeft.minutes}m
-                        </p>
-                    </div>
-                )}
+                <p className="text-gray-400 text-sm">{nextWeekend.circuit}</p>
             </div>
 
-            {/* Race Date */}
-            {raceDate && !isNaN(raceDate.getTime()) && (
-                <p className="text-sm text-gray-400 mt-2">
-                    🏁 Race:{" "}
-                    {raceDate.toLocaleString("en-GB", {
-                        day: "2-digit",
-                        month: "short",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: false,
-                    })}
-                </p>
+            {/* NEXT SESSION HIGHLIGHT */}
+            {nextSession && (
+                <div className="flex justify-between items-end bg-red-500/10 border border-red-500 p-3 rounded-lg">
+                    <div>
+                        <p className="text-xs text-gray-400 uppercase">
+                            Next Session
+                        </p>
+                        <p className="text-white font-semibold">
+                            {nextSession.sessionName}
+                        </p>
+                    </div>
+
+                    {timeLeft && (
+                        <div className="text-right">
+                            <p className="text-xs text-gray-400">Starts in</p>
+                            <p className="text-red-400 font-bold">
+                                {timeLeft.days}d {timeLeft.hours}h{" "}
+                                {timeLeft.minutes}m
+                            </p>
+                        </div>
+                    )}
+                </div>
             )}
 
-            {/* Weekend Range */}
-            {start &&
-                end &&
-                !isNaN(start.getTime()) &&
-                !isNaN(end.getTime()) && (
-                    <p className="text-sm text-gray-400 mt-1">
-                        📅 {formatWeekendDisplay(start, end)}
-                    </p>
-                )}
-
-            {/* Sessions */}
-            <div className="mt-4 space-y-2 text-sm">
+            {/* TIMELINE */}
+            <div className="space-y-2">
                 {sessions.map((s) => {
-                    const startDate = new Date(s.dateStart);
-
-                    if (isNaN(startDate.getTime())) return null;
+                    const status = getStatus(s.sessionName);
 
                     return (
                         <div
-                            key={`${s.sessionName}-${s.dateStart}`}
-                            className="flex justify-between text-gray-300"
+                            key={s.sessionName}
+                            className="flex items-center justify-between text-sm"
                         >
-                            <span>{s.sessionName}</span>
+                            {/* LEFT */}
+                            <div className="flex items-center gap-2">
+                                {/* STATUS ICON */}
+                                <span
+                                    className={
+                                        status === "done"
+                                            ? "text-green-400"
+                                            : status === "next"
+                                              ? "text-red-400"
+                                              : "text-gray-600"
+                                    }
+                                >
+                                    {status === "done"
+                                        ? "✓"
+                                        : status === "next"
+                                          ? "▶"
+                                          : "•"}
+                                </span>
 
-                            <span className="text-gray-500">
-                                {startDate.toLocaleString("en-GB", {
+                                {/* SESSION NAME */}
+                                <span
+                                    className={
+                                        status === "next"
+                                            ? "text-white font-semibold"
+                                            : status === "done"
+                                              ? "text-gray-500"
+                                              : "text-gray-400"
+                                    }
+                                >
+                                    {s.sessionName}
+                                </span>
+                            </div>
+
+                            {/* RIGHT: DATE + TIME */}
+                            <span className="text-gray-500 text-xs text-right">
+                                {new Date(s.dateStart).toLocaleString("en-GB", {
                                     day: "2-digit",
                                     month: "short",
                                     hour: "2-digit",
                                     minute: "2-digit",
-                                    hour12: false,
                                 })}
                             </span>
                         </div>

@@ -24,26 +24,32 @@ export function getNextRaceWeekend(data: RaceWeekend[]) {
     return upcoming[0] ?? null;
 }
 
-export function calculateDaysLeft(raceDate: Date) {
-    const now = Date.now();
-    return Math.ceil((raceDate.getTime() - now) / (1000 * 60 * 60 * 24));
-}
-
 export function getTimeRemaining(targetDate: Date) {
-    const now = Date.now();
-    const diff = targetDate.getTime() - now;
+    const diff = targetDate.getTime() - Date.now();
 
-    if (diff <= 0) {
-        return { days: 0, hours: 0, minutes: 0 };
-    }
+    if (diff <= 0) return { days: 0, hours: 0, minutes: 0 };
 
     const totalMinutes = Math.floor(diff / (1000 * 60));
 
-    const days = Math.floor(totalMinutes / (60 * 24));
-    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
-    const minutes = totalMinutes % 60;
+    return {
+        days: Math.floor(totalMinutes / (60 * 24)),
+        hours: Math.floor((totalMinutes % (60 * 24)) / 60),
+        minutes: totalMinutes % 60,
+    };
+}
 
-    return { days, hours, minutes };
+export function getNextSession(sessions: RaceSession[]) {
+    const now = Date.now();
+
+    const upcoming = sessions
+        .map((s) => ({
+            ...s,
+            start: new Date(s.dateStart),
+        }))
+        .filter((s) => s.start.getTime() > now)
+        .sort((a, b) => a.start.getTime() - b.start.getTime());
+
+    return upcoming[0] ?? null;
 }
 
 export function getRaceDate(sessionList: RaceSession[]) {
@@ -89,4 +95,20 @@ export function formatWeekendDisplay(start: Date, end: Date) {
     })}`;
 
     return `${dateRange} (${dayRange})`;
+}
+
+export function groupSessionsByDay(sessions: RaceSession[]) {
+    return sessions.reduce((acc: Record<string, RaceSession[]>, session) => {
+        const date = new Date(session.dateStart)
+            .toLocaleDateString("en-GB", {
+                weekday: "short",
+                day: "2-digit",
+                month: "short",
+            });
+
+        if (!acc[date]) acc[date] = [];
+        acc[date].push(session);
+
+        return acc;
+    }, {});
 }
