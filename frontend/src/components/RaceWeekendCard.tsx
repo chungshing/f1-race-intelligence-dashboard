@@ -5,6 +5,8 @@ import {
     getNextRaceWeekend,
     getNextSession,
     getTimeRemaining,
+    getWeekendLabel,
+    getSessionStatus,
 } from "@/utils/race";
 
 export default function RaceWeekendCard() {
@@ -37,26 +39,11 @@ export default function RaceWeekendCard() {
     }
 
     const sessions = nextWeekend.sessions;
-
     const nextSession = getNextSession(sessions);
 
     const timeLeft = nextSession
         ? getTimeRemaining(new Date(nextSession.dateStart))
         : null;
-
-    const getStatus = (sessionName: string) => {
-        if (!nextSession) return "upcoming";
-
-        const order = sessions.findIndex((s) => s.sessionName === sessionName);
-
-        const nextIndex = sessions.findIndex(
-            (s) => s.sessionName === nextSession.sessionName,
-        );
-
-        if (order < nextIndex) return "done";
-        if (order === nextIndex) return "next";
-        return "upcoming";
-    };
 
     return (
         <div className="bg-gray-900 border border-red-500 p-5 rounded-xl space-y-4">
@@ -64,14 +51,18 @@ export default function RaceWeekendCard() {
             <div>
                 <p className="text-gray-400 text-sm">Next Grand Prix</p>
 
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
                     {nextWeekend.country}
                 </h2>
 
                 <p className="text-gray-400 text-sm">{nextWeekend.circuit}</p>
+
+                <p className="text-gray-500 text-xs mt-1">
+                    {getWeekendLabel(sessions)}
+                </p>
             </div>
 
-            {/* NEXT SESSION HIGHLIGHT */}
+            {/* NEXT SESSION */}
             {nextSession && (
                 <div className="flex justify-between items-end bg-red-500/10 border border-red-500 p-3 rounded-lg">
                     <div>
@@ -98,16 +89,18 @@ export default function RaceWeekendCard() {
             {/* TIMELINE */}
             <div className="space-y-2">
                 {sessions.map((s) => {
-                    const status = getStatus(s.sessionName);
+                    const status = getSessionStatus(
+                        sessions,
+                        s.sessionName,
+                        nextSession?.sessionName,
+                    );
 
                     return (
                         <div
                             key={s.sessionName}
                             className="flex items-center justify-between text-sm"
                         >
-                            {/* LEFT */}
                             <div className="flex items-center gap-2">
-                                {/* STATUS ICON */}
                                 <span
                                     className={
                                         status === "done"
@@ -124,7 +117,6 @@ export default function RaceWeekendCard() {
                                           : "•"}
                                 </span>
 
-                                {/* SESSION NAME */}
                                 <span
                                     className={
                                         status === "next"
@@ -138,8 +130,7 @@ export default function RaceWeekendCard() {
                                 </span>
                             </div>
 
-                            {/* RIGHT: DATE + TIME */}
-                            <span className="text-gray-500 text-xs text-right">
+                            <span className="text-gray-500 text-xs">
                                 {new Date(s.dateStart).toLocaleString("en-GB", {
                                     day: "2-digit",
                                     month: "short",

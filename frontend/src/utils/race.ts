@@ -99,16 +99,49 @@ export function formatWeekendDisplay(start: Date, end: Date) {
 
 export function groupSessionsByDay(sessions: RaceSession[]) {
     return sessions.reduce((acc: Record<string, RaceSession[]>, session) => {
-        const date = new Date(session.dateStart)
-            .toLocaleDateString("en-GB", {
-                weekday: "short",
-                day: "2-digit",
-                month: "short",
-            });
+        const date = new Date(session.dateStart).toLocaleDateString("en-GB", {
+            weekday: "short",
+            day: "2-digit",
+            month: "short",
+        });
 
         if (!acc[date]) acc[date] = [];
         acc[date].push(session);
 
         return acc;
     }, {});
+}
+
+export function getWeekendLabel(sessions: RaceSession[]) {
+    const sorted = [...sessions].sort(
+        (a, b) =>
+            new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime(),
+    );
+
+    const start = new Date(sorted[0].dateStart);
+    const end = new Date(sorted[sorted.length - 1].dateStart);
+
+    return `${start.toLocaleDateString("en-GB", {
+        weekday: "short",
+    })} - ${end.toLocaleDateString("en-GB", {
+        weekday: "short",
+    })}`;
+}
+
+export function getSessionStatus(
+    sessions: RaceSession[],
+    sessionName: string,
+    nextSessionName?: string,
+) {
+    if (!nextSessionName) return "upcoming";
+
+    const order = sessions.findIndex((s) => s.sessionName === sessionName);
+
+    const nextIndex = sessions.findIndex(
+        (s) => s.sessionName === nextSessionName,
+    );
+
+    if (order < nextIndex) return "done";
+    if (order === nextIndex) return "next";
+    return "upcoming";
 }
