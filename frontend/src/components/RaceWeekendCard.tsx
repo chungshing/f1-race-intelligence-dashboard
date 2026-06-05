@@ -6,6 +6,7 @@ import {
     getNextRaceWeekend,
     getRaceDate,
     getWeekendRange,
+    formatWeekendDisplay,
 } from "@/utils/race";
 
 export default function RaceWeekendCard() {
@@ -41,7 +42,6 @@ export default function RaceWeekendCard() {
 
     const raceDate = getRaceDate(sessions);
     const { start, end } = getWeekendRange(sessions);
-
     const daysLeft = raceDate ? calculateDaysLeft(raceDate) : null;
 
     return (
@@ -59,11 +59,12 @@ export default function RaceWeekendCard() {
             {raceDate && !isNaN(raceDate.getTime()) && (
                 <p className="text-sm text-gray-400 mt-2">
                     🏁 Race:{" "}
-                    {raceDate.toLocaleDateString("en-GB", {
-                        weekday: "short",
+                    {raceDate.toLocaleString("en-GB", {
                         day: "2-digit",
                         month: "short",
-                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
                     })}
                 </p>
             )}
@@ -74,16 +75,7 @@ export default function RaceWeekendCard() {
                 !isNaN(start.getTime()) &&
                 !isNaN(end.getTime()) && (
                     <p className="text-sm text-gray-400 mt-1">
-                        📅{" "}
-                        {start.toLocaleDateString("en-GB", {
-                            day: "2-digit",
-                            month: "short",
-                        })}{" "}
-                        -{" "}
-                        {end.toLocaleDateString("en-GB", {
-                            day: "2-digit",
-                            month: "short",
-                        })}
+                        📅 {formatWeekendDisplay(start, end)}
                     </p>
                 )}
 
@@ -109,9 +101,12 @@ export default function RaceWeekendCard() {
                             <span>{s.sessionName}</span>
 
                             <span className="text-gray-500">
-                                {startDate.toLocaleDateString("en-GB", {
+                                {startDate.toLocaleString("en-GB", {
                                     day: "2-digit",
                                     month: "short",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    hour12: false,
                                 })}
                             </span>
                         </div>
@@ -120,5 +115,4 @@ export default function RaceWeekendCard() {
             </div>
         </div>
     );
-    
 }

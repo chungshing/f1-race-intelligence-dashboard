@@ -18,7 +18,7 @@ public class CacheConfig {
 
         cacheManager.setCaffeine(
                 Caffeine.newBuilder()
-                        .expireAfterWrite(Duration.ofSeconds(60)) // 👈 TTL HERE
+                        .expireAfterWrite(Duration.ofSeconds(60))
                         .maximumSize(100)
         );
 
