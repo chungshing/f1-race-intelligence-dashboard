@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,7 +20,6 @@ import java.util.stream.Collectors;
 @Service
 public class OpenF1Service {
 
-    // Base URL with fallback to default if not set in application.properties
     @Value("${openf1.api.baseUrl:https://api.openf1.org/v1}")
     private String openF1BaseUrl;
 
@@ -31,40 +29,38 @@ public class OpenF1Service {
         this.restTemplate = restTemplate;
     }
 
-    // Fetch driver standings with fallback
+    // =========================================================
+    // DRIVER STANDINGS
+    // =========================================================
     public List<DriverStanding> fetchDriverStandings() {
-        try {
-            log.info("Fetching championship standings from OpenF1...");
 
-            // 1. Championship data (points + position)
+        try {
+            log.info("Fetching driver standings from OpenF1...");
+
             String championshipUrl = openF1BaseUrl + "/championship_drivers?session_key=latest";
+
+            String driversUrl = openF1BaseUrl + "/drivers?session_key=latest";
 
             OpenF1ChampionshipDto[] standings = restTemplate.getForObject(championshipUrl,
                     OpenF1ChampionshipDto[].class);
 
-            if (standings == null || standings.length == 0) {
-                log.warn("No championship data found, returning fallback");
-                return fallbackStandings();
-            }
-
-            // 2. Driver metadata (name + team)
-            String driversUrl = openF1BaseUrl + "/drivers?session_key=latest";
-
             OpenF1DriverDto[] drivers = restTemplate.getForObject(driversUrl, OpenF1DriverDto[].class);
 
+            if (standings == null || standings.length == 0) {
+                throw new RuntimeException("No championship data available from OpenF1");
+            }
+
             if (drivers == null || drivers.length == 0) {
-                log.warn("No driver metadata found, using partial data");
+                log.warn("Driver metadata missing — returning partial standings");
                 return mapWithoutEnrichment(standings);
             }
 
-            // 3. Build lookup map (driver_number → driver info)
             Map<Integer, OpenF1DriverDto> driverMap = Arrays.stream(drivers)
                     .collect(Collectors.toMap(
                             OpenF1DriverDto::getDriverNumber,
                             d -> d,
                             (a, b) -> a));
 
-            // 4. Merge datasets
             List<DriverStanding> result = Arrays.stream(standings)
                     .map(s -> {
                         OpenF1DriverDto driver = driverMap.get(s.getDriverNumber());
@@ -81,25 +77,62 @@ public class OpenF1Service {
                     .sorted(Comparator.comparingInt(DriverStanding::getPosition))
                     .toList();
 
-            log.info("Successfully built {} driver standings", result.size());
+            log.info("Driver standings fetched successfully ({} drivers)", result.size());
             return result;
 
         } catch (RestClientException e) {
-            log.error("OpenF1 API failed, using fallback data", e);
-            return fallbackStandings();
+            log.warn("OpenF1 blocked request (live session or restricted access)");
+
+            return List.of(
+                    new DriverStanding(
+                            0,
+                            "Data temporarily unavailable",
+                            "OpenF1 Restricted",
+                            0,
+                            0,
+                            "#999999",
+                            null));
         }
     }
 
-    // fallback if API fails
-    private List<DriverStanding> fallbackStandings() {
-        return List.of(
-                new DriverStanding(1, "Max Verstappen", "Red Bull", 25, 1, "#0600EF", null),
-                new DriverStanding(2, "Charles Leclerc", "Ferrari", 18, 16, "#DC0000", null),
-                new DriverStanding(3, "Lando Norris", "McLaren", 15, 4, "#FF8700", null),
-                new DriverStanding(4, "Lewis Hamilton", "Mercedes", 12, 44, "#00D2BE", null));
+    // =========================================================
+    // TEAM STANDINGS
+    // =========================================================
+    public List<TeamStanding> fetchTeamStandings() {
+
+        try {
+            log.info("Fetching team standings from OpenF1...");
+
+            String url = openF1BaseUrl + "/championship_teams?session_key=latest";
+
+            OpenF1TeamChampionshipDto[] teams = restTemplate.getForObject(url, OpenF1TeamChampionshipDto[].class);
+
+            if (teams == null || teams.length == 0) {
+                throw new RuntimeException("No team championship data available from OpenF1");
+            }
+
+            return Arrays.stream(teams)
+                    .map(team -> new TeamStanding(
+                            team.getPosition_current(),
+                            team.getTeam_name(),
+                            team.getPoints_current()))
+                    .sorted(Comparator.comparingInt(TeamStanding::getPosition))
+                    .toList();
+
+        } catch (RestClientException e) {
+            log.warn("OpenF1 blocked request (live session or restricted access)");
+
+            return List.of(
+                    new TeamStanding(
+                            0,
+                            "Data temporarily unavailable",
+                            0));
+        }
     }
 
-    // fallback if driver metadata missing
+    // =========================================================
+    // FALLBACK (ONLY if driver metadata missing)
+    // =========================================================
     private List<DriverStanding> mapWithoutEnrichment(OpenF1ChampionshipDto[] standings) {
         return Arrays.stream(standings)
                 .map(s -> new DriverStanding(
@@ -112,47 +145,6 @@ public class OpenF1Service {
                         null))
                 .sorted(Comparator.comparingInt(DriverStanding::getPosition))
                 .toList();
-    }
-
-    // Fetch team standings with fallback
-    public List<TeamStanding> fetchTeamStandings() {
-
-        try {
-
-            String url = openF1BaseUrl + "/championship_teams?session_key=latest";
-
-            OpenF1TeamChampionshipDto[] teams = restTemplate.getForObject(
-                    url,
-                    OpenF1TeamChampionshipDto[].class);
-
-            if (teams == null || teams.length == 0) {
-                return fallbackTeamStandings();
-            }
-
-            return Arrays.stream(teams)
-                    .map(team -> new TeamStanding(
-                            team.getPosition_current(),
-                            team.getTeam_name(),
-                            team.getPoints_current()))
-                    .sorted(Comparator.comparingInt(TeamStanding::getPosition))
-                    .toList();
-
-        } catch (Exception e) {
-
-            log.error("Failed to fetch team standings", e);
-
-            return fallbackTeamStandings();
-        }
-    }
-
-    //  fallback if API fails or returns empty data
-    private List<TeamStanding> fallbackTeamStandings() {
-
-        return List.of(
-                new TeamStanding(1, "McLaren", 833),
-                new TeamStanding(2, "Ferrari", 652),
-                new TeamStanding(3, "Mercedes", 589),
-                new TeamStanding(4, "Red Bull", 512));
     }
 
     // Fetch all sessions for a given year, grouped by race weekend
@@ -203,14 +195,15 @@ public class OpenF1Service {
                     .sorted(Comparator.comparing(w -> w.getSessions().stream()
                             .map(RaceSession::getDateStart)
                             .min(String::compareTo)
-                            .orElse("")))
+                            .orElse("9999-12-31T00:00:00+00:00")))
                     .toList();
 
             log.info("Built {} race weekends", result.size());
             return result;
 
         } catch (Exception e) {
-            log.error("Failed to fetch race sessions", e);
+            log.warn("Race API unavailable or restricted - returning empty calendar");
+
             return List.of();
         }
     }
