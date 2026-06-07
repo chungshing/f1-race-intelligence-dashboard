@@ -6,6 +6,7 @@ import RaceWeekendCard from "@/components/RaceWeekendCard";
 import { useStandings } from "@/hooks/useStandings";
 import { useTeamStandings } from "@/hooks/useTeamStandings";
 import { useMemo } from "react";
+import { useRaceWeekends } from "@/hooks/useRaceWeekends";
 
 export default function Home() {
     const { data: standings = [], loading: driverLoading } = useStandings();
@@ -13,21 +14,22 @@ export default function Home() {
 
     const sortedStandings = useMemo(
         () => [...standings].sort((a, b) => b.points - a.points),
-        [standings]
+        [standings],
     );
 
     const sortedTeams = useMemo(
         () => [...teams].sort((a, b) => b.points - a.points),
-        [teams]
+        [teams],
     );
 
     const leader = sortedStandings[0];
     const topTeam = sortedTeams[0];
 
+    const { data: races = [] } = useRaceWeekends();
+
     return (
         <AppLayout>
             <div className="space-y-6">
-
                 {/* TOP STATS GRID */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <StatCard
@@ -35,7 +37,7 @@ export default function Home() {
                         value={
                             driverLoading
                                 ? "Loading..."
-                                : leader?.driverName ?? "N/A"
+                                : (leader?.driverName ?? "N/A")
                         }
                     />
 
@@ -44,7 +46,7 @@ export default function Home() {
                         value={
                             teamLoading
                                 ? "Loading..."
-                                : topTeam?.teamName ?? "N/A"
+                                : (topTeam?.teamName ?? "N/A")
                         }
                     />
 
@@ -60,9 +62,8 @@ export default function Home() {
 
                 {/* NEXT RACE */}
                 <div className="mt-6">
-                    <RaceWeekendCard />
+                    <RaceWeekendCard variant="card" data={races} />
                 </div>
-
             </div>
         </AppLayout>
     );

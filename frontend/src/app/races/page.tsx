@@ -4,8 +4,6 @@ import AppLayout from "@/components/AppLayout";
 import { useRaceWeekends } from "@/hooks/useRaceWeekends";
 import RaceWeekendCard from "@/components/RaceWeekendCard";
 import SeasonTimeline from "@/components/SeasonTimeline";
-import NextRaceStickyBar from "@/components/NextRaceStickyBar";
-import { getNextRaceWeekend, getNextSession } from "@/utils/race";
 
 export default function RacesPage() {
     const { data, loading, error } = useRaceWeekends();
@@ -26,21 +24,12 @@ export default function RacesPage() {
         );
     }
 
-    // ✅ FIX: define next race properly
-    const next = getNextRaceWeekend(data);
-
-    // optional chaining safety
-    const nextSession = next ? getNextSession(next.sessions) : null;
-
     return (
         <AppLayout>
             <h1 className="text-2xl font-bold mb-6">Race Calendar</h1>
 
             {/* STICKY BAR */}
-            <NextRaceStickyBar session={nextSession} />
-
-            {/* HERO */}
-            <RaceWeekendCard />
+            <RaceWeekendCard variant="sticky" data={data} />
 
             {/* TIMELINE */}
             <div className="mt-8">

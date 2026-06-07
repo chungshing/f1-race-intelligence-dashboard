@@ -145,3 +145,12 @@ export function getSessionStatus(
     if (order === nextIndex) return "next";
     return "upcoming";
 }
+
+export function isWeekendActive(weekend: RaceWeekend) {
+    const now = Date.now();
+
+    const { start, end } = getWeekendRange(weekend.sessions);
+
+    return now >= start.getTime() && now <= end.getTime();
+}
+
