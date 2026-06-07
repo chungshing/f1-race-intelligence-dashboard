@@ -37,7 +37,6 @@ export default function SeasonTimeline({ weekends }: Props) {
                     const raceDate = new Date(firstSession.dateStart);
 
                     const isPast = currentIndex !== -1 && index < currentIndex;
-
                     const isCurrent = index === currentIndex;
                     const isFuture = index > currentIndex;
 
@@ -67,7 +66,7 @@ export default function SeasonTimeline({ weekends }: Props) {
                                 className={`rounded-lg border p-4 transition cursor-pointer
                                 ${
                                     isCurrent
-                                        ? "border-red-500 bg-red-500/10"
+                                        ? "border-red-500 bg-red-500/10 shadow-lg shadow-red-500/20"
                                         : "border-gray-800 hover:border-gray-600"
                                 }
                             `}
@@ -113,9 +112,9 @@ export default function SeasonTimeline({ weekends }: Props) {
                                         )}
 
                                         {isCurrent && (
-                                            <p className="text-xs text-red-400 font-semibold">
-                                                Current Weekend
-                                            </p>
+                                            <span className="text-xs text-red-400 font-bold">
+                                                LIVE WEEKEND
+                                            </span>
                                         )}
 
                                         {isFuture && (
