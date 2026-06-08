@@ -20,7 +20,7 @@ A full-stack F1 analytics platform that visualizes real-time and historical Form
 
 ## 🧠 Architecture & Data Flow
 
-![Architecture & Data Flow](images/architecture.png)
+![Architecture & Data Flow](images/Architecture.png)
 
 * **Ingestion Layer**: Spring Boot services poll, process, and memory-cache data from the OpenF1 API.
 * **Processing Engine**: Backend calculates running statistics, session gaps, and standings on the fly.
