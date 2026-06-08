@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RaceWeekend } from "@/types/race";
 import { getNextRaceWeekend } from "@/utils/race";
 
@@ -10,8 +10,17 @@ type Props = {
 
 export default function SeasonTimeline({ weekends }: Props) {
     const nextRace = getNextRaceWeekend(weekends);
-
     const [openId, setOpenId] = useState<number | null>(null);
+    const [now, setNow] = useState<number | null>(null);
+
+    // Defer state update asynchronously to avoid cascading synchronous renders
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setNow(Date.now());
+        }, 0);
+
+        return () => clearTimeout(timer);
+    }, []);
 
     const currentIndex = nextRace
         ? weekends.findIndex((w) => w.meetingKey === nextRace.meetingKey)
@@ -28,18 +37,33 @@ export default function SeasonTimeline({ weekends }: Props) {
                 <div className="absolute left-3 top-2 bottom-0 w-px bg-gray-700" />
 
                 {weekends.map((weekend, index) => {
-                    const firstSession = [...weekend.sessions].sort(
+                    const sortedSessions = [...weekend.sessions].sort(
                         (a, b) =>
                             new Date(a.dateStart).getTime() -
                             new Date(b.dateStart).getTime(),
-                    )[0];
+                    );
 
-                    const raceDate = new Date(firstSession.dateStart);
+                    const firstSession = sortedSessions[0];
+                    const lastSession =
+                        sortedSessions[sortedSessions.length - 1];
 
-                    const isPast = currentIndex !== -1 && index < currentIndex;
-                    const isCurrent = index === currentIndex;
-                    const isFuture = index > currentIndex;
+                    const startTime = new Date(
+                        firstSession.dateStart,
+                    ).getTime();
+                    const endTime =
+                        new Date(lastSession.dateStart).getTime() + 10800000; // 3-hour buffer
 
+                    const isLive = now
+                        ? now >= startTime && now <= endTime
+                        : false;
+                    const isPast = now
+                        ? now > endTime
+                        : currentIndex !== -1 && index < currentIndex;
+                    const isFuture = now
+                        ? now < startTime
+                        : currentIndex !== -1 && index >= currentIndex;
+
+                    const isTargetCard = index === currentIndex;
                     const isOpen = openId === weekend.meetingKey;
 
                     return (
@@ -51,23 +75,25 @@ export default function SeasonTimeline({ weekends }: Props) {
                             <div
                                 className={`absolute left-0 top-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
                                 ${
-                                    isCurrent
+                                    isLive
                                         ? "bg-red-500 text-white"
                                         : isPast
                                           ? "bg-green-500 text-white"
                                           : "bg-gray-700 text-gray-300"
                                 }`}
                             >
-                                {isPast ? "✓" : isCurrent ? "🏁" : ""}
+                                {isPast ? "✓" : isLive ? "🏁" : ""}
                             </div>
 
                             {/* CARD */}
                             <div
                                 className={`rounded-lg border p-4 transition cursor-pointer
                                 ${
-                                    isCurrent
+                                    isLive
                                         ? "border-red-500 bg-red-500/10 shadow-lg shadow-red-500/20"
-                                        : "border-gray-800 hover:border-gray-600"
+                                        : isTargetCard
+                                          ? "border-blue-500 bg-blue-500/5 shadow-md"
+                                          : "border-gray-800 hover:border-gray-600"
                                 }
                             `}
                                 onClick={() =>
@@ -76,7 +102,7 @@ export default function SeasonTimeline({ weekends }: Props) {
                                     )
                                 }
                             >
-                                {/* HEADER BLOCK (your requested update starts here) */}
+                                {/* HEADER BLOCK */}
                                 <div className="flex justify-between items-start">
                                     <div>
                                         <h3
@@ -96,13 +122,12 @@ export default function SeasonTimeline({ weekends }: Props) {
 
                                     <div className="text-right">
                                         <p className="text-sm text-gray-300">
-                                            {raceDate.toLocaleDateString(
-                                                "en-GB",
-                                                {
-                                                    day: "2-digit",
-                                                    month: "short",
-                                                },
-                                            )}
+                                            {new Date(
+                                                firstSession.dateStart,
+                                            ).toLocaleDateString("en-GB", {
+                                                day: "2-digit",
+                                                month: "short",
+                                            })}
                                         </p>
 
                                         {isPast && (
@@ -111,15 +136,17 @@ export default function SeasonTimeline({ weekends }: Props) {
                                             </p>
                                         )}
 
-                                        {isCurrent && (
-                                            <span className="text-xs text-red-400 font-bold">
+                                        {isLive && (
+                                            <span className="text-xs text-red-400 font-bold animate-pulse">
                                                 LIVE WEEKEND
                                             </span>
                                         )}
 
                                         {isFuture && (
                                             <p className="text-xs text-gray-500">
-                                                Upcoming
+                                                {isTargetCard
+                                                    ? "Next Race"
+                                                    : "Upcoming"}
                                             </p>
                                         )}
                                     </div>
