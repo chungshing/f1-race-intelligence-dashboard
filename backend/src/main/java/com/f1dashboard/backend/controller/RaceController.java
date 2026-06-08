@@ -1,5 +1,6 @@
 package com.f1dashboard.backend.controller;
 
+import com.f1dashboard.backend.model.RaceResult;
 import com.f1dashboard.backend.model.RaceWeekend;
 import com.f1dashboard.backend.service.OpenF1Service;
 import org.springframework.cache.annotation.Cacheable;
@@ -23,5 +24,13 @@ public class RaceController {
     public List<RaceWeekend> getRaceWeekends(
             @RequestParam(defaultValue = "2026") int year) {
         return openF1Service.fetchRaceWeekends(year);
+    }
+
+    @Cacheable(value = "raceResults")
+    @GetMapping("/results")
+    public List<RaceResult> getRaceResults(
+            @RequestParam(required = false) Integer sessionKey
+    ) {
+        return openF1Service.fetchRaceResults(sessionKey);
     }
 }
