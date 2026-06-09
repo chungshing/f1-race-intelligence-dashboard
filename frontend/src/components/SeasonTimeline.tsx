@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { RaceWeekend } from "@/types/race";
 import { getNextRaceWeekend } from "@/utils/race";
 
@@ -13,6 +13,8 @@ export default function SeasonTimeline({ weekends }: Props) {
     const [openId, setOpenId] = useState<number | null>(null);
     const [now, setNow] = useState<number | null>(null);
 
+    const activeCardRef = useRef<HTMLDivElement | null>(null);
+
     // Defer state update asynchronously to avoid cascading synchronous renders
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -21,6 +23,15 @@ export default function SeasonTimeline({ weekends }: Props) {
 
         return () => clearTimeout(timer);
     }, []);
+
+    useEffect(() => {
+        if (activeCardRef.current) {
+            activeCardRef.current.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+            });
+        }
+    }, [now]);
 
     const currentIndex = nextRace
         ? weekends.findIndex((w) => w.meetingKey === nextRace.meetingKey)
@@ -69,6 +80,7 @@ export default function SeasonTimeline({ weekends }: Props) {
                     return (
                         <div
                             key={weekend.meetingKey}
+                            ref={isLive || isTargetCard ? activeCardRef : null}
                             className="relative pl-10"
                         >
                             {/* DOT */}

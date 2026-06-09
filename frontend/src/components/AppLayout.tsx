@@ -8,8 +8,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
             <div className="flex-1">
                 <Topbar />
-
-                <div className="p-8">{children}</div>
+                <div className="p-8 pt-4">{children}</div>
             </div>
         </main>
     );

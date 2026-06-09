@@ -26,14 +26,14 @@ export default function RacesPage() {
 
     return (
         <AppLayout>
-            <h1 className="text-2xl font-bold mb-6">Race Calendar</h1>
-
-            {/* STICKY BAR */}
             <RaceWeekendCard variant="sticky" data={data} />
 
-            {/* TIMELINE */}
-            <div className="mt-8">
-                <SeasonTimeline weekends={data} />
+            <div className="max-w-7xl mx-auto px-4 py-6">
+                <h1 className="text-2xl font-bold mb-6">Race Calendar</h1>
+
+                <div className="mt-8">
+                    <SeasonTimeline weekends={data} />
+                </div>
             </div>
         </AppLayout>
     );

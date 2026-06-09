@@ -48,7 +48,7 @@ export default function RaceWeekendCard({ variant = "card", data }: Props) {
     ======================= */
     if (variant === "sticky") {
         return (
-            <div className="sticky top-0 left-0 right-0 z-50 w-full bg-black/60 backdrop-blur border-b border-red-500 px-4 py-2 flex justify-between items-center">
+            <div className="sticky top-16 left-0 right-0 z-50 w-full bg-black/60 backdrop-blur border-b border-red-500 px-4 py-2 flex justify-between items-center">
                 <div>
                     <p className="text-xs text-gray-400 uppercase">Next Race</p>
                     <p className="text-white font-semibold">
