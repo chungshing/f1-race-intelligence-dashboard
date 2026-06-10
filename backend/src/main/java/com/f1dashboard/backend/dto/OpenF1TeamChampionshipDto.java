@@ -5,11 +5,11 @@ import lombok.Data;
 @Data
 public class OpenF1TeamChampionshipDto {
 
-    private int meeting_key;
-    private int points_current;
-    private int points_start;
-    private int position_current;
-    private int position_start;
-    private int session_key;
+    private Integer meeting_key;
+    private Integer points_current;
+    private Integer points_start;
+    private Integer position_current;
+    private Integer position_start;
+    private Integer session_key;
     private String team_name;
 }

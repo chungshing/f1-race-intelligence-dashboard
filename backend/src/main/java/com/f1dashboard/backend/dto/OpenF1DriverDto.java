@@ -7,7 +7,7 @@ import lombok.Data;
 public class OpenF1DriverDto {
 
     @JsonProperty("driver_number")
-    private int driverNumber;
+    private Integer driverNumber;
 
     @JsonProperty("broadcast_name")
     private String broadcastName;

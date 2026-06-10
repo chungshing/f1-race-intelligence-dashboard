@@ -7,23 +7,23 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class OpenF1ChampionshipDto {
 
     @JsonProperty("driver_number")
-    private int driverNumber;
+    private Integer driverNumber;
 
     @JsonProperty("meeting_key")
-    private int meetingKey;
+    private Integer meetingKey;
 
     @JsonProperty("points_current")
-    private int pointsCurrent;
+    private Integer pointsCurrent;
 
     @JsonProperty("points_start")
-    private int pointsStart;
+    private Integer pointsStart;
 
     @JsonProperty("position_current")
-    private int positionCurrent;
+    private Integer positionCurrent;
 
     @JsonProperty("position_start")
-    private int positionStart;
+    private Integer positionStart;
 
     @JsonProperty("session_key")
-    private int sessionKey;
+    private Integer sessionKey;
 }
