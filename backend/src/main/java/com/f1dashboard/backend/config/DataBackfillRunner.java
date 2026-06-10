@@ -16,8 +16,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 
+@SuppressWarnings("unused")
 @Slf4j
-// @Component <-- Comment this out so it stops running on startup
 public class DataBackfillRunner implements CommandLineRunner {
 
     private final OpenF1Service openF1Service;
