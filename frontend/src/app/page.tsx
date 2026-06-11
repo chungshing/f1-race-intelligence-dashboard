@@ -1,6 +1,6 @@
 "use client";
 
-import AppLayout from "@/components/AppLayout";
+import AppLayout from "@/components/layout/AppLayout";
 import DriverTable from "@/components/DriverTable";
 import TeamTable from "@/components/TeamTable";
 import RaceWeekendCard from "@/components/RaceWeekendCard";

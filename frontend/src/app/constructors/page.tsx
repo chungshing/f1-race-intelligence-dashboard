@@ -1,6 +1,6 @@
 "use client";
 
-import AppLayout from "@/components/AppLayout";
+import AppLayout from "@/components/layout/AppLayout";
 import TeamTable from "@/components/TeamTable";
 
 export default function ConstructorsPage() {

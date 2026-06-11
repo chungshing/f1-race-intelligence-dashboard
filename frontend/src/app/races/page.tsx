@@ -1,9 +1,9 @@
 "use client";
 
-import AppLayout from "@/components/AppLayout";
+import AppLayout from "@/components/layout/AppLayout";
 import { useRaceWeekends } from "@/hooks/useRaceWeekends";
 import RaceWeekendCard from "@/components/RaceWeekendCard";
-import SeasonTimeline from "@/components/SeasonTimeline";
+import SeasonTimeline from "@/components/dashboard/SeasonTimeline";
 
 export default function RacesPage() {
     const { data, loading, error } = useRaceWeekends();
