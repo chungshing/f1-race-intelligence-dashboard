@@ -1,39 +1,73 @@
-import { API_BASE } from "./apiBase";
+import { supabase } from "./supabaseClient";
 
+/**
+ * Fetches driver standings
+ * Fields: driverNumber, position, positionStart, positionsGained, driverName, teamName, points, pointsStart, pointsEarned, teamColor, headshotUrl
+ */
 export async function getStandings() {
-    // next: { revalidate: 300 } caches data for 5 minutes (300 seconds)
-    const res = await fetch(`${API_BASE}/api/standings`, {
-        next: { revalidate: 300 },
-    });
+    const { data, error } = await supabase
+        .from("driver_standings")
+        .select("*")
+        .order("position", { ascending: true });
 
-    if (!res.ok) {
-        throw new Error("Failed to fetch standings");
+    if (error) {
+        console.error("Error fetching driver standings:", error);
+        throw new Error(error.message);
     }
-
-    return res.json();
+    return data;
 }
 
+/**
+ * Fetches team standings
+ * Fields: teamName, position, positionStart, positionsGained, points, pointsStart, pointsEarned
+ */
 export async function getTeamStandings() {
-    const res = await fetch(`${API_BASE}/api/teams`, {
-        next: { revalidate: 300 },
-    });
+    const { data, error } = await supabase
+        .from("team_standings")
+        .select("*")
+        .order("position", { ascending: true });
 
-    if (!res.ok) {
-        throw new Error("Failed to fetch teams");
+    if (error) {
+        console.error("Error fetching team standings:", error);
+        throw new Error(error.message);
     }
-
-    return res.json();
+    return data;
 }
 
+/**
+ * Fetches all race weekends
+ * Fields: meeting_key, country, circuit, year, sessions_json
+ */
 export async function getRaces() {
-    const res = await fetch(`${API_BASE}/api/races/weekends?year=2026`, {
-        // Cache race calendars longer (e.g., 24 hours / 86400 seconds) since schedules rarely change
-        next: { revalidate: 86400 },
-    });
+    const { data, error } = await supabase
+        .from("race_weekends")
+        .select("*")
+        .order("meeting_key", { ascending: true });
 
-    if (!res.ok) {
-        throw new Error("Failed to fetch races");
+    if (error) {
+        console.error("Error fetching race weekends:", error);
+        throw new Error(error.message);
+    }
+    return data;
+}
+
+/**
+ * Fetches race results with optional filtering by meetingKey
+ * Fields: session_key, meeting_key, country, session_name, classification_json
+ */
+export async function getRaceResults(meetingKey = null) {
+    let dbQuery = supabase.from("race_results").select("*");
+
+    // Filters by meeting_key if a specific race weekend is requested
+    if (meetingKey) {
+        dbQuery = dbQuery.eq("meeting_key", meetingKey);
     }
 
-    return res.json();
+    const { data, error } = await dbQuery;
+
+    if (error) {
+        console.error("Error fetching race results:", error);
+        throw new Error(error.message);
+    }
+    return data;
 }

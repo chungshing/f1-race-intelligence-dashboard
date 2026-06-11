@@ -1,22 +1,20 @@
 import { RaceWeekend, RaceSession } from "@/types/race";
 
 export function getNextRaceWeekend(data: RaceWeekend[]) {
+    if (!data || !data.length) return null;
     const now = Date.now();
 
     const upcoming = data
         .map((weekend) => {
+            if (!weekend || !weekend.sessions)
+                return { ...weekend, raceDate: null };
             const raceSession = weekend.sessions.find(
                 (s) => s.sessionName === "Race",
             );
-
             const raceDate = raceSession
                 ? new Date(raceSession.dateStart)
                 : null;
-
-            return {
-                ...weekend,
-                raceDate,
-            };
+            return { ...weekend, raceDate };
         })
         .filter((w) => w.raceDate && w.raceDate.getTime() > now)
         .sort((a, b) => a.raceDate!.getTime() - b.raceDate!.getTime());
@@ -25,12 +23,11 @@ export function getNextRaceWeekend(data: RaceWeekend[]) {
 }
 
 export function getTimeRemaining(targetDate: Date) {
+    if (!targetDate) return { days: 0, hours: 0, minutes: 0 };
     const diff = targetDate.getTime() - Date.now();
-
     if (diff <= 0) return { days: 0, hours: 0, minutes: 0 };
 
     const totalMinutes = Math.floor(diff / (1000 * 60));
-
     return {
         days: Math.floor(totalMinutes / (60 * 24)),
         hours: Math.floor((totalMinutes % (60 * 24)) / 60),
@@ -39,118 +36,55 @@ export function getTimeRemaining(targetDate: Date) {
 }
 
 export function getNextSession(sessions: RaceSession[]) {
+    if (!sessions || !sessions.length) return null;
     const now = Date.now();
 
-    const upcoming = sessions
-        .map((s) => ({
-            ...s,
-            start: new Date(s.dateStart),
-        }))
-        .filter((s) => s.start.getTime() > now)
-        .sort((a, b) => a.start.getTime() - b.start.getTime());
-
-    return upcoming[0] ?? null;
-}
-
-export function getRaceDate(sessionList: RaceSession[]) {
-    const race = sessionList.find((s) => s.sessionName === "Race");
-
-    if (!race?.dateStart) return null;
-
-    return new Date(race.dateStart);
-}
-
-export function getWeekendRange(sessions: RaceSession[]) {
-    if (!sessions.length) {
-        return {
-            start: new Date(),
-            end: new Date(),
-        };
-    }
-
-    const sorted = [...sessions].sort(
-        (a, b) =>
-            new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime(),
+    return (
+        [...sessions]
+            .map((s) => ({ ...s, start: new Date(s.dateStart) }))
+            .filter((s) => s.start.getTime() > now)
+            .sort((a, b) => a.start.getTime() - b.start.getTime())[0] ?? null
     );
-
-    return {
-        start: new Date(sorted[0].dateStart),
-        end: new Date(sorted[sorted.length - 1].dateEnd),
-    };
-}
-
-export function formatWeekendDisplay(start: Date, end: Date) {
-    const dateRange = `${start.toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-    })} - ${end.toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-    })}`;
-
-    const dayRange = `${start.toLocaleDateString("en-GB", {
-        weekday: "short",
-    })} - ${end.toLocaleDateString("en-GB", {
-        weekday: "short",
-    })}`;
-
-    return `${dateRange} (${dayRange})`;
-}
-
-export function groupSessionsByDay(sessions: RaceSession[]) {
-    return sessions.reduce((acc: Record<string, RaceSession[]>, session) => {
-        const date = new Date(session.dateStart).toLocaleDateString("en-GB", {
-            weekday: "short",
-            day: "2-digit",
-            month: "short",
-        });
-
-        if (!acc[date]) acc[date] = [];
-        acc[date].push(session);
-
-        return acc;
-    }, {});
 }
 
 export function getWeekendLabel(sessions: RaceSession[]) {
+    if (!sessions || !sessions.length) return "N/A";
     const sorted = [...sessions].sort(
         (a, b) =>
             new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime(),
     );
-
     const start = new Date(sorted[0].dateStart);
     const end = new Date(sorted[sorted.length - 1].dateStart);
 
-    return `${start.toLocaleDateString("en-GB", {
-        weekday: "short",
-    })} - ${end.toLocaleDateString("en-GB", {
-        weekday: "short",
-    })}`;
+    return `${start.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })} - ${end.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}`;
 }
 
 export function getSessionStatus(
     sessions: RaceSession[],
-    sessionName: string,
-    nextSessionName?: string,
+    currentSessionStart: string,
+    nextSessionStart?: string,
 ) {
-    if (!nextSessionName) return "upcoming";
+    if (!nextSessionStart) return "upcoming";
 
-    const order = sessions.findIndex((s) => s.sessionName === sessionName);
+    const now = Date.now();
+    const sessionTime = new Date(currentSessionStart).getTime();
 
-    const nextIndex = sessions.findIndex(
-        (s) => s.sessionName === nextSessionName,
-    );
-
-    if (order < nextIndex) return "done";
-    if (order === nextIndex) return "next";
+    if (sessionTime < now) return "done";
+    if (currentSessionStart === nextSessionStart) return "next";
     return "upcoming";
 }
 
 export function isWeekendActive(weekend: RaceWeekend) {
+    if (!weekend || !weekend.sessions) return false;
     const now = Date.now();
 
-    const { start, end } = getWeekendRange(weekend.sessions);
+    const sorted = [...weekend.sessions].sort(
+        (a, b) =>
+            new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime(),
+    );
+    const start = new Date(sorted[0].dateStart).getTime();
+    const end =
+        new Date(sorted[sorted.length - 1].dateEnd).getTime() + 10800000; // 3h buffer
 
-    return now >= start.getTime() && now <= end.getTime();
+    return now >= start && now <= end;
 }
-

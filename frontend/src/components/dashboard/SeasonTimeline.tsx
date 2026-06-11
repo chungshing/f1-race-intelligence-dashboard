@@ -11,44 +11,48 @@ type Props = {
 export default function SeasonTimeline({ weekends }: Props) {
     const nextRace = getNextRaceWeekend(weekends);
     const [openId, setOpenId] = useState<number | null>(null);
-    const [now, setNow] = useState<number | null>(null);
+
+    // FIX: Lazy initialize to remove impure render calls
+    const [now] = useState(() => Date.now());
 
     const activeCardRef = useRef<HTMLDivElement | null>(null);
 
-    // Defer state update asynchronously to avoid cascading synchronous renders
     useEffect(() => {
+        // Only run scroll anchoring on initial client mount sequence
         const timer = setTimeout(() => {
-            setNow(Date.now());
-        }, 0);
-
+            if (activeCardRef.current) {
+                activeCardRef.current.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                });
+            }
+        }, 200);
         return () => clearTimeout(timer);
     }, []);
 
-    useEffect(() => {
-        if (activeCardRef.current) {
-            activeCardRef.current.scrollIntoView({
-                behavior: "smooth",
-                block: "center",
-            });
-        }
-    }, [now]);
-
     const currentIndex = nextRace
-        ? weekends.findIndex((w) => w.meetingKey === nextRace.meetingKey)
+        ? weekends.findIndex((w) => w.meeting_key === nextRace.meeting_key)
         : -1;
 
     return (
-        <div className="bg-gray-900 rounded-xl p-6 relative">
-            {/* HEADER */}
-            <h2 className="text-lg font-bold mb-6">2026 Season Timeline</h2>
+        // FIX: Changed bg-gradient-to-b to bg-linear-to-b
+        <div className="border border-zinc-800 bg-linear-to-b from-zinc-900 to-zinc-950 rounded-xl p-6 relative shadow-2xl">
+            {/* FIX: Resolved conflicting font-size, colors, and tracking utilities */}
+            <h2 className="text-xs font-black text-zinc-400 tracking-wider mb-6 uppercase">
+                2026 Season Timeline
+            </h2>
 
-            {/* TIMELINE */}
             <div className="space-y-4 relative">
-                {/* vertical line */}
-                <div className="absolute left-3 top-2 bottom-0 w-px bg-gray-700" />
+                <div className="absolute left-3 top-2 bottom-2 w-px bg-zinc-800" />
 
                 {weekends.map((weekend, index) => {
-                    const sortedSessions = [...weekend.sessions].sort(
+                    // 1. SAFE ACCESS: Default to empty array if sessions is missing
+                    const sessions = weekend.sessions ?? [];
+
+                    // 2. GUARD CLAUSE: Skip rendering this card if no session data exists
+                    if (sessions.length === 0) return null;
+
+                    const sortedSessions = [...sessions].sort(
                         (a, b) =>
                             new Date(a.dateStart).getTime() -
                             new Date(b.dateStart).getTime(),
@@ -62,78 +66,64 @@ export default function SeasonTimeline({ weekends }: Props) {
                         firstSession.dateStart,
                     ).getTime();
                     const endTime =
-                        new Date(lastSession.dateStart).getTime() + 10800000; // 3-hour buffer
+                        new Date(lastSession.dateEnd).getTime() + 10800000;
 
-                    const isLive = now
-                        ? now >= startTime && now <= endTime
-                        : false;
-                    const isPast = now
-                        ? now > endTime
-                        : currentIndex !== -1 && index < currentIndex;
-                    const isFuture = now
-                        ? now < startTime
-                        : currentIndex !== -1 && index >= currentIndex;
+                    const isLive = now >= startTime && now <= endTime;
+                    const isPast = now > endTime;
+                    const isFuture = now < startTime;
 
                     const isTargetCard = index === currentIndex;
-                    const isOpen = openId === weekend.meetingKey;
+                    const isOpen = openId === weekend.meeting_key;
 
                     return (
                         <div
-                            key={weekend.meetingKey}
-                            ref={isLive || isTargetCard ? activeCardRef : null}
-                            className="relative pl-10"
+                            key={weekend.meeting_key}
+                            ref={isTargetCard ? activeCardRef : null}
+                            className="relative pl-9 group"
                         >
-                            {/* DOT */}
+                            {/* CONNECTOR PIN */}
                             <div
-                                className={`absolute left-0 top-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
+                                className={`absolute left-1.5 top-5 w-4 h-4 rounded-full border-4 border-zinc-950 flex items-center justify-center transition-all duration-300 z-10
                                 ${
                                     isLive
-                                        ? "bg-red-500 text-white"
+                                        ? "bg-red-500 scale-125 shadow-lg shadow-red-500/50"
                                         : isPast
-                                          ? "bg-green-500 text-white"
-                                          : "bg-gray-700 text-gray-300"
+                                          ? "bg-emerald-500"
+                                          : "bg-zinc-800 group-hover:bg-zinc-600"
                                 }`}
-                            >
-                                {isPast ? "✓" : isLive ? "🏁" : ""}
-                            </div>
+                            />
 
-                            {/* CARD */}
+                            {/* TIMELINE CARD */}
                             <div
-                                className={`rounded-lg border p-4 transition cursor-pointer
-                                ${
-                                    isLive
-                                        ? "border-red-500 bg-red-500/10 shadow-lg shadow-red-500/20"
-                                        : isTargetCard
-                                          ? "border-blue-500 bg-blue-500/5 shadow-md"
-                                          : "border-gray-800 hover:border-gray-600"
-                                }
-                            `}
+                                // FIX: Updated opacity shorthands to canonical v4 syntax /3 and /2
+                                className={`rounded-xl border p-4 transition-all duration-200 cursor-pointer backdrop-blur-sm
+                                    ${
+                                        isLive
+                                            ? "border-red-500/60 bg-red-500/3 shadow-xl shadow-red-500/2"
+                                            : isTargetCard
+                                              ? "border-zinc-700 bg-zinc-900/40 shadow-md"
+                                              : "border-zinc-800/80 bg-zinc-950/20 hover:border-zinc-700 hover:bg-zinc-900/20"
+                                    }`}
                                 onClick={() =>
                                     setOpenId(
-                                        isOpen ? null : weekend.meetingKey,
+                                        isOpen ? null : weekend.meeting_key,
                                     )
                                 }
                             >
-                                {/* HEADER BLOCK */}
-                                <div className="flex justify-between items-start">
+                                <div className="flex justify-between items-start gap-4">
                                     <div>
                                         <h3
-                                            className={`font-semibold ${
-                                                isPast
-                                                    ? "text-gray-500"
-                                                    : "text-white"
-                                            }`}
+                                            className={`font-bold tracking-tight text-sm transition-colors ${isPast ? "text-zinc-500 line-through" : "text-zinc-100"}`}
                                         >
                                             {weekend.country}
                                         </h3>
-
-                                        <p className="text-sm text-gray-400">
+                                        <p className="text-xs text-zinc-500 font-medium mt-0.5">
                                             {weekend.circuit}
                                         </p>
                                     </div>
 
-                                    <div className="text-right">
-                                        <p className="text-sm text-gray-300">
+                                    <div className="text-right shrink-0">
+                                        <p className="text-xs font-mono font-bold text-zinc-400">
                                             {new Date(
                                                 firstSession.dateStart,
                                             ).toLocaleDateString("en-GB", {
@@ -143,40 +133,34 @@ export default function SeasonTimeline({ weekends }: Props) {
                                         </p>
 
                                         {isPast && (
-                                            <p className="text-xs text-green-400">
-                                                Completed
-                                            </p>
-                                        )}
-
-                                        {isLive && (
-                                            <span className="text-xs text-red-400 font-bold animate-pulse">
-                                                LIVE WEEKEND
+                                            <span className="text-[10px] font-bold text-emerald-500 mt-1 block uppercase tracking-wider">
+                                                Done
                                             </span>
                                         )}
-
-                                        {isFuture && (
-                                            <p className="text-xs text-gray-500">
-                                                {isTargetCard
-                                                    ? "Next Race"
-                                                    : "Upcoming"}
-                                            </p>
+                                        {isLive && (
+                                            <span className="text-[10px] font-bold text-red-400 mt-1 block uppercase tracking-widest animate-pulse">
+                                                ● Live
+                                            </span>
+                                        )}
+                                        {isFuture && isTargetCard && (
+                                            <span className="text-[10px] font-bold text-zinc-400 bg-zinc-800 px-1.5 py-0.5 rounded mt-1 inline-block uppercase tracking-wider">
+                                                Next Up
+                                            </span>
                                         )}
                                     </div>
                                 </div>
 
-                                {/* EXPANDABLE CONTENT */}
                                 {isOpen && (
-                                    <div className="mt-4 border-t border-gray-800 pt-3 space-y-2">
-                                        {weekend.sessions.map((s) => (
+                                    <div className="mt-4 border-t border-zinc-800/60 pt-3 space-y-2 animate-fadeIn">
+                                        {sortedSessions.map((s) => (
                                             <div
                                                 key={s.sessionName}
-                                                className="flex justify-between text-sm"
+                                                className="flex justify-between items-center text-xs"
                                             >
-                                                <span className="text-gray-300">
+                                                <span className="text-zinc-400 font-medium">
                                                     {s.sessionName}
                                                 </span>
-
-                                                <span className="text-gray-500">
+                                                <span className="text-zinc-500 font-mono">
                                                     {new Date(
                                                         s.dateStart,
                                                     ).toLocaleString("en-GB", {
@@ -184,6 +168,7 @@ export default function SeasonTimeline({ weekends }: Props) {
                                                         month: "short",
                                                         hour: "2-digit",
                                                         minute: "2-digit",
+                                                        hour12: false,
                                                     })}
                                                 </span>
                                             </div>
