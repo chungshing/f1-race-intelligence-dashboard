@@ -13,13 +13,22 @@ import lombok.NoArgsConstructor;
 public class TeamStanding {
 
     @Id
-    private String teamName; 
+    private String teamName;
     private int position;
+    private int positionStart;
+    private int positionsGained;
     private int points;
+    private int pointsStart;
+    private int pointsEarned;
 
-    public TeamStanding(int position, String teamName, int points) {
+    public TeamStanding(int position, int positionStart, int positionsGained,
+            String teamName, int points, int pointsStart, int pointsEarned) {
         this.position = position;
+        this.positionStart = positionStart;
+        this.positionsGained = positionsGained;
         this.teamName = teamName;
         this.points = points;
+        this.pointsStart = pointsStart;
+        this.pointsEarned = pointsEarned;
     }
 }

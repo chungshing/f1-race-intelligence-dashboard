@@ -5,6 +5,7 @@ import com.f1dashboard.backend.repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import java.time.Year;
 import java.util.List;
 
 @Slf4j
@@ -24,11 +25,13 @@ public class F1SyncScheduler {
         this.weekendRepo = weekendRepo;
     }
 
-    @Scheduled(cron = "0 0 0,12 * * ?") // Every 12 hours at midnight and noon  
+    @Scheduled(cron = "0 0 0,12 * * ?") // Every 12 hours at midnight and noon
     public void syncDataPipeline() {
         log.info("Starting background F1 data sync...");
 
         try {
+            int currentYear = Year.now().getValue();
+
             // 1. Sync Standings
             List<DriverStanding> drivers = openF1Service.fetchDriverStandings();
             if (!drivers.isEmpty())
@@ -43,10 +46,9 @@ public class F1SyncScheduler {
 
             spaceRequests();
 
-            // 3. Sync Calendar (Current Year 2026)
-            List<RaceWeekend> weekends = openF1Service.fetchRaceWeekends(2026);
+            // 3. Sync Calendar (Dynamic Current Year)
+            List<RaceWeekend> weekends = openF1Service.fetchRaceWeekends(currentYear);
             if (!weekends.isEmpty()) {
-                weekends.forEach(w -> w.setYear(2026));
                 weekendRepo.saveAll(weekends);
             }
 

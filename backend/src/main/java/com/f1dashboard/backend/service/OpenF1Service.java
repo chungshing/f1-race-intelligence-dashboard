@@ -6,12 +6,13 @@ import com.f1dashboard.backend.repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.OffsetDateTime;
+import java.time.Year;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,9 +35,6 @@ public class OpenF1Service {
         this.raceResultRepository = raceResultRepository;
     }
 
-    // =========================================================
-    // RATE LIMITING HELPER
-    // =========================================================
     private void delayBetweenRequests() {
         try {
             Thread.sleep(2500);
@@ -46,9 +44,6 @@ public class OpenF1Service {
         }
     }
 
-    // =========================================================
-    // DATABASE LOOKUP FALLBACKS
-    // =========================================================
     public List<RaceWeekend> getCachedWeekends(int year) {
         List<RaceWeekend> records = raceWeekendRepository.findByYear(year);
         if (records.isEmpty()) {
@@ -76,9 +71,7 @@ public class OpenF1Service {
         return records;
     }
 
-    // =========================================================
-    // DRIVER STANDINGS
-    // =========================================================
+    @Transactional
     public List<DriverStanding> fetchDriverStandings() {
         try {
             String championshipUrl = openF1BaseUrl + "/championship_drivers?session_key=latest";
@@ -104,9 +97,13 @@ public class OpenF1Service {
                         OpenF1DriverDto d = driverMap.get(s.getDriverNumber());
                         return new DriverStanding(
                                 s.getPositionCurrent(),
+                                s.getPositionStart() != null ? s.getPositionStart() : s.getPositionCurrent(),
+                                s.getPositionsGained(),
                                 d != null ? d.getFullName() : "Driver " + s.getDriverNumber(),
                                 d != null ? d.getTeamName() : "Unknown",
                                 s.getPointsCurrent(),
+                                s.getPointsStart() != null ? s.getPointsStart() : s.getPointsCurrent(),
+                                s.getPointsEarned(),
                                 s.getDriverNumber(),
                                 d != null ? d.getTeamColour() : "#999999",
                                 d != null ? d.getHeadshotUrl() : null);
@@ -114,14 +111,12 @@ public class OpenF1Service {
                     .sorted(Comparator.comparingInt(DriverStanding::getPosition))
                     .toList();
         } catch (RestClientException e) {
-            log.warn("Driver standings unavailable (OpenF1 restriction)");
+            log.warn("Driver standings unavailable (OpenF1 restriction)", e);
             return List.of();
         }
     }
 
-    // =========================================================
-    // TEAM STANDINGS
-    // =========================================================
+    @Transactional
     public List<TeamStanding> fetchTeamStandings() {
         try {
             String url = openF1BaseUrl + "/championship_teams?session_key=latest";
@@ -132,18 +127,22 @@ public class OpenF1Service {
                 return List.of();
 
             return Arrays.stream(teams)
-                    .map(t -> new TeamStanding(t.getPosition_current(), t.getTeam_name(), t.getPoints_current()))
+                    .map(t -> new TeamStanding(
+                            t.getPositionCurrent(),
+                            t.getPositionStart() != null ? t.getPositionStart() : t.getPositionCurrent(),
+                            t.getPositionsGained(),
+                            t.getTeamName(),
+                            t.getPointsCurrent(),
+                            t.getPointsStart() != null ? t.getPointsStart() : t.getPointsCurrent(),
+                            t.getPointsEarned()))
                     .sorted(Comparator.comparingInt(TeamStanding::getPosition))
                     .toList();
         } catch (RestClientException e) {
-            log.warn("Team standings unavailable");
+            log.warn("Team standings unavailable", e);
             return List.of();
         }
     }
 
-    // =========================================================
-    // RACE WEEKENDS (CALENDAR)
-    // =========================================================
     public List<RaceWeekend> fetchRaceWeekends(int year) {
         try {
             String url = openF1BaseUrl + "/sessions?year=" + year;
@@ -187,9 +186,6 @@ public class OpenF1Service {
         }
     }
 
-    // =========================================================
-    // RACE RESULTS ENTRY POINT
-    // =========================================================
     public List<RaceResult> fetchRaceResults(Integer sessionKey) {
         try {
             String targetsKey = (sessionKey != null) ? String.valueOf(sessionKey) : "latest";
@@ -236,9 +232,6 @@ public class OpenF1Service {
         }
     }
 
-    // =========================================================
-    // FETCH ALL SESSION RESULTS FOR A WEEKEND
-    // =========================================================
     public List<RaceResult> fetchWeekendSessionResults(Integer meetingKey) {
         try {
             String sessionsUrl = openF1BaseUrl + "/sessions";
@@ -251,9 +244,8 @@ public class OpenF1Service {
             delayBetweenRequests();
             OpenF1SessionDto[] weekendSessions = restTemplate.getForObject(sessionsUrl, OpenF1SessionDto[].class);
 
-            if (weekendSessions == null || weekendSessions.length == 0) {
+            if (weekendSessions == null || weekendSessions.length == 0)
                 return List.of();
-            }
 
             Integer targetMeetingKey = (meetingKey != null) ? meetingKey : weekendSessions[0].getMeeting_key();
 
@@ -270,12 +262,11 @@ public class OpenF1Service {
             List<RaceResult> allWeekendResults = new ArrayList<>();
             Instant now = Instant.now();
 
-            // Guard: Sort and filter out future/cancelled sessions before calling the API
             List<OpenF1SessionDto> completedSessions = Arrays.stream(weekendSessions)
                     .filter(s -> s.getDate_start() != null && s.getSession_key() != null)
                     .filter(s -> {
-                        LocalDateTime localStart = LocalDateTime.parse(s.getDate_start().substring(0, 19));
-                        return localStart.toInstant(ZoneOffset.UTC).isBefore(now);
+                        Instant sessionStart = OffsetDateTime.parse(s.getDate_start()).toInstant();
+                        return sessionStart.isBefore(now);
                     })
                     .sorted(Comparator.comparing(OpenF1SessionDto::getDate_start))
                     .toList();
@@ -297,6 +288,7 @@ public class OpenF1Service {
         }
     }
 
+    @Transactional
     public List<RaceResult> getCachedWeekendResults(Integer meetingKey) {
         if (meetingKey == null) {
             meetingKey = resolveLatestMeetingKey();
@@ -306,12 +298,12 @@ public class OpenF1Service {
 
         List<RaceResult> records = raceResultRepository.findByMeetingKey(meetingKey);
 
-        if (records.size() >= 5) {
-            log.info("Cache hit! Entire weekend is complete with {} sessions recorded.", records.size());
+        if (!records.isEmpty()) {
+            log.info("Cache hit! Found existing weekend results.");
             return records;
         }
 
-        log.info("Weekend active/incomplete (Stored: {}/5). Checking OpenF1 for updates...", records.size());
+        log.info("Checking OpenF1 for new weekend session data...");
         List<RaceResult> liveResults = fetchWeekendSessionResults(meetingKey);
 
         if (!liveResults.isEmpty()) {
@@ -321,9 +313,6 @@ public class OpenF1Service {
         return liveResults;
     }
 
-    // =========================================================
-    // HELPER MAPPERS
-    // =========================================================
     private DriverResult mapDriverResult(OpenF1SessionResultDto dto) {
         if (dto == null)
             return null;
@@ -331,17 +320,7 @@ public class OpenF1Service {
         List<Double> gaps = normalize(dto.getGap_to_leader());
         Double latestGap = (gaps == null || gaps.isEmpty()) ? 0.0 : gaps.get(gaps.size() - 1);
 
-        boolean dnf = false;
-        boolean dns = false;
-        boolean dsq = false;
-
-        return new DriverResult(
-                dto.getPosition(),
-                dto.getDriver_number(),
-                latestGap,
-                dnf,
-                dns,
-                dsq);
+        return new DriverResult(dto.getPosition(), dto.getDriver_number(), latestGap, false, false, false);
     }
 
     private List<Double> normalize(Object value) {
@@ -362,7 +341,8 @@ public class OpenF1Service {
 
     private Integer resolveLatestMeetingKey() {
         try {
-            String url = openF1BaseUrl + "/sessions?year=2026";
+            int currentYear = Year.now().getValue();
+            String url = openF1BaseUrl + "/sessions?year=" + currentYear;
             OpenF1SessionDto[] sessions = restTemplate.getForObject(url, OpenF1SessionDto[].class);
             if (sessions == null || sessions.length == 0)
                 return null;
@@ -375,9 +355,7 @@ public class OpenF1Service {
                 if (session.getMeeting_key() == null || session.getDate_start() == null)
                     continue;
 
-                // substring(0, 19) handles timestamps with variable tail fractions safely
-                LocalDateTime localStart = LocalDateTime.parse(session.getDate_start().substring(0, 19));
-                Instant sessionStart = localStart.toInstant(ZoneOffset.UTC);
+                Instant sessionStart = OffsetDateTime.parse(session.getDate_start()).toInstant();
 
                 if (sessionStart.isBefore(now) && sessionStart.isAfter(latestTrackedTime)) {
                     latestTrackedTime = sessionStart;
@@ -393,8 +371,18 @@ public class OpenF1Service {
 
     private List<DriverStanding> mapWithoutEnrichment(OpenF1ChampionshipDto[] standings) {
         return Arrays.stream(standings)
-                .map(s -> new DriverStanding(s.getPositionCurrent(), "Driver " + s.getDriverNumber(), "Unknown",
-                        s.getPointsCurrent(), s.getDriverNumber(), "#999999", null))
+                .map(s -> new DriverStanding(
+                        s.getPositionCurrent(),
+                        s.getPositionStart() != null ? s.getPositionStart() : s.getPositionCurrent(),
+                        s.getPositionsGained(),
+                        "Driver " + s.getDriverNumber(),
+                        "Unknown",
+                        s.getPointsCurrent(),
+                        s.getPointsStart() != null ? s.getPointsStart() : s.getPointsCurrent(),
+                        s.getPointsEarned(),
+                        s.getDriverNumber(),
+                        "#999999",
+                        null))
                 .toList();
     }
 }

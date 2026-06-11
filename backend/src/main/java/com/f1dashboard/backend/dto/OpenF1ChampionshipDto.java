@@ -26,4 +26,16 @@ public class OpenF1ChampionshipDto {
 
     @JsonProperty("session_key")
     private Integer sessionKey;
+
+    public int getPositionsGained() {
+        if (positionStart == null || positionCurrent == null)
+            return 0;
+        return positionStart - positionCurrent;
+    }
+
+    public int getPointsEarned() {
+        if (pointsCurrent == null || pointsStart == null)
+            return 0;
+        return pointsCurrent - pointsStart;
+    }
 }
