@@ -10,12 +10,19 @@ export function useRaceWeekends() {
     useEffect(() => {
         getRaces()
             .then((res) => {
-                //console.log("RACES API RESPONSE:", res);
                 if (!Array.isArray(res)) {
                     throw new Error("Invalid race data format");
                 }
 
-                setData(res);
+                const parsedData: RaceWeekend[] = res.map((race) => ({
+                    meetingKey: race.meeting_key,
+                    circuit: race.circuit,
+                    country: race.country,
+                    year: race.year,
+                    sessions: JSON.parse(race.sessions_json || "[]"),
+                }));
+
+                setData(parsedData);
             })
             .catch((err) => {
                 console.error("Race API error:", err);

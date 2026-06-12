@@ -4,16 +4,16 @@ import lombok.Data;
 
 @Data
 public class OpenF1SessionResultDto {
-    private boolean dnf;
-    private boolean dns;
-    private boolean dsq;
+    private Boolean dnf;
+    private Boolean dns;
+    private Boolean dsq;
 
-    private int driver_number;
+    private Integer driver_number;
     private Object duration;
     private Object gap_to_leader;
 
-    private int number_of_laps;
-    private int meeting_key;
-    private int position;
-    private int session_key;
+    private Integer number_of_laps;
+    private Integer meeting_key;
+    private Integer position;
+    private Integer session_key;
 }

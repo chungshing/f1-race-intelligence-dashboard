@@ -2,28 +2,28 @@ package com.f1dashboard.backend.service;
 
 import com.f1dashboard.backend.model.DriverStanding;
 import com.f1dashboard.backend.model.TeamStanding;
-
-import lombok.extern.slf4j.Slf4j;
+import com.f1dashboard.backend.repository.DriverStandingRepository;
+import com.f1dashboard.backend.repository.TeamStandingRepository;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 
-@Slf4j
 @Service
 public class StandingsService {
 
-    private final OpenF1Service openF1Service;
+    private final DriverStandingRepository driverRepository;
+    private final TeamStandingRepository teamRepository;
 
-    public StandingsService(OpenF1Service openF1Service) {
-        this.openF1Service = openF1Service;
+    public StandingsService(DriverStandingRepository driverRepository, TeamStandingRepository teamRepository) {
+        this.driverRepository = driverRepository;
+        this.teamRepository = teamRepository;
     }
 
     public List<DriverStanding> getStandings() {
-        log.info("Fetching driver standings");
-        return openF1Service.fetchDriverStandings();
+        return driverRepository.findAll(Sort.by(Sort.Direction.ASC, "position"));
     }
 
     public List<TeamStanding> getTeamStandings() {
-        return openF1Service.fetchTeamStandings();
+        return teamRepository.findAll(Sort.by(Sort.Direction.ASC, "position"));
     }
 }

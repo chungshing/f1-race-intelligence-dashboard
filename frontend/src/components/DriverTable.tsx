@@ -1,115 +1,125 @@
-"use client";
+import NextImage from "next/image";
+import { DriverStanding } from "@/types/standing";
+import { formatHexColor } from "@/utils/sessions";
+import { ArrowUp, ArrowDown, Minus } from "lucide-react";
 
-//import { useLiveData } from '@/hook/useLiveData(mock)';
-import { useStandings } from "@/hooks/useStandings";
-import Image from "next/image";
-import { DriverStanding } from "@/types/shared";
-
-function getPositionColor(pos: number) {
-    if (pos === 1) return "text-yellow-400";
-    if (pos === 2) return "text-zinc-300";
-    if (pos === 3) return "text-orange-400";
-    return "text-zinc-400";
+interface DriverTableProps {
+    standings: DriverStanding[];
+    limit?: number;
 }
 
-export default function DriverTable() {
-    const { data: standings = [] as DriverStanding[], loading, error } = useStandings();
-    if (loading) {
+export function DriverTable({ standings, limit }: DriverTableProps) {
+    if (standings.length === 0)
         return (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-white">
-                Loading standings...
-            </div>
+            <p className="text-sm text-zinc-400 p-4 border border-zinc-800 rounded-lg bg-zinc-950">
+                No driver data available.
+            </p>
         );
-    }
 
-    if (error) {
-        return (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-red-400">
-                {error}
-            </div>
-        );
-    }
+    const displayedStandings = limit ? standings.slice(0, limit) : standings;
+
     return (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-            {/* Header */}
-            <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-white">
-                    Driver Standings
-                </h3>
-
-                <span className="text-xs px-2 py-1 rounded-full bg-red-600 text-black font-bold">
-                    LIVE
-                </span>
-            </div>
-
-            {/* Table */}
-            <table className="w-full text-left">
-                <thead className="bg-zinc-800 text-zinc-400 text-xs uppercase tracking-wider">
-                    <tr>
-                        <th className="p-4">Pos</th>
+        <div className="border border-zinc-800 rounded-xl overflow-x-auto bg-linear-to-b from-zinc-900 to-zinc-950 shadow-2xl">
+            <table className="w-full text-left border-collapse text-sm min-w-162.5">
+                <thead>
+                    <tr className="border-b border-zinc-800 bg-zinc-900/40 text-xs font-semibold tracking-wider text-zinc-400 uppercase">
+                        <th className="p-4 w-16 text-center">Pos</th>
+                        <th className="p-4 w-16 text-center">No</th>
                         <th className="p-4">Driver</th>
                         <th className="p-4">Team</th>
-                        <th className="p-4 text-right">Points</th>
+                        <th className="p-4 text-center w-24">Change</th>
+                        <th className="p-4 text-right w-28">Points</th>
                     </tr>
                 </thead>
+                <tbody className="divide-y divide-zinc-800/50">
+                    {displayedStandings.map((row, index) => {
+                        const rowKey = row.driverNumber
+                            ? `driver-${row.driverNumber}`
+                            : `driver-${row.driverName}-${index}`;
 
-                <tbody>
-                    {standings.map((driver) => (
-                        <tr
-                            key={driver.position}
-                            className="border-t border-zinc-800 hover:bg-zinc-800/60 transition"
-                            style={{
-                                borderLeft: `4px solid #${driver.teamColor}`,
-                            }}
-                        >
-                            {/* Position */}
-                            <td
-                                className={`p-4 font-bold ${getPositionColor(driver.position)}`}
+                        const posColor =
+                            row.position === 1
+                                ? "text-amber-400"
+                                : row.position === 2
+                                  ? "text-zinc-300"
+                                  : row.position === 3
+                                    ? "text-amber-600"
+                                    : "text-zinc-100";
+
+                        return (
+                            <tr
+                                key={rowKey}
+                                className="group hover:bg-zinc-800/20 transition-all duration-150"
                             >
-                                P{driver.position}
-                            </td>
-
-                            {/* Driver */}
-                            <td className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <span className="text-zinc-400 font-mono w-8">
-                                        #{driver.driverNumber}
-                                    </span>
-
-                                    {driver.headshotUrl ? (
-                                        <Image
-                                            src={driver.headshotUrl}
-                                            alt={driver.driverName}
-                                            width={40}
-                                            height={40}
-                                            className="rounded-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="w-10 h-10 rounded-full bg-zinc-700" />
-                                    )}
-
-                                    <span className="text-white font-medium">
-                                        {driver.driverName}
-                                    </span>
-                                </div>
-                            </td>
-
-                            {/* Team */}
-                            <td
-                                className="p-4 font-medium"
-                                style={{
-                                    color: `#${driver.teamColor}`,
-                                }}
-                            >
-                                {driver.teamName}
-                            </td>
-
-                            {/* Points */}
-                            <td className="p-4 text-right font-semibold text-red-400">
-                                {driver.points}
-                            </td>
-                        </tr>
-                    ))}
+                                <td
+                                    className={`p-4 font-black text-center text-base ${posColor}`}
+                                >
+                                    {row.position}
+                                </td>
+                                <td className="p-4 text-zinc-500 text-center font-mono font-bold group-hover:text-zinc-300 transition-colors">
+                                    {row.driverNumber}
+                                </td>
+                                <td
+                                    className="p-4 font-semibold text-zinc-100"
+                                    style={{
+                                        borderLeft: `4px solid ${formatHexColor(row.teamColor)}`,
+                                    }}
+                                >
+                                    <div className="flex items-center gap-3 pl-1">
+                                        {row.headshotUrl && (
+                                            <div className="relative w-8 h-8 rounded-full border border-zinc-700 overflow-hidden bg-zinc-800 shrink-0 shadow-inner">
+                                                <NextImage
+                                                    src={row.headshotUrl}
+                                                    alt={
+                                                        row.driverName ||
+                                                        "Driver"
+                                                    }
+                                                    fill
+                                                    unoptimized
+                                                    className="object-cover group-hover:scale-105 transition-transform"
+                                                />
+                                            </div>
+                                        )}
+                                        <span className="tracking-tight">
+                                            {row.driverName}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td className="p-4 text-zinc-400 font-medium">
+                                    {row.teamName}
+                                </td>
+                                <td className="p-4 text-center">
+                                    <div className="flex items-center justify-center">
+                                        {row.positionsGained > 0 ? (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                                <ArrowUp className="w-3 h-3 stroke-3" />{" "}
+                                                {row.positionsGained}
+                                            </span>
+                                        ) : row.positionsGained < 0 ? (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20">
+                                                <ArrowDown className="w-3 h-3 stroke-3" />{" "}
+                                                {Math.abs(row.positionsGained)}
+                                            </span>
+                                        ) : (
+                                            <Minus className="w-3 h-3 text-zinc-600 stroke-3" />
+                                        )}
+                                    </div>
+                                </td>
+                                <td className="p-4 text-right">
+                                    <div className="flex flex-col items-end justify-center">
+                                        <span className="font-bold text-zinc-100 text-sm tracking-tight">
+                                            {row.points}
+                                        </span>
+                                        {row.pointsEarned > 0 && (
+                                            <span className="text-[10px] font-bold text-emerald-400 mt-0.5 bg-emerald-500/10 px-1 rounded">
+                                                +{row.pointsEarned}
+                                            </span>
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        );
+                    })}
                 </tbody>
             </table>
         </div>
