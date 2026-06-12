@@ -6,7 +6,7 @@ export interface RaceSession {
 }
 
 export interface RaceWeekend {
-    meeting_key: number;
+    meetingKey: number;
     circuit: string;
     country: string;
     year: number;

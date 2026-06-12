@@ -55,10 +55,14 @@ export async function getRaces() {
  * Fetches race results with optional filtering by meetingKey
  * Fields: session_key, meeting_key, country, session_name, classification_json
  */
-export async function getRaceResults(meetingKey = null) {
-    let dbQuery = supabase.from("race_results").select("*");
+export async function getRaceResults(meetingKey: number | null = null) {
+    // Explicitly select only required columns
+    let dbQuery = supabase
+        .from("race_results")
+        .select(
+            "session_key, meeting_key, country, session_name, classification_json",
+        );
 
-    // Filters by meeting_key if a specific race weekend is requested
     if (meetingKey) {
         dbQuery = dbQuery.eq("meeting_key", meetingKey);
     }

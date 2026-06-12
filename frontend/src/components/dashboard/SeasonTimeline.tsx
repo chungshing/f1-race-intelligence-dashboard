@@ -31,7 +31,7 @@ export default function SeasonTimeline({ weekends }: Props) {
     }, []);
 
     const currentIndex = nextRace
-        ? weekends.findIndex((w) => w.meeting_key === nextRace.meeting_key)
+        ? weekends.findIndex((w) => w.meetingKey === nextRace.meetingKey)
         : -1;
 
     return (
@@ -73,11 +73,11 @@ export default function SeasonTimeline({ weekends }: Props) {
                     const isFuture = now < startTime;
 
                     const isTargetCard = index === currentIndex;
-                    const isOpen = openId === weekend.meeting_key;
+                    const isOpen = openId === weekend.meetingKey;
 
                     return (
                         <div
-                            key={weekend.meeting_key}
+                            key={weekend.meetingKey}
                             ref={isTargetCard ? activeCardRef : null}
                             className="relative pl-9 group"
                         >
@@ -106,7 +106,7 @@ export default function SeasonTimeline({ weekends }: Props) {
                                     }`}
                                 onClick={() =>
                                     setOpenId(
-                                        isOpen ? null : weekend.meeting_key,
+                                        isOpen ? null : weekend.meetingKey,
                                     )
                                 }
                             >
@@ -173,6 +173,12 @@ export default function SeasonTimeline({ weekends }: Props) {
                                                 </span>
                                             </div>
                                         ))}
+                                        <a
+                                            href={`/races/${weekend.meetingKey}`}
+                                            className="block mt-4 w-full text-center text-xs font-bold py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded transition-colors"
+                                        >
+                                            View Race Results
+                                        </a>
                                     </div>
                                 )}
                             </div>
