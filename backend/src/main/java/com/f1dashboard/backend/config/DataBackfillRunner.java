@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 
+// @Component // Uncomment to enable the backfill runner on application startup. Use with caution!
 @SuppressWarnings("unused")
 @Slf4j
 public class DataBackfillRunner implements CommandLineRunner {
@@ -41,21 +42,21 @@ public class DataBackfillRunner implements CommandLineRunner {
 
         try {
             // 1. Fetch AND Save the Season Calendar / Race Weekends
-            log.info("Backfilling 2026 season calendar and weekend structure...");
-            List<RaceWeekend> weekends = openF1Service.fetchRaceWeekends(2026);
-            if (!weekends.isEmpty()) {
-                raceWeekendRepository.saveAll(weekends);
-                log.info("Successfully persisted {} race weekends to the database.", weekends.size());
-            }
+            // log.info("Backfilling 2026 season calendar and weekend structure...");
+            // List<RaceWeekend> weekends = openF1Service.fetchRaceWeekends(2026);
+            // if (!weekends.isEmpty()) {
+            //     raceWeekendRepository.saveAll(weekends);
+            //     log.info("Successfully persisted {} race weekends to the database.", weekends.size());
+            // }
 
             // 2. Fetch historical session data
             String url = "https://api.openf1.org/v1/sessions?year=2026";
             OpenF1SessionDto[] sessions = restTemplate.getForObject(url, OpenF1SessionDto[].class);
 
-            if (sessions == null || sessions.length == 0) {
-                log.warn("No historical sessions found for 2026.");
-                return;
-            }
+            // if (sessions == null || sessions.length == 0) {
+            //     log.warn("No historical sessions found for 2026.");
+            //     return;
+            // }
 
             log.info("Found {} total historical sessions to evaluate.", sessions.length);
             Instant now = Instant.now();
@@ -68,10 +69,10 @@ public class DataBackfillRunner implements CommandLineRunner {
                 }
 
                 // Guard: Skip if already processed
-                if (raceResultRepository.existsById(sessionKey)) {
-                    log.debug("Skipping session {} - already backfilled.", sessionKey);
-                    continue;
-                }
+                // if (raceResultRepository.existsById(sessionKey)) {
+                //     log.debug("Skipping session {} - already backfilled.", sessionKey);
+                //     continue;
+                // }
 
                 // Guard: Skip future sessions
                 if (session.getDate_start() != null) {

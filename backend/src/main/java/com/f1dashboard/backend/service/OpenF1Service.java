@@ -320,7 +320,17 @@ public class OpenF1Service {
         List<Double> gaps = normalize(dto.getGap_to_leader());
         Double latestGap = (gaps == null || gaps.isEmpty()) ? 0.0 : gaps.get(gaps.size() - 1);
 
-        return new DriverResult(dto.getPosition(), dto.getDriver_number(), latestGap, false, false, false);
+        boolean isDnf = (dto.getDnf() != null && dto.getDnf());
+        boolean isDns = (dto.getDns() != null && dto.getDns());
+        boolean isDsq = (dto.getDsq() != null && dto.getDsq());
+
+        return new DriverResult(
+                dto.getPosition(),
+                dto.getDriver_number(),
+                latestGap,
+                isDnf,
+                isDns,
+                isDsq);
     }
 
     private List<Double> normalize(Object value) {
