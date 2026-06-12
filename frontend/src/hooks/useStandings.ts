@@ -1,34 +1,11 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useEffect, useState } from "react";
 import { getStandings, getTeamStandings } from "@/lib/app";
-import { DriverStanding, Team } from "@/types/shared";
-
-// ==========================================
-// API Response Type Definitions
-// ==========================================
-interface RawDriverStanding {
-    driver_number: number | string;
-    position: number | string;
-    position_start?: number | string | null;
-    positions_gained?: number | string | null;
-    driver_name?: string | null;
-    team_name?: string | null;
-    points?: number | string | null;
-    points_start?: number | string | null;
-    points_earned?: number | string | null;
-    team_color?: string | null;
-    headshot_url?: string | null;
-}
-
-interface RawTeamStanding {
-    team_name?: string | null;
-    position: number | string;
-    position_start?: number | string | null;
-    positions_gained?: number | string | null;
-    points?: number | string | null;
-    points_start?: number | string | null;
-    points_earned?: number | string | null;
-}
+import {
+    DriverStanding,
+    Team,
+    RawDriverStanding,
+    RawTeamStanding,
+} from "@/types/standing";
 
 // ==========================================
 // Data Mapping Helpers
@@ -88,19 +65,23 @@ export function useStandings() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        async function load() {
-            try {
-                // Ensure your lib function signature returns the matching raw type array or un-typed data casted to it
-                const result = (await getStandings()) as RawDriverStanding[];
-                setData(mapDriverStandings(result));
-            } catch (err) {
-                setError("Failed to load standings");
-            } finally {
-                setLoading(false);
-            }
-        }
+        let isMounted = true;
 
-        load();
+        getStandings()
+            .then((result) => {
+                // result is automatically inferred as RawDriverStanding[]
+                if (isMounted) setData(mapDriverStandings(result));
+            })
+            .catch(() => {
+                if (isMounted) setError("Failed to load standings");
+            })
+            .finally(() => {
+                if (isMounted) setLoading(false);
+            });
+
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     return { data, loading, error };
@@ -112,18 +93,23 @@ export function useTeamStandings() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        async function load() {
-            try {
-                const result = (await getTeamStandings()) as RawTeamStanding[];
-                setData(mapTeamStandings(result));
-            } catch (err) {
-                setError("Failed to load team standings");
-            } finally {
-                setLoading(false);
-            }
-        }
+        let isMounted = true;
 
-        load();
+        getTeamStandings()
+            .then((result) => {
+                // result is automatically inferred as RawTeamStanding[]
+                if (isMounted) setData(mapTeamStandings(result));
+            })
+            .catch(() => {
+                if (isMounted) setError("Failed to load team standings");
+            })
+            .finally(() => {
+                if (isMounted) setLoading(false);
+            });
+
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     return { data, loading, error };

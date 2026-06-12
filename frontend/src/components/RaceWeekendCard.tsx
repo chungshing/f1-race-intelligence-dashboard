@@ -7,10 +7,11 @@ import {
     getWeekendLabel,
 } from "@/utils/race";
 import { RaceWeekend } from "@/types/race";
+import { Check, Play, Circle, Timer, MapPin, Calendar } from "lucide-react";
 
 type Props = {
     variant?: "card" | "sticky";
-    data: RaceWeekend | null; // FIX: Changed from RaceWeekend[] to single object or null
+    data: RaceWeekend | null;
 };
 
 export default function RaceWeekendCard({ variant = "card", data }: Props) {
@@ -21,7 +22,6 @@ export default function RaceWeekendCard({ variant = "card", data }: Props) {
         return () => clearInterval(interval);
     }, []);
 
-    // FIX: Simplified fallback check for null/undefined data
     if (!data) {
         return (
             <div className="text-sm text-zinc-400 p-4 border border-zinc-800 rounded-xl bg-zinc-950">
@@ -30,7 +30,6 @@ export default function RaceWeekendCard({ variant = "card", data }: Props) {
         );
     }
 
-    // Always guarantee chronological order for display rendering
     const sortedSessions = [...data.sessions].sort(
         (a, b) =>
             new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime(),
@@ -41,9 +40,7 @@ export default function RaceWeekendCard({ variant = "card", data }: Props) {
         ? getTimeRemaining(new Date(nextSession.dateStart))
         : null;
 
-    /* =======================
-        STICKY COMPACT MODE
-    ======================= */
+    /* Sticky Compact Mode */
     if (variant === "sticky") {
         return (
             <div className="sticky top-16 left-0 right-0 z-50 w-full bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 px-6 py-3 flex justify-between items-center shadow-lg">
@@ -54,18 +51,20 @@ export default function RaceWeekendCard({ variant = "card", data }: Props) {
                     <p className="text-zinc-100 font-bold text-sm tracking-tight">
                         {data.country}
                     </p>
-                    <p className="text-zinc-500 text-xs font-medium">
-                        {data.circuit}
+                    <p className="text-zinc-500 text-xs font-medium flex items-center gap-1 mt-0.5">
+                        <MapPin className="w-3 h-3 shrink-0" /> {data.circuit}
                     </p>
                 </div>
 
                 {nextSession && (
                     <div className="text-right">
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center justify-end gap-1">
+                            <Play className="w-2.5 h-2.5 fill-current text-red-500" />{" "}
                             Next Up: {nextSession.sessionName}
                         </span>
                         {timeLeft && (
-                            <p className="text-red-400 font-mono font-bold text-sm">
+                            <p className="text-red-400 font-mono font-bold text-sm flex items-center justify-end gap-1 mt-0.5">
+                                <Timer className="w-3.5 h-3.5" />
                                 {timeLeft.days}d {timeLeft.hours}h{" "}
                                 {timeLeft.minutes}m
                             </p>
@@ -76,9 +75,7 @@ export default function RaceWeekendCard({ variant = "card", data }: Props) {
         );
     }
 
-    /* =======================
-        FULL WIDGET CARD MODE
-    ======================= */
+    /* Full Card Mode */
     return (
         <div className="border border-zinc-800 rounded-xl p-5 bg-linear-to-b from-zinc-900 to-zinc-950 shadow-2xl space-y-5">
             <div className="border-b border-zinc-800/60 pb-3">
@@ -89,10 +86,12 @@ export default function RaceWeekendCard({ variant = "card", data }: Props) {
                     {data.country}
                 </h2>
                 <div className="flex justify-between items-center mt-1">
-                    <p className="text-zinc-400 text-xs font-medium">
+                    <p className="text-zinc-400 text-xs font-medium flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-zinc-500 shrink-0" />{" "}
                         {data.circuit}
                     </p>
-                    <p className="text-zinc-500 font-mono text-xs font-semibold">
+                    <p className="text-zinc-500 font-mono text-xs font-semibold flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-zinc-600" />{" "}
                         {getWeekendLabel(sortedSessions)}
                     </p>
                 </div>
@@ -101,18 +100,19 @@ export default function RaceWeekendCard({ variant = "card", data }: Props) {
             {nextSession && timeLeft && (
                 <div className="flex justify-between items-center bg-zinc-900/50 border border-zinc-800 p-3.5 rounded-xl shadow-inner">
                     <div>
-                        <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                        <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1">
+                            <Play className="w-2.5 h-2.5 fill-current text-red-500" />{" "}
                             Next up
                         </p>
-                        <p className="text-zinc-100 font-bold tracking-tight text-sm">
+                        <p className="text-zinc-100 font-bold tracking-tight text-sm mt-0.5">
                             {nextSession.sessionName}
                         </p>
                     </div>
                     <div className="text-right">
-                        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
-                            Starts In
+                        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider flex items-center justify-end gap-1">
+                            <Timer className="w-3 h-3" /> Starts In
                         </p>
-                        <p className="text-red-400 font-mono font-black text-base">
+                        <p className="text-red-400 font-mono font-black text-base mt-0.5">
                             {timeLeft.days}d {timeLeft.hours}h{" "}
                             {timeLeft.minutes}m
                         </p>
@@ -134,16 +134,22 @@ export default function RaceWeekendCard({ variant = "card", data }: Props) {
                         >
                             <div className="flex items-center gap-3">
                                 <span
-                                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors
+                                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors border
                                     ${
                                         isDone
-                                            ? "bg-emerald-950 text-emerald-400 border border-emerald-800/30"
+                                            ? "bg-emerald-950 text-emerald-400 border-emerald-800/30"
                                             : isNext
-                                              ? "bg-red-950 text-red-400 border border-red-800/50 animate-pulse"
-                                              : "bg-zinc-800/50 text-zinc-500"
+                                              ? "bg-red-950 text-red-400 border-red-800/50 animate-pulse"
+                                              : "bg-zinc-800/50 text-zinc-500 border-transparent"
                                     }`}
                                 >
-                                    {isDone ? "✓" : isNext ? "▶" : "•"}
+                                    {isDone ? (
+                                        <Check className="w-2.5 h-2.5 stroke-3" />
+                                    ) : isNext ? (
+                                        <Play className="w-2.5 h-2.5 fill-current ml-0.5" />
+                                    ) : (
+                                        <Circle className="w-1.5 h-1.5 fill-current" />
+                                    )}
                                 </span>
 
                                 <span

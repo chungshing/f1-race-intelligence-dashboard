@@ -17,3 +17,11 @@ export interface RaceWeekend {
         dateEnd: string;
     }[];
 }
+
+export interface SupabaseRaceRow {
+    meeting_key: number;
+    circuit: string;
+    country: string;
+    year: number;
+    sessions_json: string;
+}

@@ -14,3 +14,11 @@ export interface RaceResult {
     sessionName: string;
     classification: DriverResult[];
 }
+
+export interface SupabaseRaceResultRow {
+    session_key: number;
+    meeting_key: number;
+    country: string;
+    session_name: string;
+    classification_json: string | DriverResult[];
+}

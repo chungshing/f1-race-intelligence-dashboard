@@ -1,8 +1,9 @@
-import { Team } from "@/types/shared";
+import { Team } from "@/types/standing";
+import { ArrowUp, ArrowDown, Minus } from "lucide-react";
 
 interface TeamTableProps {
     standings: Team[];
-    limit?: number; // Optional prop to limit rows
+    limit?: number;
 }
 
 export function TeamTable({ standings, limit }: TeamTableProps) {
@@ -13,7 +14,6 @@ export function TeamTable({ standings, limit }: TeamTableProps) {
             </p>
         );
 
-    // Slice the data if a limit is provided
     const displayedStandings = limit ? standings.slice(0, limit) : standings;
 
     return (
@@ -29,9 +29,7 @@ export function TeamTable({ standings, limit }: TeamTableProps) {
                 </thead>
                 <tbody className="divide-y divide-zinc-800/50">
                     {displayedStandings.map((row, index) => {
-                        const rowKey = row.teamName
-                            ? `team-${row.teamName}`
-                            : `team-${index}`;
+                        const rowKey = row.teamName ? `team-${row.teamName}` : `team-${index}`;
 
                         const posColor = 
                             row.position === 1 ? "text-amber-400" :
@@ -50,23 +48,26 @@ export function TeamTable({ standings, limit }: TeamTableProps) {
                                     {row.teamName}
                                 </td>
                                 <td className="p-4 text-center">
-                                    {row.positionsGained > 0 ? (
-                                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                            ▲ {row.positionsGained}
-                                        </span>
-                                    ) : row.positionsGained < 0 ? (
-                                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20">
-                                            ▼ {Math.abs(row.positionsGained)}
-                                        </span>
-                                    ) : (
-                                        <span className="text-zinc-600 font-bold font-mono">--</span>
-                                    )}
+                                    <div className="flex items-center justify-center">
+                                        {row.positionsGained > 0 ? (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                                <ArrowUp className="w-3 h-3 stroke-3" /> {row.positionsGained}
+                                            </span>
+                                        ) : row.positionsGained < 0 ? (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20">
+                                                <ArrowDown className="w-3 h-3 stroke-3" /> {Math.abs(row.positionsGained)}
+                                            </span>
+                                        ) : (
+                                            <Minus className="w-3 h-3 text-zinc-600 stroke-3" />
+                                        )}
+                                    </div>
                                 </td>
                                 <td className="p-4 text-right">
                                     <div className="flex flex-col items-end justify-center">
                                         <span className="font-bold text-zinc-100 text-sm tracking-tight">
                                             {row.points}
                                         </span>
+                                        {/* Added pointsEarned block matching DriverTable design */}
                                         {row.pointsEarned > 0 && (
                                             <span className="text-[10px] font-bold text-emerald-400 mt-0.5 bg-emerald-500/10 px-1 rounded">
                                                 +{row.pointsEarned}

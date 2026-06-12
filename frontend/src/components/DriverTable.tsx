@@ -1,10 +1,11 @@
 import NextImage from "next/image";
-import { DriverStanding } from "@/types/shared";
+import { DriverStanding } from "@/types/standing";
 import { formatHexColor } from "@/utils/sessions";
+import { ArrowUp, ArrowDown, Minus } from "lucide-react";
 
 interface DriverTableProps {
     standings: DriverStanding[];
-    limit?: number; // Optional prop to limit rows
+    limit?: number;
 }
 
 export function DriverTable({ standings, limit }: DriverTableProps) {
@@ -15,7 +16,6 @@ export function DriverTable({ standings, limit }: DriverTableProps) {
             </p>
         );
 
-    // Slice the data if a limit is provided
     const displayedStandings = limit ? standings.slice(0, limit) : standings;
 
     return (
@@ -89,19 +89,21 @@ export function DriverTable({ standings, limit }: DriverTableProps) {
                                     {row.teamName}
                                 </td>
                                 <td className="p-4 text-center">
-                                    {row.positionsGained > 0 ? (
-                                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                            ▲ {row.positionsGained}
-                                        </span>
-                                    ) : row.positionsGained < 0 ? (
-                                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20">
-                                            ▼ {Math.abs(row.positionsGained)}
-                                        </span>
-                                    ) : (
-                                        <span className="text-zinc-600 font-bold font-mono">
-                                            --
-                                        </span>
-                                    )}
+                                    <div className="flex items-center justify-center">
+                                        {row.positionsGained > 0 ? (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                                <ArrowUp className="w-3 h-3 stroke-3" />{" "}
+                                                {row.positionsGained}
+                                            </span>
+                                        ) : row.positionsGained < 0 ? (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20">
+                                                <ArrowDown className="w-3 h-3 stroke-3" />{" "}
+                                                {Math.abs(row.positionsGained)}
+                                            </span>
+                                        ) : (
+                                            <Minus className="w-3 h-3 text-zinc-600 stroke-3" />
+                                        )}
+                                    </div>
                                 </td>
                                 <td className="p-4 text-right">
                                     <div className="flex flex-col items-end justify-center">

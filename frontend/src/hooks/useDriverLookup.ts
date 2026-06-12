@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react";
 import { getStandings } from "@/lib/app";
 
-interface SupabaseDriverRow {
-    driver_number: number;
-    driver_name: string;
-    team_name: string;
-    team_color: string;
-}
-
 export const useDriverLookup = () => {
     const [lookup, setLookup] = useState<
         Record<number, { name: string; team: string; team_color: string }>
@@ -15,22 +8,27 @@ export const useDriverLookup = () => {
 
     useEffect(() => {
         async function buildLookup() {
-            const data = (await getStandings()) as SupabaseDriverRow[];
+            // TypeScript already knows 'data' is RawDriverStanding[] from getStandings()
+            const data = await getStandings();
 
             const newLookup: Record<
                 number,
                 { name: string; team: string; team_color: string }
             > = {};
 
-            data.forEach((d: SupabaseDriverRow) => {
+            data.forEach((d) => {
+                // TypeScript already knows 'd' is an element of RawDriverStanding
+                const driverNumber = Number(d.driver_number);
+                if (isNaN(driverNumber)) return;
+
                 const rawColor = d.team_color || "3f3f46";
                 const formattedColor = rawColor.startsWith("#")
                     ? rawColor
                     : `#${rawColor}`;
-                    
-                newLookup[d.driver_number] = {
-                    name: d.driver_name,
-                    team: d.team_name,
+
+                newLookup[driverNumber] = {
+                    name: d.driver_name || "Unknown Driver",
+                    team: d.team_name || "Unknown Team",
                     team_color: formattedColor,
                 };
             });
