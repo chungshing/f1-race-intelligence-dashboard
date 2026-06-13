@@ -11,7 +11,7 @@ import { getNextRaceWeekend } from "@/utils/race";
 import { RaceResultsTable } from "@/components/RaceResultsTable";
 import { useDriverLookup } from "@/hooks/useDriverLookup";
 import { getRaceResults } from "@/lib/app";
-import { DriverResult, SupabaseRaceResultRow } from "@/types/results"; // Updated import path
+import { DriverResult, SupabaseRaceResultRow } from "@/types/results";
 
 type TabType = "drivers" | "constructors";
 
@@ -20,27 +20,46 @@ export default function Home() {
     const { data: teams = [], loading: teamLoading } = useTeamStandings();
     const { data: races = [] } = useRaceWeekends();
     const [activeTab, setActiveTab] = useState<TabType>("drivers");
-
     const driverLookup = useDriverLookup();
-    const [latestClassification, setLatestClassification] = useState<
-        DriverResult[]
-    >([]);
-    const [resultsLoading, setResultsLoading] = useState(true);
+
+    const [mountTimestamp] = useState(() => Date.now());
+
+    const [resultsState, setResultsState] = useState<{
+        data: DriverResult[];
+        loading: boolean;
+    }>({ data: [], loading: true });
 
     const nextRace = useMemo(() => getNextRaceWeekend(races), [races]);
 
+    // Sort descending by actual calendar date to handle arbitrary meetingKey values correctly
+    const sortedRaces = useMemo(() => {
+        return races
+            .map((race) => {
+                const raceSession = race.sessions?.find(
+                    (s) => s.sessionName === "Race",
+                );
+                const raceDate = raceSession
+                    ? new Date(raceSession.dateStart)
+                    : null;
+                return { ...race, raceDate };
+            })
+            .filter(
+                (race) =>
+                    race.raceDate && race.raceDate.getTime() <= mountTimestamp,
+            )
+            .toSorted((a, b) => b.raceDate!.getTime() - a.raceDate!.getTime());
+    }, [races, mountTimestamp]);
+
+    // Use a primitive identity key to avoid infinite effect triggers from new array references
+    const sortedRacesKey = JSON.stringify(sortedRaces.map((r) => r.meetingKey));
+
     useEffect(() => {
         let isMounted = true;
-        if (!races || races.length === 0) return;
+        if (!sortedRaces.length) return;
 
-        const sortedRaces = [...races].sort(
-            (a, b) => b.meetingKey - a.meetingKey,
-        );
-
-        const fetchLatestRace = async () => {
-            for (const race of sortedRaces) {
-                try {
-                    // Using the newly imported result row type
+        const fetchLatestCompletedRace = async () => {
+            try {
+                for (const race of sortedRaces) {
                     const data: SupabaseRaceResultRow[] = await getRaceResults(
                         race.meetingKey,
                     );
@@ -49,65 +68,71 @@ export default function Home() {
                     const mainRaceSession = data.find(
                         (s) => s.session_name === "Race",
                     );
-
                     if (mainRaceSession) {
-                        let classification =
-                            mainRaceSession.classification_json;
-
-                        if (typeof classification === "string") {
-                            try {
-                                classification = JSON.parse(classification);
-                            } catch {
-                                classification = [];
-                            }
+                        let rawData = mainRaceSession.classification_json;
+                        if (typeof rawData === "string") {
+                            rawData = JSON.parse(rawData);
                         }
 
-                        if (
-                            Array.isArray(classification) &&
-                            classification.length > 0
-                        ) {
-                            setLatestClassification(
-                                classification as DriverResult[],
-                            );
-                            setResultsLoading(false);
+                        if (Array.isArray(rawData) && rawData.length > 0) {
+                            setResultsState({
+                                data: rawData as DriverResult[],
+                                loading: false,
+                            });
                             return;
                         }
                     }
-                } catch (err) {
-                    console.error(
-                        `Failed to check latest race results for meeting ${race.meetingKey}:`,
-                        err,
-                    );
                 }
+            } catch (err) {
+                console.error("Failed to fetch latest race data:", err);
+            } finally {
+                if (isMounted)
+                    setResultsState((prev) => ({ ...prev, loading: false }));
             }
-            if (isMounted) setResultsLoading(false);
         };
 
-        fetchLatestRace();
-
+        fetchLatestCompletedRace();
         return () => {
             isMounted = false;
         };
-    }, [races]);
+    }, [sortedRacesKey, sortedRaces.length, sortedRaces]);
 
-    const sortedStandings = useMemo(
-        () => [...standings].sort((a, b) => b.points - a.points),
-        [standings],
-    );
-    const sortedTeams = useMemo(
-        () => [...teams].sort((a, b) => b.points - a.points),
-        [teams],
-    );
+    const leader = standings[0];
+    const runnerUp = standings[1];
+    const topTeam = teams[0];
 
-    const leader = sortedStandings[0];
-    const runnerUp = sortedStandings[1];
-    const topTeam = sortedTeams[0];
+    const statsCards = [
+        {
+            label: "Championship Leader",
+            val: driverLoading ? "..." : leader?.driverName,
+            sub: leader?.teamName,
+            pts: leader?.points,
+            color: leader?.teamColor ? `#${leader.teamColor}` : "#71717a",
+        },
+        {
+            label: "Constructor Leader",
+            val: teamLoading ? "..." : topTeam?.teamName,
+            sub: "Factory Lead",
+            pts: topTeam?.points,
+            color: "#71717a",
+        },
+        {
+            label: "Title Fight Gap",
+            val:
+                leader && runnerUp
+                    ? `+${leader.points - runnerUp.points}`
+                    : "—",
+            sub: "Points Delta",
+            pts: null,
+            color: "#71717a",
+        },
+    ];
 
     return (
         <AppLayout>
             <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 p-4 md:p-6 text-zinc-100">
-                {/* HERO HEADER */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-zinc-800 pb-4 md:pb-6 gap-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-zinc-800 p-6 rounded-2xl bg-zinc-900/40 gap-4">
+                    {/* Foreground Content Left */}
                     <div>
                         <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-linear-to-r from-white to-zinc-400 bg-clip-text text-transparent">
                             Race Hub Dashboard
@@ -116,6 +141,8 @@ export default function Home() {
                             Live season telemetry and analytics.
                         </p>
                     </div>
+
+                    {/* Foreground Content Right */}
                     <div className="flex items-center gap-2 text-xs font-mono bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 self-start md:self-auto">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                         <span className="text-zinc-300 uppercase tracking-wider font-bold">
@@ -126,30 +153,7 @@ export default function Home() {
 
                 {/* STATS GRID */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {[
-                        {
-                            label: "Championship Leader",
-                            val: driverLoading ? "..." : leader?.driverName,
-                            sub: leader?.teamName,
-                            pts: leader?.points,
-                            color: leader?.teamColor,
-                        },
-                        {
-                            label: "Constructor Leader",
-                            val: teamLoading ? "..." : topTeam?.teamName,
-                            sub: "Factory Lead",
-                            pts: topTeam?.points,
-                        },
-                        {
-                            label: "Title Fight Gap",
-                            val:
-                                leader && runnerUp
-                                    ? `+${leader.points - runnerUp.points}`
-                                    : "—",
-                            sub: "Points Delta",
-                            pts: null,
-                        },
-                    ].map((card, i) => (
+                    {statsCards.map((card, i) => (
                         <div
                             key={i}
                             className="relative bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5"
@@ -162,15 +166,11 @@ export default function Home() {
                             </h2>
                             <p
                                 className="text-[10px] mt-1 truncate"
-                                style={{
-                                    color: card.color
-                                        ? `#${card.color}`
-                                        : "#71717a",
-                                }}
+                                style={{ color: card.color }}
                             >
                                 {card.sub}
                             </p>
-                            {card.pts !== null && (
+                            {card.pts !== null && card.pts !== undefined && (
                                 <span className="absolute top-5 right-5 text-[10px] font-mono font-bold bg-zinc-800 px-2 py-0.5 rounded">
                                     {card.pts} PTS
                                 </span>
@@ -202,12 +202,9 @@ export default function Home() {
 
                         <div className="w-full overflow-x-auto">
                             {activeTab === "drivers" ? (
-                                <DriverTable
-                                    standings={sortedStandings}
-                                    limit={7}
-                                />
+                                <DriverTable standings={standings} limit={7} />
                             ) : (
-                                <TeamTable standings={sortedTeams} limit={7} />
+                                <TeamTable standings={teams} limit={7} />
                             )}
                         </div>
                     </div>
@@ -224,7 +221,7 @@ export default function Home() {
                                     data={nextRace}
                                 />
                             ) : (
-                                <div className="h-40 bg-zinc-900/50 rounded-2xl animate-pulse" />
+                                <div className="h-44 bg-zinc-900/50 rounded-2xl animate-pulse" />
                             )}
                         </div>
 
@@ -233,11 +230,11 @@ export default function Home() {
                             <h3 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 px-2">
                                 Latest Race Results
                             </h3>
-                            {resultsLoading ? (
+                            {resultsState.loading ? (
                                 <div className="h-44 bg-zinc-900/50 border border-zinc-800/50 rounded-2xl animate-pulse" />
-                            ) : latestClassification.length > 0 ? (
+                            ) : resultsState.data.length > 0 ? (
                                 <RaceResultsTable
-                                    classification={latestClassification}
+                                    classification={resultsState.data}
                                     lookup={driverLookup}
                                     variant="landing"
                                 />

@@ -20,10 +20,10 @@ public class StandingsService {
     }
 
     public List<DriverStanding> getStandings() {
-        return driverRepository.findAll(Sort.by(Sort.Direction.ASC, "position"));
+        return driverRepository.findAll(Sort.by(Sort.Direction.ASC, DriverStanding::getPosition));
     }
 
     public List<TeamStanding> getTeamStandings() {
-        return teamRepository.findAll(Sort.by(Sort.Direction.ASC, "position"));
+        return teamRepository.findAll(Sort.by(Sort.Direction.ASC, TeamStanding::getPosition));
     }
 }
