@@ -16,7 +16,7 @@ public class ProductionSyncController {
     private final F1SyncScheduler syncScheduler;
 
     // Injects a secret key from your Render environment variables
-    @Value("${CRON_SECRET_TOKEN}")
+    @Value("${CRON_SECRET_TOKEN:local-dev-fallback}")
     private String cronSecretToken;
 
     public ProductionSyncController(F1SyncScheduler syncScheduler) {
