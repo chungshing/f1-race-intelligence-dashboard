@@ -7,7 +7,15 @@ import {
     getWeekendLabel,
 } from "@/utils/race";
 import { RaceWeekend } from "@/types/race";
-import { Check, Play, Circle, Timer, MapPin, Calendar } from "lucide-react";
+import {
+    Check,
+    Play,
+    Circle,
+    Timer,
+    MapPin,
+    Calendar,
+    Trophy,
+} from "lucide-react";
 
 type Props = {
     variant?: "card" | "sticky";
@@ -40,10 +48,15 @@ export default function RaceWeekendCard({ variant = "card", data }: Props) {
         ? getTimeRemaining(new Date(nextSession.dateStart))
         : null;
 
+    // Check if at least one session (e.g., FP1) has completed
+    const hasWeekendStarted = sortedSessions.some(
+        (s) => new Date(s.dateStart).getTime() < now,
+    );
+
     /* Sticky Compact Mode */
     if (variant === "sticky") {
         return (
-            <div className="sticky top-16 left-0 right-0 z-50 w-full bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 px-6 py-3 flex justify-between items-center shadow-lg">
+            <div className="sticky top-16 left-0 right-0 z-50 w-full bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 px-6 py-3 flex justify-between items-center shadow-lg gap-4">
                 <div>
                     <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest">
                         Next Grand Prix
@@ -56,21 +69,33 @@ export default function RaceWeekendCard({ variant = "card", data }: Props) {
                     </p>
                 </div>
 
-                {nextSession && (
-                    <div className="text-right">
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center justify-end gap-1">
-                            <Play className="w-2.5 h-2.5 fill-current text-red-500" />{" "}
-                            Next Up: {nextSession.sessionName}
-                        </span>
-                        {timeLeft && (
-                            <p className="text-red-400 font-mono font-bold text-sm flex items-center justify-end gap-1 mt-0.5">
-                                <Timer className="w-3.5 h-3.5" />
-                                {timeLeft.days}d {timeLeft.hours}h{" "}
-                                {timeLeft.minutes}m
-                            </p>
-                        )}
-                    </div>
-                )}
+                <div className="flex items-center gap-4">
+                    {nextSession && (
+                        <div className="text-right">
+                            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center justify-end gap-1">
+                                <Play className="w-2.5 h-2.5 fill-current text-red-500" />{" "}
+                                Next Up: {nextSession.sessionName}
+                            </span>
+                            {timeLeft && (
+                                <p className="text-red-400 font-mono font-bold text-sm flex items-center justify-end gap-1 mt-0.5">
+                                    <Timer className="w-3.5 h-3.5" />
+                                    {timeLeft.days}d {timeLeft.hours}h{" "}
+                                    {timeLeft.minutes}m
+                                </p>
+                            )}
+                        </div>
+                    )}
+
+                    {hasWeekendStarted && (
+                        <a
+                            href={`/races/${data.meetingKey}`}
+                            className="text-xs font-bold px-3 py-1.5 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-200 rounded-lg transition-colors shrink-0 flex items-center gap-1.5"
+                        >
+                            <Trophy className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                            Dashboard
+                        </a>
+                    )}
+                </div>
             </div>
         );
     }
@@ -173,6 +198,16 @@ export default function RaceWeekendCard({ variant = "card", data }: Props) {
                     );
                 })}
             </div>
+
+            {hasWeekendStarted && (
+                <a
+                    href={`/races/${data.meetingKey}`}
+                    className="flex w-full items-center justify-center gap-2 text-xs font-bold py-2.5 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-200 rounded-lg transition-colors"
+                >
+                    <Trophy className="w-4 h-4 text-zinc-400 shrink-0" />
+                    View Results Dashboard
+                </a>
+            )}
         </div>
     );
 }

@@ -182,7 +182,7 @@ export default function Home() {
                 {/* DUAL-COLUMN LAYOUT */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
                     <div className="lg:col-span-2 bg-zinc-900/30 border border-zinc-800/60 rounded-2xl p-4 md:p-6 backdrop-blur-sm">
-                        <div className="flex bg-zinc-950 p-1 rounded-xl border border-zinc-800 w-full max-w-70 mb-6">
+                        <div className="flex bg-zinc-950 p-1 rounded-xl border border-zinc-800 w-full max-w-70">
                             {(["drivers", "constructors"] as const).map(
                                 (tab) => (
                                     <button
@@ -202,10 +202,24 @@ export default function Home() {
 
                         <div className="w-full overflow-x-auto">
                             {activeTab === "drivers" ? (
-                                <DriverTable standings={standings} limit={7} />
+                                <DriverTable standings={standings} limit={8} />
                             ) : (
-                                <TeamTable standings={teams} limit={7} />
+                                <TeamTable standings={teams} limit={8} />
                             )}
+                        </div>
+
+                        {/* Subtle inline link that maps to the active tab context */}
+                        <div className="flex justify-end pt-2 border-t border-zinc-800/40">
+                            <a
+                                href={
+                                    activeTab === "drivers"
+                                        ? "/drivers"
+                                        : "/constructors"
+                                }
+                                className="text-[11px] font-bold text-zinc-500 hover:text-zinc-300 transition-colors tracking-tight flex items-center gap-1"
+                            >
+                                View Full Standings →
+                            </a>
                         </div>
                     </div>
 
