@@ -9,16 +9,20 @@ type Props = {
 };
 
 export default function SeasonTimeline({ weekends }: Props) {
-    const nextRace = getNextRaceWeekend(weekends);
     const [openId, setOpenId] = useState<number | null>(null);
     const activeCardRef = useRef<HTMLDivElement | null>(null);
 
-    // Initial safe render state to prevent hydration mismatches
-    const [now, setNow] = useState<number | null>(null);
+    // Pure static initialization avoids hydration mismatches
+    const [clock, setClock] = useState({
+        isMounted: false,
+        now: 0,
+    });
 
-    // Memoize timeline properties transformation mapping step to minimize hot path computation overhead
-    const processedWeekends = useMemo(() => {
-        return weekends
+    // Process weekends and grab next race metadata in a single memoization pass
+    const { processedWeekends, currentIndex } = useMemo(() => {
+        const nextRace = getNextRaceWeekend(weekends);
+
+        const processed = weekends
             .map((weekend) => {
                 const sessions = weekend.sessions ?? [];
                 if (sessions.length === 0) return null;
@@ -29,34 +33,59 @@ export default function SeasonTimeline({ weekends }: Props) {
                         new Date(b.dateStart).getTime(),
                 );
 
-                const firstSession = sortedSessions[0];
                 const lastSession = sortedSessions[sortedSessions.length - 1];
-
-                const startTime = new Date(firstSession.dateStart).getTime();
-                const endTime =
-                    new Date(lastSession.dateEnd).getTime() + 10800000;
 
                 return {
                     ...weekend,
                     sortedSessions,
-                    firstSession,
-                    startTime,
-                    endTime,
+                    firstSession: sortedSessions[0],
+                    startTime: new Date(sortedSessions[0].dateStart).getTime(),
+                    // Added a fallback switch to avoid runtime errors if dates are corrupted
+                    endTime:
+                        new Date(
+                            lastSession?.dateEnd || lastSession?.dateStart,
+                        ).getTime() + 10800000,
                 };
             })
-            .filter(Boolean);
+            .filter((w): w is NonNullable<typeof w> => w !== null);
+
+        const index = nextRace
+            ? processed.findIndex((w) => w.meetingKey === nextRace.meetingKey)
+            : -1;
+
+        return { processedWeekends: processed, currentIndex: index };
     }, [weekends]);
 
+    // Handle standard browser clock synching
     useEffect(() => {
-        // Wrap initial state call in a timeout to break synchronous execution path
-        const initTimer = setTimeout(() => {
-            setNow(Date.now());
+        const initialSync = setTimeout(() => {
+            setClock({
+                isMounted: true,
+                now: Date.now(),
+            });
+
+            // Automatically open the current/next race card for immediate visibility
+            if (currentIndex !== -1 && processedWeekends[currentIndex]) {
+                setOpenId(processedWeekends[currentIndex].meetingKey);
+            }
         }, 0);
 
-        // Update ticker every 60 seconds to keep live states fully reactive
         const clockInterval = setInterval(() => {
-            setNow(Date.now());
+            setClock((prev) => ({
+                ...prev,
+                now: Date.now(),
+            }));
         }, 60000);
+
+        return () => {
+            clearTimeout(initialSync);
+            clearInterval(clockInterval);
+        };
+    }, [currentIndex, processedWeekends]);
+
+    // Smooth scroll position directly to current item
+    useEffect(() => {
+        if (!clock.isMounted) return;
 
         const scrollTimer = setTimeout(() => {
             if (activeCardRef.current) {
@@ -65,38 +94,34 @@ export default function SeasonTimeline({ weekends }: Props) {
                     block: "center",
                 });
             }
-        }, 200);
+        }, 300);
 
-        return () => {
-            clearTimeout(initTimer);
-            clearInterval(clockInterval);
-            clearTimeout(scrollTimer);
-        };
-    }, []);
-
-    const currentIndex = nextRace
-        ? processedWeekends.findIndex(
-              (w) => w?.meetingKey === nextRace.meetingKey,
-          )
-        : -1;
+        return () => clearTimeout(scrollTimer);
+    }, [clock.isMounted, currentIndex]);
 
     return (
-        <div className="border border-zinc-800 bg-linear-to-b from-zinc-900 to-zinc-950 rounded-xl p-6 relative shadow-2xl">
-            <h2 className="text-xs font-black text-zinc-400 tracking-wider mb-6 uppercase">
-                2026 Season Timeline
-            </h2>
+        <div className="border border-zinc-800 bg-zinc-950 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xs font-black text-zinc-400 tracking-widest uppercase">
+                    2026 Season Timeline
+                </h2>
+                <span className="text-[10px] font-mono bg-zinc-900 text-zinc-500 px-2 py-0.5 rounded border border-zinc-800">
+                    {processedWeekends.length} Rounds
+                </span>
+            </div>
 
-            <div className="space-y-4 relative">
-                <div className="absolute left-3 top-2 bottom-2 w-px bg-zinc-800" />
+            <div className="space-y-3 relative">
+                <div className="absolute left-3 top-4 bottom-4 w-px bg-zinc-800" />
 
                 {processedWeekends.map((weekend, index) => {
-                    if (!weekend) return null;
-
-                    const isLive = now
-                        ? now >= weekend.startTime && now <= weekend.endTime
-                        : false;
-                    const isPast = now ? now > weekend.endTime : false;
-                    const isFuture = now ? now < weekend.startTime : true;
+                    const isLive =
+                        clock.isMounted &&
+                        clock.now >= weekend.startTime &&
+                        clock.now <= weekend.endTime;
+                    const isPast =
+                        clock.isMounted && clock.now > weekend.endTime;
+                    const isFuture =
+                        !clock.isMounted || clock.now < weekend.startTime;
 
                     const isTargetCard = index === currentIndex;
                     const isOpen = openId === weekend.meetingKey;
@@ -105,50 +130,48 @@ export default function SeasonTimeline({ weekends }: Props) {
                         <div
                             key={weekend.meetingKey}
                             ref={isTargetCard ? activeCardRef : null}
-                            className="relative pl-9 group"
+                            className={`relative pl-8 transition-opacity duration-300 ${isPast && !isOpen ? "opacity-50 hover:opacity-90" : "opacity-100"}`}
                         >
-                            {/* CONNECTOR PIN */}
+                            {isPast && (
+                                <div className="absolute left-3 top-4 h-full w-px bg-emerald-500/30 z-0" />
+                            )}
+
                             <div
-                                className={`absolute left-1.5 top-5 w-4 h-4 rounded-full border-4 border-zinc-950 flex items-center justify-center transition-all duration-300 z-10
-                                ${
-                                    isLive
-                                        ? "bg-red-500 scale-125 shadow-lg shadow-red-500/50"
-                                        : isPast
-                                          ? "bg-emerald-500"
-                                          : "bg-zinc-800 group-hover:bg-zinc-600"
-                                }`}
+                                className={`absolute left-1.5 top-4.5 w-3 h-3 rounded-full border-2 border-zinc-950 transition-all duration-300 z-10
+                                ${isLive ? "bg-red-500 ring-4 ring-red-500/20 scale-110" : ""}
+                                ${isPast ? "bg-emerald-500" : ""}
+                                ${isFuture && !isTargetCard ? "bg-zinc-800" : ""}
+                                ${isTargetCard && !isLive ? "bg-zinc-400 ring-4 ring-zinc-500/10" : ""}`}
                             />
 
-                            {/* TIMELINE CARD */}
                             <div
-                                className={`rounded-xl border p-4 transition-all duration-200 cursor-pointer backdrop-blur-sm
-                                    ${
-                                        isLive
-                                            ? "border-red-500/60 bg-red-500/3 shadow-xl shadow-red-500/2"
-                                            : isTargetCard
-                                              ? "border-zinc-700 bg-zinc-900/40 shadow-md"
-                                              : "border-zinc-800/80 bg-zinc-950/20 hover:border-zinc-700 hover:bg-zinc-900/20"
-                                    }`}
                                 onClick={() =>
                                     setOpenId(
                                         isOpen ? null : weekend.meetingKey,
                                     )
                                 }
+                                className={`rounded-xl border p-3.5 transition-all duration-200 cursor-pointer backdrop-blur-xs select-none
+                                    ${isLive ? "border-red-500/30 bg-red-950/10 shadow-lg shadow-red-950/20" : ""}
+                                    ${isTargetCard && !isLive ? "border-zinc-700 bg-zinc-900/40" : ""}
+                                    ${!isTargetCard && !isLive ? "border-zinc-900 bg-zinc-900/10 hover:border-zinc-800 hover:bg-zinc-900/30" : ""}`}
                             >
-                                <div className="flex justify-between items-start gap-4">
-                                    <div>
-                                        <h3
-                                            className={`font-bold tracking-tight text-sm transition-colors ${isPast ? "text-zinc-500 line-through" : "text-zinc-100"}`}
-                                        >
-                                            {weekend.country}
-                                        </h3>
-                                        <p className="text-xs text-zinc-500 font-medium mt-0.5">
+                                <div className="flex justify-between items-center gap-4">
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="font-bold text-sm tracking-tight text-zinc-100 truncate">
+                                                {weekend.country}
+                                            </h3>
+                                        </div>
+                                        <p className="text-xs text-zinc-500 truncate mt-0.5">
                                             {weekend.circuit}
                                         </p>
                                     </div>
 
                                     <div className="text-right shrink-0">
-                                        <p className="text-xs font-mono font-bold text-zinc-400">
+                                        <p
+                                            className="text-xs font-mono font-semibold text-zinc-400"
+                                            suppressHydrationWarning
+                                        >
                                             {new Date(
                                                 weekend.firstSession.dateStart,
                                             ).toLocaleDateString("en-GB", {
@@ -157,61 +180,89 @@ export default function SeasonTimeline({ weekends }: Props) {
                                             })}
                                         </p>
 
-                                        {now && (
-                                            <>
-                                                {isPast && (
-                                                    <span className="text-[10px] font-bold text-emerald-500 mt-1 block uppercase tracking-wider">
-                                                        Done
-                                                    </span>
-                                                )}
+                                        {clock.isMounted && (
+                                            <div className="mt-0.5">
                                                 {isLive && (
-                                                    <span className="text-[10px] font-bold text-red-400 mt-1 block uppercase tracking-widest animate-pulse">
+                                                    <span className="text-[9px] font-black text-red-400 uppercase tracking-widest animate-pulse">
                                                         ● Live
                                                     </span>
                                                 )}
+                                                {isPast && (
+                                                    <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">
+                                                        Done
+                                                    </span>
+                                                )}
                                                 {isFuture && isTargetCard && (
-                                                    <span className="text-[10px] font-bold text-zinc-400 bg-zinc-800 px-1.5 py-0.5 rounded mt-1 inline-block uppercase tracking-wider">
+                                                    <span className="text-[9px] font-bold text-zinc-950 bg-zinc-200 px-1 py-px rounded-xs uppercase tracking-wider">
                                                         Next Up
                                                     </span>
                                                 )}
-                                            </>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
 
                                 {isOpen && (
-                                    <div className="mt-4 border-t border-zinc-800/60 pt-3 space-y-2 animate-fadeIn">
-                                        {weekend.sortedSessions.map((s) => (
-                                            <div
-                                                key={s.sessionName}
-                                                className="flex justify-between items-center text-xs"
-                                            >
-                                                <span className="text-zinc-400 font-medium">
-                                                    {s.sessionName}
-                                                </span>
-                                                <span className="text-zinc-500 font-mono">
-                                                    {new Date(
-                                                        s.dateStart,
-                                                    ).toLocaleString("en-GB", {
-                                                        day: "2-digit",
-                                                        month: "short",
-                                                        hour: "2-digit",
-                                                        minute: "2-digit",
-                                                        hour12: false,
-                                                    })}
-                                                </span>
-                                            </div>
-                                        ))}
-                                        {/* Only render results button for completed race weekends */}
-                                        {isPast && (
+                                    <div className="mt-3.5 border-t border-zinc-900 pt-3 space-y-2.5">
+                                        {weekend.sortedSessions.map((s) => {
+                                            const sessionStart = new Date(
+                                                s.dateStart,
+                                            ).getTime();
+                                            const sessionEnd = new Date(
+                                                s.dateEnd,
+                                            ).getTime();
+                                            const isSessionPast =
+                                                clock.isMounted &&
+                                                clock.now > sessionEnd;
+                                            const isSessionLive =
+                                                clock.isMounted &&
+                                                clock.now >= sessionStart &&
+                                                clock.now <= sessionEnd;
+
+                                            return (
+                                                <div
+                                                    key={s.sessionName}
+                                                    className="flex justify-between items-center text-xs"
+                                                >
+                                                    <span
+                                                        className={`font-medium ${isSessionLive ? "text-red-400" : isSessionPast ? "text-zinc-500" : "text-zinc-400"}`}
+                                                    >
+                                                        {s.sessionName}
+                                                    </span>
+                                                    <span
+                                                        className={`font-mono text-[11px] ${isSessionLive ? "text-red-400 font-bold" : "text-zinc-500"}`}
+                                                        suppressHydrationWarning
+                                                    >
+                                                        {isSessionLive
+                                                            ? "LIVE"
+                                                            : new Date(
+                                                                  s.dateStart,
+                                                              ).toLocaleString(
+                                                                  "en-GB",
+                                                                  {
+                                                                      day: "2-digit",
+                                                                      month: "short",
+                                                                      hour: "2-digit",
+                                                                      minute: "2-digit",
+                                                                      hour12: false,
+                                                                  },
+                                                              )}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
+
+                                        {!isFuture && (
                                             <a
                                                 href={`/races/${weekend.meetingKey}`}
                                                 onClick={(e) =>
                                                     e.stopPropagation()
                                                 }
-                                                className="block mt-4 w-full text-center text-xs font-bold py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded transition-colors"
+                                                className="block mt-3 w-full text-center text-xs font-bold py-2 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-200 rounded-lg transition-colors"
                                             >
-                                                View Race Results
+                                                {isLive
+                                                    ? "Enter Live Dashboard"
+                                                    : "View Weekend Results"}
                                             </a>
                                         )}
                                     </div>

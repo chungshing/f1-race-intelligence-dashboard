@@ -11,55 +11,41 @@ import { getNextRaceWeekend } from "@/utils/race";
 import { RaceResultsTable } from "@/components/RaceResultsTable";
 import { useDriverLookup } from "@/hooks/useDriverLookup";
 import { getRaceResults } from "@/lib/app";
-import { DriverResult } from "@/types/results";
+import { DriverResult, SupabaseRaceResultRow } from "@/types/results"; // Updated import path
 
 type TabType = "drivers" | "constructors";
 
-interface SupabaseRaceRow {
-    session_key: number;
-    meeting_key: number;
-    country: string;
-    session_name: string;
-    classification_json: string | DriverResult[];
-}
-
 export default function Home() {
-    // 1. Existing Hooks & State
     const { data: standings = [], loading: driverLoading } = useStandings();
     const { data: teams = [], loading: teamLoading } = useTeamStandings();
     const { data: races = [] } = useRaceWeekends();
     const [activeTab, setActiveTab] = useState<TabType>("drivers");
 
-    // 2. Real Live Results State matching your details page style
     const driverLookup = useDriverLookup();
     const [latestClassification, setLatestClassification] = useState<
         DriverResult[]
     >([]);
     const [resultsLoading, setResultsLoading] = useState(true);
 
-    // 3. Derived Next Race details
     const nextRace = useMemo(() => getNextRaceWeekend(races), [races]);
 
-    // 4. Automatically query and filter for the latest completed full race
     useEffect(() => {
         let isMounted = true;
         if (!races || races.length === 0) return;
 
-        // Sort descending to target the most recent meeting keys
         const sortedRaces = [...races].sort(
             (a, b) => b.meetingKey - a.meetingKey,
         );
 
-        // Find the first race that yields real database rows
         const fetchLatestRace = async () => {
             for (const race of sortedRaces) {
                 try {
-                    const data: SupabaseRaceRow[] = await getRaceResults(
+                    // Using the newly imported result row type
+                    const data: SupabaseRaceResultRow[] = await getRaceResults(
                         race.meetingKey,
                     );
                     if (!isMounted) return;
 
-                    // Filter out sessions to target the main event 'Race'
                     const mainRaceSession = data.find(
                         (s) => s.session_name === "Race",
                     );
@@ -80,9 +66,11 @@ export default function Home() {
                             Array.isArray(classification) &&
                             classification.length > 0
                         ) {
-                            setLatestClassification(classification);
+                            setLatestClassification(
+                                classification as DriverResult[],
+                            );
                             setResultsLoading(false);
-                            return; // Found it! Exit early
+                            return;
                         }
                     }
                 } catch (err) {
@@ -102,7 +90,6 @@ export default function Home() {
         };
     }, [races]);
 
-    // Standing calculations
     const sortedStandings = useMemo(
         () => [...standings].sort((a, b) => b.points - a.points),
         [standings],
