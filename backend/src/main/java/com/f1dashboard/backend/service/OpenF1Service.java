@@ -26,13 +26,18 @@ public class OpenF1Service {
     private final RestTemplate restTemplate;
     private final RaceWeekendRepository raceWeekendRepository;
     private final RaceResultRepository raceResultRepository;
+    private final DriverStandingRepository driverRepo;
+    private final TeamStandingRepository teamRepo;
 
     public OpenF1Service(RestTemplate restTemplate,
             RaceWeekendRepository raceWeekendRepository,
-            RaceResultRepository raceResultRepository) {
+            RaceResultRepository raceResultRepository, DriverStandingRepository driverRepo,
+            TeamStandingRepository teamRepo) {
         this.restTemplate = restTemplate;
         this.raceWeekendRepository = raceWeekendRepository;
         this.raceResultRepository = raceResultRepository;
+        this.driverRepo = driverRepo;
+        this.teamRepo = teamRepo;
     }
 
     private void delayBetweenRequests() {
@@ -48,7 +53,11 @@ public class OpenF1Service {
         List<RaceWeekend> records = raceWeekendRepository.findByYear(year);
         if (records.isEmpty()) {
             log.info("No weekends found in database for year {}. Fetching live from OpenF1...", year);
-            return fetchRaceWeekends(year);
+            List<RaceWeekend> liveWeekends = fetchRaceWeekends(year);
+            if (!liveWeekends.isEmpty()) {
+                raceWeekendRepository.saveAll(liveWeekends);
+            }
+            return liveWeekends;
         }
         return records;
     }
@@ -111,8 +120,13 @@ public class OpenF1Service {
                     .sorted(Comparator.comparingInt(DriverStanding::getPosition))
                     .toList();
         } catch (RestClientException e) {
-            log.warn("Driver standings unavailable (OpenF1 restriction)", e);
-            return List.of();
+            log.warn(
+                    "Driver standings unavailable due to OpenF1 race weekend restrictions. Loading cached data from DB.");
+
+            // Fetch existing records from your database instead of returning empty
+            return driverRepo.findAll().stream()
+                    .sorted(Comparator.comparingInt(DriverStanding::getPosition))
+                    .toList();
         }
     }
 
@@ -138,8 +152,13 @@ public class OpenF1Service {
                     .sorted(Comparator.comparingInt(TeamStanding::getPosition))
                     .toList();
         } catch (RestClientException e) {
-            log.warn("Team standings unavailable", e);
-            return List.of();
+            log.warn(
+                    "Team standings unavailable due to OpenF1 race weekend restrictions. Loading cached data from DB.");
+
+            // Fetch existing records from your database instead of returning empty
+            return teamRepo.findAll().stream()
+                    .sorted(Comparator.comparingInt(TeamStanding::getPosition))
+                    .toList();
         }
     }
 
@@ -227,11 +246,20 @@ public class OpenF1Service {
 
             return List.of(result);
         } catch (Exception e) {
-            log.error("Failed to fetch race results for sessionKey: {}", sessionKey, e);
+            log.error("Failed to fetch live race results for sessionKey: {}. Falling back to DB cache.", sessionKey, e);
+
+            // If we have a specific sessionKey, look it up in the DB so we don't return an
+            // empty list down the pipeline
+            if (sessionKey != null) {
+                return raceResultRepository.findById(sessionKey)
+                        .map(List::of)
+                        .orElse(List.of());
+            }
             return List.of();
         }
     }
 
+    @Transactional
     public List<RaceResult> fetchWeekendSessionResults(Integer meetingKey) {
         try {
             String sessionsUrl = openF1BaseUrl + "/sessions";
@@ -281,7 +309,18 @@ public class OpenF1Service {
                 }
             }
 
-            return allWeekendResults;
+            // FILTERING LAYER: Deduplicate by session_key before returning to cache
+            // coordinator
+            return allWeekendResults.stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toMap(
+                            RaceResult::getSessionKey, // Uses the proper camelCase getter
+                            r -> r,
+                            (existing, replacement) -> existing))
+                    .values()
+                    .stream()
+                    .toList();
+
         } catch (Exception e) {
             log.error("Failed to compile weekend session results for meeting key: {}", meetingKey, e);
             return List.of();
@@ -293,24 +332,37 @@ public class OpenF1Service {
         if (meetingKey == null) {
             meetingKey = resolveLatestMeetingKey();
         }
-        if (meetingKey == null)
+        if (meetingKey == null) {
             return List.of();
-
-        List<RaceResult> records = raceResultRepository.findByMeetingKey(meetingKey);
-
-        if (!records.isEmpty()) {
-            log.info("Cache hit! Found existing weekend results.");
-            return records;
         }
 
-        log.info("Checking OpenF1 for new weekend session data...");
+        // 1. Get current database state
+        List<RaceResult> localRecords = raceResultRepository.findByMeetingKey(meetingKey);
+
+        // 2. Fetch fresh session payloads from live endpoint
         List<RaceResult> liveResults = fetchWeekendSessionResults(meetingKey);
 
-        if (!liveResults.isEmpty()) {
-            raceResultRepository.saveAll(liveResults);
+        // Safety fallback
+        if (liveResults.isEmpty()) {
+            log.warn("Live weekend results returned empty payload for meeting {}. Preserving local cache.", meetingKey);
+            return localRecords;
         }
 
-        return liveResults;
+        // 3. Check for structural updates OR content changes
+        boolean cacheNeedsRefresh = localRecords.size() != liveResults.size() || !localRecords.equals(liveResults);
+
+        if (cacheNeedsRefresh) {
+            log.info("Cache updates detected. Upserting fresh matrices to database...");
+
+            // UPSERT STRATEGY: Save or update incoming rows without erasing old ones
+            raceResultRepository.saveAllAndFlush(liveResults);
+
+            // Fetch fresh state to ensure return structure contains all records combined
+            return raceResultRepository.findByMeetingKey(meetingKey);
+        }
+
+        log.info("Cache validation check passed for active meeting key: {}", meetingKey);
+        return localRecords;
     }
 
     private DriverResult mapDriverResult(OpenF1SessionResultDto dto) {
@@ -354,6 +406,15 @@ public class OpenF1Service {
             int currentYear = Year.now().getValue();
             String url = openF1BaseUrl + "/sessions?year=" + currentYear;
             OpenF1SessionDto[] sessions = restTemplate.getForObject(url, OpenF1SessionDto[].class);
+
+            // If the current year has no sessions yet (e.g., off-season early in the year),
+            // fallback to last year
+            if (sessions == null || sessions.length == 0) {
+                log.info("No sessions found for current year {}. Checking previous year...", currentYear);
+                url = openF1BaseUrl + "/sessions?year=" + (currentYear - 1);
+                sessions = restTemplate.getForObject(url, OpenF1SessionDto[].class);
+            }
+
             if (sessions == null || sessions.length == 0)
                 return null;
 

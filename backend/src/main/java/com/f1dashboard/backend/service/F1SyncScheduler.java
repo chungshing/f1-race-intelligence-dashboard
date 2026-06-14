@@ -3,7 +3,6 @@ package com.f1dashboard.backend.service;
 import com.f1dashboard.backend.model.*;
 import com.f1dashboard.backend.repository.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import java.time.Year;
 import java.util.List;
@@ -15,61 +14,51 @@ public class F1SyncScheduler {
     private final OpenF1Service openF1Service;
     private final DriverStandingRepository driverRepo;
     private final TeamStandingRepository teamRepo;
-    private final RaceWeekendRepository weekendRepo;
 
-    public F1SyncScheduler(OpenF1Service openF1Service, DriverStandingRepository driverRepo,
-            TeamStandingRepository teamRepo, RaceWeekendRepository weekendRepo) {
+    public F1SyncScheduler(OpenF1Service openF1Service,
+            DriverStandingRepository driverRepo,
+            TeamStandingRepository teamRepo) {
         this.openF1Service = openF1Service;
         this.driverRepo = driverRepo;
         this.teamRepo = teamRepo;
-        this.weekendRepo = weekendRepo;
     }
 
-    @Scheduled(cron = "0 0 0,12 * * ?") // Every 12 hours at midnight and noon
+    // Triggered externally via cronjob.org endpoint routing
     public void syncDataPipeline() {
         log.info("Starting background F1 data sync...");
 
         try {
             int currentYear = Year.now().getValue();
 
-            // 1. Sync Standings
+            // 1. Sync Driver Standings safely
             List<DriverStanding> drivers = openF1Service.fetchDriverStandings();
-            if (!drivers.isEmpty())
+            if (drivers != null && !drivers.isEmpty()) {
                 driverRepo.saveAll(drivers);
-
-            spaceRequests();
-
-            // 2. Sync Team Standings
-            List<TeamStanding> teams = openF1Service.fetchTeamStandings();
-            if (!teams.isEmpty())
-                teamRepo.saveAll(teams);
-
-            spaceRequests();
-
-            // 3. Sync Calendar (Dynamic Current Year)
-            List<RaceWeekend> weekends = openF1Service.fetchRaceWeekends(currentYear);
-            if (!weekends.isEmpty()) {
-                weekendRepo.saveAll(weekends);
+                log.info("Successfully updated driver standings.");
+            } else {
+                log.warn("Driver standings API returned empty. Retaining existing database records.");
             }
 
-            spaceRequests();
+            // 2. Sync Team Standings safely
+            List<TeamStanding> teams = openF1Service.fetchTeamStandings();
+            if (teams != null && !teams.isEmpty()) {
+                teamRepo.saveAll(teams);
+                log.info("Successfully updated team standings.");
+            } else {
+                log.warn("Team standings API returned empty. Retaining existing database records.");
+            }
 
-            // 4. Sync ALL Weekend Session Results (Protected by database caching wrapper)
+            // 3. Sync Calendar via Service Cache
+            List<RaceWeekend> weekends = openF1Service.getCachedWeekends(currentYear);
+            log.info("Calendar validation complete. Total weekends tracked: {}", weekends.size());
+
+            // 4. Sync Weekend Session Results
             List<RaceResult> weekendResults = openF1Service.getCachedWeekendResults(null);
-            log.info("Successfully synchronized {} session classifications for this weekend.", weekendResults.size());
+            log.info("Successfully synchronized {} session classifications.", weekendResults.size());
 
             log.info("F1 background database update complete.");
         } catch (Exception e) {
             log.error("Pipeline synchronization error encountered", e);
-        }
-    }
-
-    private void spaceRequests() {
-        try {
-            Thread.sleep(2500);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.warn("Sync sleep interval was interrupted");
         }
     }
 }
