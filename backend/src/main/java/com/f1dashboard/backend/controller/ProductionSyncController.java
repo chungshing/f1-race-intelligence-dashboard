@@ -15,7 +15,6 @@ public class ProductionSyncController {
 
     private final F1SyncScheduler syncScheduler;
 
-    // Injects a secret key from your Render environment variables
     @Value("${CRON_SECRET_TOKEN:local-dev-fallback}")
     private String cronSecretToken;
 
@@ -25,13 +24,16 @@ public class ProductionSyncController {
 
     @GetMapping("/trigger")
     public ResponseEntity<String> triggerManualSync(@RequestParam("token") String token) {
-        // Validate incoming token against your secret configuration
         if (cronSecretToken == null || !cronSecretToken.equals(token)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Unauthorized: Invalid execution token.");
         }
 
+        // Triggers the async thread instantly and immediately returns to the next line
         syncScheduler.syncDataPipeline();
-        return ResponseEntity.ok("F1 pipeline synchronization completed!");
+
+        // Changed to .accepted() (HTTP 202) and updated message text
+        return ResponseEntity.accepted()
+                .body("F1 pipeline synchronization started in the background.");
     }
 }

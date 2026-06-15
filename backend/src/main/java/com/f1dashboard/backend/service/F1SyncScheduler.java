@@ -3,6 +3,8 @@ package com.f1dashboard.backend.service;
 import com.f1dashboard.backend.model.*;
 import com.f1dashboard.backend.repository.*;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import java.time.Year;
 import java.util.List;
@@ -24,6 +26,7 @@ public class F1SyncScheduler {
     }
 
     // Triggered externally via cronjob.org endpoint routing
+    @Async
     public void syncDataPipeline() {
         log.info("Starting background F1 data sync...");
 
