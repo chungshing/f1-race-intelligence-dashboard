@@ -39,7 +39,7 @@ A high-performance full-stack F1 analytics platform that visualizes real-time an
 - **✅ Phase 2: Backend Development** – OpenF1 integration, in-memory data processing, and REST endpoints.
 - **✅ Phase 3: Full-Stack Integration** – Connected Next.js to Spring Boot, added state management, and handled loading states.
 - **✅ Phase 4: Persistent Data Layer** – Migration to Supabase/PostgreSQL for historical data storage.
-- **🔄 Phase 5: Advanced Features (In Progress)** – Driver profile pages and telemetry visualizations.
+- **🔄 Phase 5: Advanced Features (In Progress)** – Driver profile pages and historical post-race tyre strategy visualizers.
 
 <details>
 <summary>⚙️ <b>Local Development Setup</b> (Click to expand)</summary>
@@ -73,8 +73,9 @@ A high-performance full-stack F1 analytics platform that visualizes real-time an
 - **Behavior**: During live Formula 1 race sessions, the public OpenF1 API rate-limits historical queries and restricts unauthenticated global access.
 - **Mitigation**: The backend utilizes Supabase (PostgreSQL) as a persistent cache. By storing and processing data asynchronously, the dashboard serves historical results instantly from the database without repeated, latency-heavy calls to the upstream API.
 
-### 🐢 Infrastructure Latency (Free-Tier Hosting)
+### 🐢 Infrastructure Latency & Background Workers (Free-Tier Hosting)
 
-- **Backend Cold Starts**: Hosted on Render's free tier. Inactivity triggers a spun-down container state. The initial API request may encounter a **5–10 second delay** while the service wakes up.
-- **Frontend Performance**: Hosted on Vercel. Global delivery is highly optimized, though data-dependent components rely on the backend wake-up cycle.
+* **Backend Cold Starts:** Hosted on Render's free tier. Inactivity triggers a spun-down container state. The initial API request may encounter a **5–10 second delay** while the service wakes up.
+* **Frontend Performance:** Hosted on Vercel. Global delivery is highly optimized, though data-dependent components rely on the backend wake-up cycle.
+* **Cron/Automation Workarounds:** Render's free tier disables native persistent background workers and `@Scheduled` tasks when the instance spins down. To circumvent this constraint, an external webhook router (**cron-job.org**) is configured to trigger specific Spring Boot ingest endpoints every weekend for a 5-hour active window during Grand Prix sessions, keeping the instance awake and ensuring consistent database backfilling.
 </details>
