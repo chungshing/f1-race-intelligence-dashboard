@@ -1,7 +1,7 @@
 export interface DriverResult {
     position: number | null;
     driverNumber: number;
-    gapToLeader: number;
+    gapToLeader: string;
     dnf: boolean;
     dns: boolean;
     dsq: boolean;

@@ -52,7 +52,7 @@ export const RaceResultsTable = ({ classification, lookup, variant = 'default' }
                             ) : r.gapToLeader != null ? (
                                 <>
                                     <Timer className='w-3 h-3 text-zinc-600' />
-                                    <span>+{r.gapToLeader.toFixed(3)}</span>
+                                    <span>{r.gapToLeader}</span>
                                 </>
                             ) : (
                                 '-'
@@ -113,7 +113,7 @@ export const RaceResultsTable = ({ classification, lookup, variant = 'default' }
                                         <Trophy className='w-3.5 h-3.5 fill-amber-400/10' /> Winner
                                     </span>
                                 ) : r.gapToLeader != null ? (
-                                    `+${r.gapToLeader.toFixed(3)}`
+                                    `${r.gapToLeader}`
                                 ) : (
                                     '-'
                                 )}
