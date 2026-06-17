@@ -369,8 +369,30 @@ public class OpenF1Service {
         if (dto == null)
             return null;
 
-        List<Double> gaps = normalize(dto.getGap_to_leader());
-        Double latestGap = (gaps == null || gaps.isEmpty()) ? 0.0 : gaps.get(gaps.size() - 1);
+        // 1. Extract and format the raw value into a displayable string safely
+        String latestGap = "0.0";
+        Object rawGap = dto.getGap_to_leader();
+
+        if (rawGap != null) {
+            if (rawGap instanceof List<?>) {
+                List<?> gapList = (List<?>) rawGap;
+                if (!gapList.isEmpty()) {
+                    Object lastElement = gapList.get(gapList.size() - 1);
+                    latestGap = lastElement != null ? lastElement.toString() : "0.0";
+                }
+            } else {
+                latestGap = rawGap.toString();
+            }
+        }
+
+        // 2. Format numerical gaps slightly to make them look uniform (e.g., adding '+'
+        // prefix)
+        if (latestGap.matches("^\\d+\\.\\d+$")) {
+            double numericGap = Double.parseDouble(latestGap);
+            if (numericGap > 0) {
+                latestGap = "+" + latestGap;
+            }
+        }
 
         boolean isDnf = (dto.getDnf() != null && dto.getDnf());
         boolean isDns = (dto.getDns() != null && dto.getDns());
@@ -383,22 +405,6 @@ public class OpenF1Service {
                 isDnf,
                 isDns,
                 isDsq);
-    }
-
-    private List<Double> normalize(Object value) {
-        if (value == null)
-            return List.of();
-        if (value instanceof List<?> list) {
-            return list.stream()
-                    .filter(Objects::nonNull)
-                    .filter(Number.class::isInstance)
-                    .map(v -> ((Number) v).doubleValue())
-                    .toList();
-        }
-        if (value instanceof Number num) {
-            return List.of(num.doubleValue());
-        }
-        return List.of();
     }
 
     private Integer resolveLatestMeetingKey() {

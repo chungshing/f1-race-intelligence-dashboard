@@ -10,8 +10,8 @@ import lombok.NoArgsConstructor;
 public class DriverResult {
     private Integer position;
     private Integer driverNumber;
-    private Double gapToLeader;
-    private Boolean dnf;
-    private Boolean dns;
-    private Boolean dsq;
+    private String gapToLeader;
+    private boolean dnf;
+    private boolean dns;
+    private boolean dsq;
 }
