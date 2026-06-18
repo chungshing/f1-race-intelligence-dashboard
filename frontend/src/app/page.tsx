@@ -22,12 +22,14 @@ export default function Home() {
     const [activeTab, setActiveTab] = useState<TabType>('drivers');
     const driverLookup = useDriverLookup();
 
-
     const [mountTimestamp] = useState(() => Date.now());
     const [resultsState, setResultsState] = useState<{
         data: DriverResult[];
         loading: boolean;
     }>({ data: [], loading: true });
+
+    // NEW: Syncing state for UI button feedback
+    const [isSyncing, setIsSyncing] = useState(false);
 
     const nextRace = useMemo(() => getNextRaceWeekend(races), [races]);
 
@@ -43,6 +45,12 @@ export default function Home() {
     }, [races, mountTimestamp]);
 
     const sortedRacesKey = JSON.stringify(sortedRaces.map((r) => r.meetingKey));
+
+    // NEW: Silent-wake execution on component mount
+    useEffect(() => {
+        // Fires a safe root ping to wake Render from cold-sleep instantly
+        fetch('https://f1-race-intelligence-dashboard.onrender.com/api/health').catch(() => null);
+    }, []);
 
     useEffect(() => {
         let isMounted = true;
@@ -85,6 +93,36 @@ export default function Home() {
         };
     }, [sortedRacesKey, sortedRaces.length, sortedRaces]);
 
+    // NEW: Manual sync pipeline execution handler
+    const handleManualSync = async () => {
+        if (isSyncing) return;
+        setIsSyncing(true);
+
+        const SECRET_TOKEN = process.env.NEXT_PUBLIC_CRON_SECRET_TOKEN || 'local-dev-fallback';
+        const url = `https://f1-race-intelligence-dashboard.onrender.com/api/v1/automation/trigger?token=${SECRET_TOKEN}`;
+
+        try {
+            const response = await fetch(url);
+            if (response.status === 202) {
+                alert('Pipeline synchronization started successfully.');
+            } else if (response.status === 401) {
+                alert('Unauthorized: Invalid backend validation token.');
+                setIsSyncing(false);
+            } else {
+                throw new Error('Server starting sequence delay.');
+            }
+        } catch (error) {
+            console.warn(
+                'Backend waking up or network dropped. Retrying sync in 10 seconds...',
+                error,
+            );
+            setTimeout(handleManualSync, 10000);
+        } finally {
+            // Keep spinning for 5 seconds to show visual feedback before resetting
+            setTimeout(() => setIsSyncing(false), 5000);
+        }
+    };
+
     const leader = standings[0];
     const runnerUp = standings[1];
     const topTeam = teams[0];
@@ -122,12 +160,65 @@ export default function Home() {
     return (
         <AppLayout>
             <div className='space-y-5 text-zinc-100'>
-                {/* HEADER WITH REINSTATED SUBTITLE */}
-                <div className='mb-5'>
-                    <h1 className='text-2xl font-bold text-zinc-100'>Command Hub</h1>
-                    <p className='text-xs text-zinc-400 mt-1'>
-                        Season telemetry and championship standings overview.
-                    </p>
+                {/* HEADER WITH REINSTATED SUBTITLE & MANUAL SYNC BUTTON */}
+                <div className='mb-5 flex items-center justify-between border-b border-zinc-800/40 pb-4'>
+                    <div>
+                        <h1 className='text-2xl font-bold text-zinc-100'>Command Hub</h1>
+                        <p className='text-xs text-zinc-400 mt-1'>
+                            Season telemetry and championship standings overview.
+                        </p>
+                    </div>
+                    <button
+                        onClick={handleManualSync}
+                        disabled={isSyncing}
+                        className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border transition-all ${
+                            isSyncing
+                                ? 'bg-zinc-900 border-zinc-800 text-zinc-500 cursor-not-allowed'
+                                : 'bg-zinc-950 hover:bg-zinc-900 border-zinc-800 text-zinc-200 active:scale-95'
+                        }`}
+                    >
+                        {isSyncing ? (
+                            <>
+                                <svg
+                                    className='animate-spin h-3.5 w-3.5 text-zinc-500'
+                                    fill='none'
+                                    viewBox='0 0 24 24'
+                                >
+                                    <circle
+                                        className='opacity-25'
+                                        cx='12'
+                                        cy='12'
+                                        r='10'
+                                        stroke='currentColor'
+                                        strokeWidth='4'
+                                    />
+                                    <path
+                                        className='opacity-75'
+                                        fill='currentColor'
+                                        d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                                    />
+                                </svg>
+                                Syncing Live Data...
+                            </>
+                        ) : (
+                            <>
+                                <svg
+                                    className='h-3.5 w-3.5'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    strokeWidth='2'
+                                    viewBox='0 0 24 24'
+                                >
+                                    <path
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
+                                        d='M4 4v5h.582m15.356 2A8.001 8.001 0 1121.253 8H18'
+                                    />
+                                </svg>
+                                Sync Session Data
+                            </>
+                        )}
+                    </button>
                 </div>
 
                 {/* COMPACT OVERVIEW STATS GRID */}
