@@ -21,16 +21,29 @@ public class RaceWeekend {
     private String circuit;
     private int year;
 
+    @Column(name = "circuit_image")
+    private String circuitImage;
+
+    @Column(name = "country_flag")
+    private String countryFlag;
+
+    @Column(name = "circuit_type")
+    private String circuitType;
+
     @Convert(converter = RaceSessionJsonConverter.class)
     @Column(name = "sessions_json", columnDefinition = "TEXT")
     private List<RaceSession> sessions = new ArrayList<>();
 
-    // Updated constructor to include year
-    public RaceWeekend(Integer meetingKey, String country, String circuit, int year, List<RaceSession> sessions) {
+    public RaceWeekend(Integer meetingKey, String country, String circuit, int year,
+            String circuitImage, String countryFlag, String circuitType,
+            List<RaceSession> sessions) {
         this.meetingKey = meetingKey;
         this.country = country;
         this.circuit = circuit;
         this.year = year;
+        this.circuitImage = circuitImage;
+        this.countryFlag = countryFlag;
+        this.circuitType = circuitType;
         this.sessions = sessions;
     }
 }

@@ -164,13 +164,25 @@ public class OpenF1Service {
 
     public List<RaceWeekend> fetchRaceWeekends(int year) {
         try {
-            String url = openF1BaseUrl + "/sessions?year=" + year;
+            // 1. Fetch OpenF1 Sessions
+            String sessionUrl = openF1BaseUrl + "/sessions?year=" + year;
             delayBetweenRequests();
-            OpenF1SessionDto[] sessions = restTemplate.getForObject(url, OpenF1SessionDto[].class);
+            OpenF1SessionDto[] sessions = restTemplate.getForObject(sessionUrl, OpenF1SessionDto[].class);
 
             if (sessions == null || sessions.length == 0)
                 return List.of();
 
+            // 2. Fetch OpenF1 Meetings to extract visual images
+            String meetingUrl = openF1BaseUrl + "/meetings?year=" + year;
+            delayBetweenRequests();
+            OpenF1MeetingDto[] meetings = restTemplate.getForObject(meetingUrl, OpenF1MeetingDto[].class);
+
+            // Map meetings by meeting_key for O(1) instant lookup
+            Map<Integer, OpenF1MeetingDto> meetingMap = (meetings == null) ? Map.of()
+                    : Arrays.stream(meetings)
+                            .collect(Collectors.toMap(OpenF1MeetingDto::getMeeting_key, m -> m, (m1, m2) -> m1));
+
+            // 3. Group sessions by meeting key exactly as you did before
             Map<Integer, List<OpenF1SessionDto>> grouped = Arrays.stream(sessions)
                     .collect(Collectors.groupingBy(OpenF1SessionDto::getMeeting_key));
 
@@ -179,6 +191,12 @@ public class OpenF1Service {
                         List<OpenF1SessionDto> list = entry.getValue();
                         OpenF1SessionDto first = list.get(0);
 
+                        // Grab the visuals from our map using the meeting key
+                        OpenF1MeetingDto meetingDetails = meetingMap.get(entry.getKey());
+                        String circuitImg = (meetingDetails != null) ? meetingDetails.getCircuit_image() : null;
+                        String countryFlg = (meetingDetails != null) ? meetingDetails.getCountry_flag() : null;
+                        String circuitTyp = (meetingDetails != null) ? meetingDetails.getCircuit_type() : null;
+
                         List<RaceSession> mappedSessions = list.stream()
                                 .map(s -> new RaceSession(s.getSession_name(), s.getSession_type(), s.getDate_start(),
                                         s.getDate_end()))
@@ -186,11 +204,15 @@ public class OpenF1Service {
                                         Comparator.nullsLast(String::compareTo)))
                                 .toList();
 
+                        // Map down into our unified entity row
                         return new RaceWeekend(
                                 entry.getKey(),
                                 first.getCountry_name(),
                                 first.getCircuit_short_name(),
                                 year,
+                                circuitImg,
+                                countryFlg,
+                                circuitTyp,
                                 mappedSessions);
                     })
                     .sorted(Comparator.comparing(w -> w.getSessions().stream()
