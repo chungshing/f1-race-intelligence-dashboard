@@ -10,12 +10,10 @@ export interface RaceWeekend {
     circuit: string;
     country: string;
     year: number;
-    sessions: {
-        sessionName: string;
-        sessionType: string;
-        dateStart: string;
-        dateEnd: string;
-    }[];
+    circuitImage: string;
+    countryFlag: string;
+    circuitType: string;
+    sessions: RaceSession[];
 }
 
 export interface SupabaseRaceRow {
@@ -23,5 +21,8 @@ export interface SupabaseRaceRow {
     circuit: string;
     country: string;
     year: number;
+    circuit_image: string;
+    country_flag: string;
+    circuit_type: string;
     sessions_json: string;
 }
