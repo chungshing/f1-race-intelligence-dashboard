@@ -50,34 +50,17 @@ public class OpenF1Service {
     }
 
     public List<RaceWeekend> getCachedWeekends(int year) {
-        List<RaceWeekend> records = raceWeekendRepository.findByYear(year);
-        if (records.isEmpty()) {
-            log.info("No weekends found in database for year {}. Fetching live from OpenF1...", year);
-            List<RaceWeekend> liveWeekends = fetchRaceWeekends(year);
-            if (!liveWeekends.isEmpty()) {
-                raceWeekendRepository.saveAll(liveWeekends);
-            }
+        log.info("Validating race calendar for year {} with live data source...", year);
+        List<RaceWeekend> liveWeekends = fetchRaceWeekends(year);
+
+        if (!liveWeekends.isEmpty()) {
+            raceWeekendRepository.deleteAllInBatch();
+            raceWeekendRepository.saveAll(liveWeekends);
             return liveWeekends;
         }
-        return records;
-    }
 
-    public List<RaceResult> getCachedResults(Integer sessionKey) {
-        if (sessionKey != null) {
-            return raceResultRepository.findById(sessionKey)
-                    .map(List::of)
-                    .orElseGet(() -> {
-                        log.info("No result found in database for session {}. Fetching live...", sessionKey);
-                        return fetchRaceResults(sessionKey);
-                    });
-        }
-
-        List<RaceResult> records = raceResultRepository.findAll();
-        if (records.isEmpty()) {
-            log.info("No race results found in database. Fetching latest live from OpenF1...");
-            return fetchRaceResults(null);
-        }
-        return records;
+        log.warn("Live calendar fetch was empty. Falling back to local records.");
+        return raceWeekendRepository.findByYear(year);
     }
 
     @Transactional

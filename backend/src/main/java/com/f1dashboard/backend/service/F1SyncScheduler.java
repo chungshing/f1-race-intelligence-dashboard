@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.Year;
 import java.util.List;
 
@@ -25,37 +26,39 @@ public class F1SyncScheduler {
         this.teamRepo = teamRepo;
     }
 
-    // Triggered externally via cronjob.org endpoint routing
     @Async
+    @Transactional
     public void syncDataPipeline() {
         log.info("Starting background F1 data sync...");
 
         try {
             int currentYear = Year.now().getValue();
 
-            // 1. Sync Driver Standings safely
+            // 1. Sync Driver Standings (Overwrite stale data)
             List<DriverStanding> drivers = openF1Service.fetchDriverStandings();
             if (drivers != null && !drivers.isEmpty()) {
+                driverRepo.deleteAllInBatch(); 
                 driverRepo.saveAll(drivers);
                 log.info("Successfully updated driver standings.");
             } else {
                 log.warn("Driver standings API returned empty. Retaining existing database records.");
             }
 
-            // 2. Sync Team Standings safely
+            // 2. Sync Team Standings (Overwrite stale data)
             List<TeamStanding> teams = openF1Service.fetchTeamStandings();
             if (teams != null && !teams.isEmpty()) {
+                teamRepo.deleteAllInBatch();
                 teamRepo.saveAll(teams);
                 log.info("Successfully updated team standings.");
             } else {
                 log.warn("Team standings API returned empty. Retaining existing database records.");
             }
 
-            // 3. Sync Calendar via Service Cache
+            // 3. Sync Calendar via Service Cache (Internal save handling)
             List<RaceWeekend> weekends = openF1Service.getCachedWeekends(currentYear);
             log.info("Calendar validation complete. Total weekends tracked: {}", weekends.size());
 
-            // 4. Sync Weekend Session Results
+            // 4. Sync Weekend Session Results (Internal upsert handling)
             List<RaceResult> weekendResults = openF1Service.getCachedWeekendResults(null);
             log.info("Successfully synchronized {} session classifications.", weekendResults.size());
 
