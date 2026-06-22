@@ -228,6 +228,7 @@ public class OpenF1Service {
 
             Integer activeKey = activeSession.getSession_key();
 
+            // 1. Fetch Classifications
             delayBetweenRequests();
             OpenF1SessionResultDto[] res = restTemplate.getForObject(
                     openF1BaseUrl + "/session_result?session_key=" + activeKey,
@@ -242,19 +243,47 @@ public class OpenF1Service {
                     .sorted(Comparator.comparing(DriverResult::getPosition, Comparator.nullsLast(Integer::compareTo)))
                     .collect(Collectors.toList());
 
+            // 2. Fetch and Attach Pit Stops Data
+            List<PitStop> pitStopsList = new ArrayList<>();
+            try {
+                delayBetweenRequests();
+                String pitUrl = openF1BaseUrl + "/pit?session_key=" + activeKey;
+                PitStop[] fetchedPits = restTemplate.getForObject(pitUrl, PitStop[].class);
+                if (fetchedPits != null) {
+                    pitStopsList = Arrays.asList(fetchedPits);
+                }
+            } catch (Exception e) {
+                log.warn("Pit stops data empty or unavailable for session key: {}", activeKey);
+            }
+
+            // 3. Fetch and Attach Stints Data
+            List<Stint> stintsList = new ArrayList<>();
+            try {
+                delayBetweenRequests();
+                String stintUrl = openF1BaseUrl + "/stints?session_key=" + activeKey;
+                Stint[] fetchedStints = restTemplate.getForObject(stintUrl, Stint[].class);
+                if (fetchedStints != null) {
+                    stintsList = Arrays.asList(fetchedStints);
+                }
+            } catch (Exception e) {
+                log.warn("Stints data empty or unavailable for session key: {}", activeKey);
+            }
+
+            // 4. Construct complete, enriched entity directly
             RaceResult result = new RaceResult(
                     activeSession.getMeeting_key(),
                     activeKey,
                     activeSession.getCountry_name(),
                     activeSession.getSession_name(),
-                    driverResults);
+                    driverResults,
+                    pitStopsList,
+                    stintsList);
 
             return List.of(result);
+
         } catch (Exception e) {
             log.error("Failed to fetch live race results for sessionKey: {}. Falling back to DB cache.", sessionKey, e);
 
-            // If we have a specific sessionKey, look it up in the DB so we don't return an
-            // empty list down the pipeline
             if (sessionKey != null) {
                 return raceResultRepository.findById(sessionKey)
                         .map(List::of)
@@ -359,10 +388,21 @@ public class OpenF1Service {
         if (cacheNeedsRefresh) {
             log.info("Cache updates detected. Upserting fresh matrices to database...");
 
-            // UPSERT STRATEGY: Save or update incoming rows without erasing old ones
-            raceResultRepository.saveAllAndFlush(liveResults);
+            // UPSERT STRATEGY: Update existing rows correctly by mapping arrays to old
+            // records
+            for (RaceResult live : liveResults) {
+                raceResultRepository.findById(live.getSessionKey()).ifPresent(local -> {
+                    // Retain lists across background updates
+                    if (live.getPitStops() == null || live.getPitStops().isEmpty()) {
+                        live.setPitStops(local.getPitStops());
+                    }
+                    if (live.getStints() == null || live.getStints().isEmpty()) {
+                        live.setStints(local.getStints());
+                    }
+                });
+            }
 
-            // Fetch fresh state to ensure return structure contains all records combined
+            raceResultRepository.saveAllAndFlush(liveResults);
             return raceResultRepository.findByMeetingKey(meetingKey);
         }
 

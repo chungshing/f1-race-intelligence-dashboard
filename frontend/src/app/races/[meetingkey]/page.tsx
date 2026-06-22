@@ -3,9 +3,22 @@
 import { useEffect, useState, use, useMemo } from 'react';
 import { getRaceResults } from '@/lib/app';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
-import { RaceResultsTable } from '@/components/RaceResultsTable';
+import { RaceResultsTable } from '@/components/table/RaceResultsTable';
 import { RaceResult, SupabaseRaceResultRow } from '@/types/results';
+import { RaceStrategyTable } from '@/components/table/RaceStrategyTable';
 import AppLayout from '@/components/layout/AppLayout';
+
+const parseJsonField = <T,>(field: string | T[] | undefined): T[] => {
+    if (!field) return [];
+    if (typeof field === 'string') {
+        try {
+            return JSON.parse(field);
+        } catch {
+            return [];
+        }
+    }
+    return Array.isArray(field) ? field : [];
+};
 
 export default function RacePage({ params }: { params: Promise<{ meetingkey: string }> }) {
     const { meetingkey } = use(params);
@@ -13,6 +26,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
 
     const [results, setResults] = useState<RaceResult[]>([]);
     const [activeSessionKey, setActiveSessionKey] = useState<number | null>(null);
+    const [activeTab, setActiveTab] = useState<'classification' | 'strategy'>('classification');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -21,25 +35,15 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
         getRaceResults(Number(meetingkey)).then((data: SupabaseRaceResultRow[]) => {
             if (!isMounted) return;
 
-            const normalizedResults: RaceResult[] = data.map((r) => {
-                let classification = r.classification_json;
-
-                if (typeof classification === 'string') {
-                    try {
-                        classification = JSON.parse(classification);
-                    } catch {
-                        classification = [];
-                    }
-                }
-
-                return {
-                    sessionKey: r.session_key,
-                    meetingKey: r.meeting_key,
-                    country: r.country,
-                    sessionName: r.session_name,
-                    classification: Array.isArray(classification) ? classification : [],
-                };
-            });
+            const normalizedResults: RaceResult[] = data.map((r) => ({
+                sessionKey: r.session_key,
+                meetingKey: r.meeting_key,
+                country: r.country,
+                sessionName: r.session_name,
+                classification: parseJsonField(r.classification_json),
+                pitStops: parseJsonField(r.pit_stops_json),
+                stints: parseJsonField(r.stints_json),
+            }));
 
             setResults(normalizedResults);
 
@@ -96,7 +100,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
 
     return (
         <AppLayout>
-            <div className='max-w-5xl mx-auto px-4 py-8 space-y-8'>
+            <div className='max-w-5xl mx-auto px-4 py-8 space-y-6'>
                 <div className='relative pl-5 before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-blue-500 before:rounded-full'>
                     <span className='text-[10px] font-bold text-blue-500 tracking-widest uppercase'>
                         Grand Prix Results
@@ -106,6 +110,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                     </h1>
                 </div>
 
+                {/* Session Select Bar */}
                 <div className='bg-zinc-950/60 border border-zinc-800/60 rounded-xl p-1 backdrop-blur-md shadow-inner'>
                     <div className='flex gap-1 overflow-x-auto scrollbar-none snap-x'>
                         {results.map((race) => {
@@ -127,12 +132,46 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                     </div>
                 </div>
 
+                {/* View State Navigation Tabs */}
+                <div className='flex space-x-6 border-b border-zinc-800/80 text-xs font-bold uppercase tracking-wider pb-px'>
+                    <button
+                        onClick={() => setActiveTab('classification')}
+                        className={`pb-3 transition-colors ${
+                            activeTab === 'classification'
+                                ? 'text-blue-500 border-b-2 border-blue-500 font-black'
+                                : 'text-zinc-400 hover:text-zinc-200'
+                        }`}
+                    >
+                        Classification
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('strategy')}
+                        className={`pb-3 transition-colors ${
+                            activeTab === 'strategy'
+                                ? 'text-blue-500 border-b-2 border-blue-500 font-black'
+                                : 'text-zinc-400 hover:text-zinc-200'
+                        }`}
+                    >
+                        Race Strategy
+                    </button>
+                </div>
+
+                {/* Render Selection Context */}
                 {activeRace && (
                     <section className='animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out'>
-                        <RaceResultsTable
-                            classification={activeRace.classification}
-                            lookup={driverLookup}
-                        />
+                        {activeTab === 'classification' ? (
+                            <RaceResultsTable
+                                classification={activeRace.classification}
+                                lookup={driverLookup}
+                            />
+                        ) : (
+                            <RaceStrategyTable
+                                pitStops={activeRace.pitStops}
+                                stints={activeRace.stints}
+                                lookup={driverLookup}
+                                results={activeRace.classification}
+                            />
+                        )}
                     </section>
                 )}
             </div>
