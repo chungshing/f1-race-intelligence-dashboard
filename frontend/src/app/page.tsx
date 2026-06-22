@@ -1,14 +1,14 @@
 'use client';
 
 import AppLayout from '@/components/layout/AppLayout';
-import { DriverTable } from '@/components/DriverTable';
-import { TeamTable } from '@/components/TeamTable';
-import RaceWeekendCard from '@/components/RaceWeekendCard';
+import { DriverTable } from '@/components/table/DriverTable';
+import { TeamTable } from '@/components/table/TeamTable';
+import RaceWeekendCard from '@/components/table/RaceWeekendCard';
 import { useStandings, useTeamStandings } from '@/hooks/useStandings';
 import { useMemo, useState, useEffect } from 'react';
 import { useRaceWeekends } from '@/hooks/useRaceWeekends';
 import { getNextRaceWeekend } from '@/utils/race';
-import { RaceResultsTable } from '@/components/RaceResultsTable';
+import { RaceResultsTable } from '@/components/table/RaceResultsTable';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
 import { getRaceResults } from '@/lib/app';
 import { DriverResult, SupabaseRaceResultRow } from '@/types/results';

@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useRaceWeekends } from '@/hooks/useRaceWeekends';
-import RaceWeekendCard from '@/components/RaceWeekendCard';
+import RaceWeekendCard from '@/components/table/RaceWeekendCard';
 import SeasonTimeline from '@/components/dashboard/SeasonTimeline';
 import { getNextRaceWeekend } from '@/utils/race';
 

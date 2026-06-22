@@ -1,7 +1,7 @@
 'use client';
 
 import AppLayout from '@/components/layout/AppLayout';
-import { DriverTable } from '@/components/DriverTable';
+import { DriverTable } from '@/components/table/DriverTable';
 import { useStandings } from '@/hooks/useStandings';
 
 export default function DriversPage() {
