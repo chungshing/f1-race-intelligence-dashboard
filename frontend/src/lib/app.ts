@@ -56,16 +56,14 @@ export async function getRaces(): Promise<SupabaseRaceRow[]> {
 
 /**
  * Fetches race results with optional filtering by meetingKey
- * Fields: session_key, meeting_key, country, session_name, classification_json
+ * Fields: session_key, meeting_key, country, session_name, classification_json, pit_stops_json, stints_json
  */
 export async function getRaceResults(
     meetingKey: number | null = null,
 ): Promise<SupabaseRaceResultRow[]> {
     let dbQuery = supabase
         .from("race_results")
-        .select(
-            "session_key, meeting_key, country, session_name, classification_json",
-        );
+        .select("*");
 
     if (meetingKey) {
         dbQuery = dbQuery.eq("meeting_key", meetingKey);

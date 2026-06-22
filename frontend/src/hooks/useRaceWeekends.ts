@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getRaces } from "@/lib/app";
-import { RaceWeekend } from "@/types/race";
+import { RaceWeekend, SupabaseRaceRow } from "@/types/race";
 
 export function useRaceWeekends() {
     const [data, setData] = useState<RaceWeekend[]>([]);
@@ -14,11 +14,14 @@ export function useRaceWeekends() {
                     throw new Error("Invalid race data format");
                 }
 
-                const parsedData: RaceWeekend[] = res.map((race) => ({
+                const parsedData: RaceWeekend[] = res.map((race: SupabaseRaceRow) => ({
                     meetingKey: race.meeting_key,
                     circuit: race.circuit,
                     country: race.country,
                     year: race.year,
+                    circuitImage: race.circuit_image || "",
+                    countryFlag: race.country_flag || "",
+                    circuitType: race.circuit_type || "Unknown",
                     sessions: JSON.parse(race.sessions_json || "[]"),
                 }));
 

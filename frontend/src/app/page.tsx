@@ -1,14 +1,14 @@
 'use client';
 
 import AppLayout from '@/components/layout/AppLayout';
-import { DriverTable } from '@/components/DriverTable';
-import { TeamTable } from '@/components/TeamTable';
-import RaceWeekendCard from '@/components/RaceWeekendCard';
+import { DriverTable } from '@/components/table/DriverTable';
+import { TeamTable } from '@/components/table/TeamTable';
+import RaceWeekendCard from '@/components/table/RaceWeekendCard';
 import { useStandings, useTeamStandings } from '@/hooks/useStandings';
 import { useMemo, useState, useEffect } from 'react';
 import { useRaceWeekends } from '@/hooks/useRaceWeekends';
 import { getNextRaceWeekend } from '@/utils/race';
-import { RaceResultsTable } from '@/components/RaceResultsTable';
+import { RaceResultsTable } from '@/components/table/RaceResultsTable';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
 import { getRaceResults } from '@/lib/app';
 import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
@@ -28,7 +28,7 @@ export default function Home() {
         loading: boolean;
     }>({ data: [], loading: true });
 
-    // NEW: Syncing state for UI button feedback
+    // Syncing state for UI button feedback
     const [isSyncing, setIsSyncing] = useState(false);
 
     const nextRace = useMemo(() => getNextRaceWeekend(races), [races]);
@@ -46,7 +46,7 @@ export default function Home() {
 
     const sortedRacesKey = JSON.stringify(sortedRaces.map((r) => r.meetingKey));
 
-    // NEW: Silent-wake execution on component mount
+    // Silent-wake execution on component mount
     useEffect(() => {
         // Fires a safe root ping to wake Render from cold-sleep instantly
         fetch('https://f1-race-intelligence-dashboard.onrender.com/api/health').catch(() => null);
@@ -91,35 +91,44 @@ export default function Home() {
         return () => {
             isMounted = false;
         };
-    }, [sortedRacesKey, sortedRaces.length, sortedRaces]);
+    }, [sortedRaces, sortedRacesKey]);
 
-    // NEW: Manual sync pipeline execution handler
     const handleManualSync = async () => {
         if (isSyncing) return;
         setIsSyncing(true);
 
         const SECRET_TOKEN = process.env.NEXT_PUBLIC_CRON_SECRET_TOKEN || 'local-dev-fallback';
-        const url = `https://f1-race-intelligence-dashboard.onrender.com/api/v1/automation/trigger?token=${SECRET_TOKEN}`;
+        const url = 'https://f1-race-intelligence-dashboard.onrender.com/api/v1/automation/trigger';
 
         try {
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ token: SECRET_TOKEN }),
+            });
+
             if (response.status === 202) {
                 alert('Pipeline synchronization started successfully.');
+                // Keep spinning for 5 seconds to provide visual feedback for a successful trigger
+                setTimeout(() => setIsSyncing(false), 5000);
             } else if (response.status === 401) {
                 alert('Unauthorized: Invalid backend validation token.');
                 setIsSyncing(false);
             } else {
-                throw new Error('Server starting sequence delay.');
+                throw new Error(`Server returned status: ${response.status}`);
             }
         } catch (error) {
             console.warn(
                 'Backend waking up or network dropped. Retrying sync in 10 seconds...',
                 error,
             );
-            setTimeout(handleManualSync, 10000);
-        } finally {
-            // Keep spinning for 5 seconds to show visual feedback before resetting
-            setTimeout(() => setIsSyncing(false), 5000);
+            // Only retry if it failed due to a crash, network error, or cold start (not 401 Unauthorized)
+            setTimeout(() => {
+                setIsSyncing(false); // Clear lock right before retrying
+                handleManualSync();
+            }, 10000);
         }
     };
 

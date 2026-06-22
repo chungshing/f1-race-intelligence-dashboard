@@ -1,7 +1,7 @@
 'use client';
 
 import AppLayout from '@/components/layout/AppLayout';
-import { TeamTable } from '@/components/TeamTable';
+import { TeamTable } from '@/components/table/TeamTable';
 import { useTeamStandings } from '@/hooks/useStandings';
 
 export default function ConstructorsPage() {

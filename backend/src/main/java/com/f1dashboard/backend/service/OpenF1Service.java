@@ -50,34 +50,17 @@ public class OpenF1Service {
     }
 
     public List<RaceWeekend> getCachedWeekends(int year) {
-        List<RaceWeekend> records = raceWeekendRepository.findByYear(year);
-        if (records.isEmpty()) {
-            log.info("No weekends found in database for year {}. Fetching live from OpenF1...", year);
-            List<RaceWeekend> liveWeekends = fetchRaceWeekends(year);
-            if (!liveWeekends.isEmpty()) {
-                raceWeekendRepository.saveAll(liveWeekends);
-            }
+        log.info("Validating race calendar for year {} with live data source...", year);
+        List<RaceWeekend> liveWeekends = fetchRaceWeekends(year);
+
+        if (!liveWeekends.isEmpty()) {
+            raceWeekendRepository.deleteAllInBatch();
+            raceWeekendRepository.saveAll(liveWeekends);
             return liveWeekends;
         }
-        return records;
-    }
 
-    public List<RaceResult> getCachedResults(Integer sessionKey) {
-        if (sessionKey != null) {
-            return raceResultRepository.findById(sessionKey)
-                    .map(List::of)
-                    .orElseGet(() -> {
-                        log.info("No result found in database for session {}. Fetching live...", sessionKey);
-                        return fetchRaceResults(sessionKey);
-                    });
-        }
-
-        List<RaceResult> records = raceResultRepository.findAll();
-        if (records.isEmpty()) {
-            log.info("No race results found in database. Fetching latest live from OpenF1...");
-            return fetchRaceResults(null);
-        }
-        return records;
+        log.warn("Live calendar fetch was empty. Falling back to local records.");
+        return raceWeekendRepository.findByYear(year);
     }
 
     @Transactional
@@ -164,13 +147,25 @@ public class OpenF1Service {
 
     public List<RaceWeekend> fetchRaceWeekends(int year) {
         try {
-            String url = openF1BaseUrl + "/sessions?year=" + year;
+            // 1. Fetch OpenF1 Sessions
+            String sessionUrl = openF1BaseUrl + "/sessions?year=" + year;
             delayBetweenRequests();
-            OpenF1SessionDto[] sessions = restTemplate.getForObject(url, OpenF1SessionDto[].class);
+            OpenF1SessionDto[] sessions = restTemplate.getForObject(sessionUrl, OpenF1SessionDto[].class);
 
             if (sessions == null || sessions.length == 0)
                 return List.of();
 
+            // 2. Fetch OpenF1 Meetings to extract visual images
+            String meetingUrl = openF1BaseUrl + "/meetings?year=" + year;
+            delayBetweenRequests();
+            OpenF1MeetingDto[] meetings = restTemplate.getForObject(meetingUrl, OpenF1MeetingDto[].class);
+
+            // Map meetings by meeting_key for O(1) instant lookup
+            Map<Integer, OpenF1MeetingDto> meetingMap = (meetings == null) ? Map.of()
+                    : Arrays.stream(meetings)
+                            .collect(Collectors.toMap(OpenF1MeetingDto::getMeeting_key, m -> m, (m1, m2) -> m1));
+
+            // 3. Group sessions by meeting key exactly as you did before
             Map<Integer, List<OpenF1SessionDto>> grouped = Arrays.stream(sessions)
                     .collect(Collectors.groupingBy(OpenF1SessionDto::getMeeting_key));
 
@@ -179,6 +174,12 @@ public class OpenF1Service {
                         List<OpenF1SessionDto> list = entry.getValue();
                         OpenF1SessionDto first = list.get(0);
 
+                        // Grab the visuals from our map using the meeting key
+                        OpenF1MeetingDto meetingDetails = meetingMap.get(entry.getKey());
+                        String circuitImg = (meetingDetails != null) ? meetingDetails.getCircuit_image() : null;
+                        String countryFlg = (meetingDetails != null) ? meetingDetails.getCountry_flag() : null;
+                        String circuitTyp = (meetingDetails != null) ? meetingDetails.getCircuit_type() : null;
+
                         List<RaceSession> mappedSessions = list.stream()
                                 .map(s -> new RaceSession(s.getSession_name(), s.getSession_type(), s.getDate_start(),
                                         s.getDate_end()))
@@ -186,11 +187,15 @@ public class OpenF1Service {
                                         Comparator.nullsLast(String::compareTo)))
                                 .toList();
 
+                        // Map down into our unified entity row
                         return new RaceWeekend(
                                 entry.getKey(),
                                 first.getCountry_name(),
                                 first.getCircuit_short_name(),
                                 year,
+                                circuitImg,
+                                countryFlg,
+                                circuitTyp,
                                 mappedSessions);
                     })
                     .sorted(Comparator.comparing(w -> w.getSessions().stream()
@@ -223,6 +228,7 @@ public class OpenF1Service {
 
             Integer activeKey = activeSession.getSession_key();
 
+            // 1. Fetch Classifications
             delayBetweenRequests();
             OpenF1SessionResultDto[] res = restTemplate.getForObject(
                     openF1BaseUrl + "/session_result?session_key=" + activeKey,
@@ -237,19 +243,47 @@ public class OpenF1Service {
                     .sorted(Comparator.comparing(DriverResult::getPosition, Comparator.nullsLast(Integer::compareTo)))
                     .collect(Collectors.toList());
 
+            // 2. Fetch and Attach Pit Stops Data
+            List<PitStop> pitStopsList = new ArrayList<>();
+            try {
+                delayBetweenRequests();
+                String pitUrl = openF1BaseUrl + "/pit?session_key=" + activeKey;
+                PitStop[] fetchedPits = restTemplate.getForObject(pitUrl, PitStop[].class);
+                if (fetchedPits != null) {
+                    pitStopsList = Arrays.asList(fetchedPits);
+                }
+            } catch (Exception e) {
+                log.warn("Pit stops data empty or unavailable for session key: {}", activeKey);
+            }
+
+            // 3. Fetch and Attach Stints Data
+            List<Stint> stintsList = new ArrayList<>();
+            try {
+                delayBetweenRequests();
+                String stintUrl = openF1BaseUrl + "/stints?session_key=" + activeKey;
+                Stint[] fetchedStints = restTemplate.getForObject(stintUrl, Stint[].class);
+                if (fetchedStints != null) {
+                    stintsList = Arrays.asList(fetchedStints);
+                }
+            } catch (Exception e) {
+                log.warn("Stints data empty or unavailable for session key: {}", activeKey);
+            }
+
+            // 4. Construct complete, enriched entity directly
             RaceResult result = new RaceResult(
                     activeSession.getMeeting_key(),
                     activeKey,
                     activeSession.getCountry_name(),
                     activeSession.getSession_name(),
-                    driverResults);
+                    driverResults,
+                    pitStopsList,
+                    stintsList);
 
             return List.of(result);
+
         } catch (Exception e) {
             log.error("Failed to fetch live race results for sessionKey: {}. Falling back to DB cache.", sessionKey, e);
 
-            // If we have a specific sessionKey, look it up in the DB so we don't return an
-            // empty list down the pipeline
             if (sessionKey != null) {
                 return raceResultRepository.findById(sessionKey)
                         .map(List::of)
@@ -354,10 +388,21 @@ public class OpenF1Service {
         if (cacheNeedsRefresh) {
             log.info("Cache updates detected. Upserting fresh matrices to database...");
 
-            // UPSERT STRATEGY: Save or update incoming rows without erasing old ones
-            raceResultRepository.saveAllAndFlush(liveResults);
+            // UPSERT STRATEGY: Update existing rows correctly by mapping arrays to old
+            // records
+            for (RaceResult live : liveResults) {
+                raceResultRepository.findById(live.getSessionKey()).ifPresent(local -> {
+                    // Retain lists across background updates
+                    if (live.getPitStops() == null || live.getPitStops().isEmpty()) {
+                        live.setPitStops(local.getPitStops());
+                    }
+                    if (live.getStints() == null || live.getStints().isEmpty()) {
+                        live.setStints(local.getStints());
+                    }
+                });
+            }
 
-            // Fetch fresh state to ensure return structure contains all records combined
+            raceResultRepository.saveAllAndFlush(liveResults);
             return raceResultRepository.findByMeetingKey(meetingKey);
         }
 
