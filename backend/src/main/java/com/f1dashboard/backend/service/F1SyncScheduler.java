@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Year;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -17,13 +18,16 @@ public class F1SyncScheduler {
     private final OpenF1Service openF1Service;
     private final DriverStandingRepository driverRepo;
     private final TeamStandingRepository teamRepo;
+    private final LapRepository lapRepo;
 
     public F1SyncScheduler(OpenF1Service openF1Service,
             DriverStandingRepository driverRepo,
-            TeamStandingRepository teamRepo) {
+            TeamStandingRepository teamRepo,
+            LapRepository lapRepo) {
         this.openF1Service = openF1Service;
         this.driverRepo = driverRepo;
         this.teamRepo = teamRepo;
+        this.lapRepo = lapRepo;
     }
 
     @Async
@@ -34,17 +38,17 @@ public class F1SyncScheduler {
         try {
             int currentYear = Year.now().getValue();
 
-            // 1. Sync Driver Standings (Overwrite stale data)
+            // 1. Sync Driver Standings
             List<DriverStanding> drivers = openF1Service.fetchDriverStandings();
             if (drivers != null && !drivers.isEmpty()) {
-                driverRepo.deleteAllInBatch(); 
+                driverRepo.deleteAllInBatch();
                 driverRepo.saveAll(drivers);
                 log.info("Successfully updated driver standings.");
             } else {
                 log.warn("Driver standings API returned empty. Retaining existing database records.");
             }
 
-            // 2. Sync Team Standings (Overwrite stale data)
+            // 2. Sync Team Standings
             List<TeamStanding> teams = openF1Service.fetchTeamStandings();
             if (teams != null && !teams.isEmpty()) {
                 teamRepo.deleteAllInBatch();
@@ -54,13 +58,40 @@ public class F1SyncScheduler {
                 log.warn("Team standings API returned empty. Retaining existing database records.");
             }
 
-            // 3. Sync Calendar via Service Cache (Internal save handling)
+            // 3. Sync Calendar via Service Cache
             List<RaceWeekend> weekends = openF1Service.getCachedWeekends(currentYear);
             log.info("Calendar validation complete. Total weekends tracked: {}", weekends.size());
 
-            // 4. Sync Weekend Session Results (Internal upsert handling)
+            // 4. Sync Weekend Session Results
             List<RaceResult> weekendResults = openF1Service.getCachedWeekendResults(null);
             log.info("Successfully synchronized {} session classifications.", weekendResults.size());
+
+            // 5. Sync Lap Telemetry ONLY for competitive sessions
+            if (weekendResults != null && !weekendResults.isEmpty()) {
+
+                List<Integer> currentSessionKeys = weekendResults.stream()
+                        .map(RaceResult::getSessionKey)
+                        .filter(Objects::nonNull)
+                        .toList();
+
+                if (!currentSessionKeys.isEmpty()) {
+                    log.info("Evicting old weekend telemetry data to preserve free Supabase limits...");
+                    lapRepo.deleteBySessionKeyNotIn(currentSessionKeys);
+                }
+
+                log.info("Starting fresh lap telemetry synchronization...");
+                for (RaceResult result : weekendResults) {
+                    String sessionName = result.getSessionName();
+
+                    if (sessionName != null && !sessionName.toLowerCase().contains("practice")) {
+                        if (result.getSessionKey() != null) {
+                            List<Lap> lapsSynced = openF1Service.getCachedSessionLaps(result.getSessionKey());
+                            log.info("Synced {} laps for {} (Key: {})", lapsSynced.size(), sessionName,
+                                    result.getSessionKey());
+                        }
+                    }
+                }
+            }
 
             log.info("F1 background database update complete.");
         } catch (Exception e) {

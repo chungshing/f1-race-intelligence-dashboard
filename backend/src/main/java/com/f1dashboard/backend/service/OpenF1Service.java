@@ -28,16 +28,20 @@ public class OpenF1Service {
     private final RaceResultRepository raceResultRepository;
     private final DriverStandingRepository driverRepo;
     private final TeamStandingRepository teamRepo;
+    private final LapRepository lapRepository;
 
     public OpenF1Service(RestTemplate restTemplate,
             RaceWeekendRepository raceWeekendRepository,
-            RaceResultRepository raceResultRepository, DriverStandingRepository driverRepo,
-            TeamStandingRepository teamRepo) {
+            RaceResultRepository raceResultRepository,
+            DriverStandingRepository driverRepo,
+            TeamStandingRepository teamRepo,
+            LapRepository lapRepository) {
         this.restTemplate = restTemplate;
         this.raceWeekendRepository = raceWeekendRepository;
         this.raceResultRepository = raceResultRepository;
         this.driverRepo = driverRepo;
         this.teamRepo = teamRepo;
+        this.lapRepository = lapRepository;
     }
 
     private void delayBetweenRequests() {
@@ -408,6 +412,65 @@ public class OpenF1Service {
 
         log.info("Cache validation check passed for active meeting key: {}", meetingKey);
         return localRecords;
+    }
+
+    @Transactional
+    public List<Lap> fetchSessionLapTelemetry(int sessionKey) {
+        try {
+            String url = openF1BaseUrl + "/laps?session_key=" + sessionKey;
+            log.info("Ingesting session telemetry payload from OpenF1: {}", url);
+
+            delayBetweenRequests();
+            OpenF1LapDto[] rawLaps = restTemplate.getForObject(url, OpenF1LapDto[].class);
+
+            if (rawLaps == null || rawLaps.length == 0) {
+                log.warn("Payload empty for session key: {}", sessionKey);
+                return List.of();
+            }
+
+            List<Lap> mappedLaps = Arrays.stream(rawLaps)
+                    .filter(Objects::nonNull)
+                    .map(dto -> new Lap(
+                            dto.getSession_key(),
+                            dto.getDriver_number(),
+                            dto.getLap_number(),
+                            dto.getMeeting_key(),
+                            dto.getDate_start() != null ? OffsetDateTime.parse(dto.getDate_start()) : null,
+                            dto.getDuration_sector_1(),
+                            dto.getDuration_sector_2(),
+                            dto.getDuration_sector_3(),
+                            dto.getLap_duration(),
+                            dto.getI1_speed(),
+                            dto.getI2_speed(),
+                            dto.getSt_speed(),
+                            dto.getIs_pit_out_lap() != null && dto.getIs_pit_out_lap(),
+                            dto.getSegments_sector_1(),
+                            dto.getSegments_sector_2(),
+                            dto.getSegments_sector_3()))
+                    .toList();
+
+            // Save everything into Supabase in a high-speed batch transaction
+            log.info("Successfully cached {} lap entries to Supabase for session {}", mappedLaps.size(), sessionKey);
+            return lapRepository.saveAll(mappedLaps);
+
+        } catch (RestClientException e) {
+            log.error("Failed to execute sync for session database rows: {}", sessionKey, e);
+            return List.of();
+        }
+    }
+
+    public List<Lap> getCachedSessionLaps(int sessionKey) {
+        // 1. Try to load from your Supabase cache layer first
+        List<Lap> localRecords = lapRepository.findByIdSessionKey(sessionKey);
+
+        if (!localRecords.isEmpty()) {
+            log.info("Cache hit: Loaded {} laps from Supabase for session {}", localRecords.size(), sessionKey);
+            return localRecords;
+        }
+
+        // 2. Cache miss: Fetch live from OpenF1, save to Supabase, and return
+        log.info("Cache miss: Syncing lap data from OpenF1 for session {}", sessionKey);
+        return fetchSessionLapTelemetry(sessionKey);
     }
 
     private DriverResult mapDriverResult(OpenF1SessionResultDto dto) {
