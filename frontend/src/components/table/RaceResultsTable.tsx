@@ -1,5 +1,7 @@
+'use client';
+
 import { DriverResult } from '@/types/results';
-import { Trophy, Timer } from 'lucide-react';
+import { Trophy, Timer, ListOrdered } from 'lucide-react';
 import { getPositionColor, TABLE_CONTAINER_CLASS, TABLE_THEAD_CLASS } from '@/utils/styles';
 
 interface Props {
@@ -66,6 +68,14 @@ export const RaceResultsTable = ({ classification, lookup, variant = 'default' }
 
     return (
         <div className={TABLE_CONTAINER_CLASS}>
+            {/* Synchronized Component Header */}
+            <div className='p-4 pl-5 border-b border-zinc-900 bg-zinc-900/20 flex items-center gap-2'>
+                <ListOrdered className='w-4 h-4 text-zinc-500' />
+                <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
+                    Official Classification
+                </h3>
+            </div>
+
             <table className='w-full text-left border-collapse'>
                 <thead>
                     <tr className={TABLE_THEAD_CLASS}>
