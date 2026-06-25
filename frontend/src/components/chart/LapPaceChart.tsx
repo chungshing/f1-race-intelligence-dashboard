@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
     LineChart,
     Line,
@@ -79,6 +79,20 @@ export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartPr
 
     const maxLap = chartData.length > 0 ? Math.max(...chartData.map((d) => d.lap || 0)) : 0;
 
+    const yDomain = useMemo(() => {
+        if (chartData.length === 0) return ['auto', 'auto'];
+
+        const allTimes = selectedDrivers.flatMap((num) =>
+            chartData.map((d) => d[String(num)] as number).filter(Boolean),
+        );
+        if (allTimes.length === 0) return ['auto', 'auto'];
+
+        const sorted = [...allTimes].sort((a, b) => a - b);
+        const median = sorted[Math.floor(sorted.length / 2)];
+
+        return [median - 5, median + 15] as [number, number];
+    }, [chartData, selectedDrivers]);
+
     if (loading || !isMounted) {
         return (
             <div className='text-zinc-500 text-xs py-20 text-center animate-pulse tracking-wider uppercase font-semibold'>
@@ -100,9 +114,31 @@ export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartPr
             <div className='p-5 flex flex-col gap-6 min-w-0'>
                 {/* 1. Top-aligned Compact Horizontal Driver List */}
                 <div className='w-full min-w-0'>
-                    <h4 className='text-[10px] font-bold text-zinc-500 tracking-widest uppercase mb-2.5'>
-                        Filter Drivers
-                    </h4>
+                    <div className='flex items-center justify-between mb-2.5'>
+                        <h4 className='text-[10px] font-bold text-zinc-500 tracking-widest uppercase mb-2.5'>
+                            Filter Drivers
+                        </h4>
+                        <div className='flex gap-3'>
+                            <button
+                                onClick={() =>
+                                    setSelectedDrivers(
+                                        driversList
+                                            .map((d) => Number(d.driverNumber || d.driver_number))
+                                            .filter(Boolean),
+                                    )
+                                }
+                                className='text-[10px] font-bold text-zinc-500 hover:text-zinc-300 uppercase tracking-wider transition-colors'
+                            >
+                                All
+                            </button>
+                            <button
+                                onClick={() => setSelectedDrivers([])}
+                                className='text-[10px] font-bold text-zinc-500 hover:text-zinc-300 uppercase tracking-wider transition-colors'
+                            >
+                                Clear
+                            </button>
+                        </div>
+                    </div>
                     <div className='flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1 scrollbar-none'>
                         {driversList.map((driver, idx) => {
                             const num = Number(driver.driverNumber || driver.driver_number);
@@ -184,7 +220,7 @@ export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartPr
                                     stroke='#71717a'
                                     fontSize={10}
                                     tickLine={false}
-                                    domain={['dataMin - 0.3', 'dataMax + 0.3']}
+                                    domain={yDomain}
                                     dx={-5}
                                 >
                                     <Label
