@@ -4,9 +4,9 @@ export interface SupabaseLapRow {
     lap_number: number;
     meeting_key: number;
     date_start: string | null;
-    duration_sector_1: number | null;
-    duration_sector_2: number | null;
-    duration_sector_3: number | null;
+    duration_sector1: number | null; 
+    duration_sector2: number | null;
+    duration_sector3: number | null;
     lap_duration: number | null;
     i1_speed: number | null;
     i2_speed: number | null;

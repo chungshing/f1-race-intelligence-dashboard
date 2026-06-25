@@ -11,6 +11,7 @@ import { SectorSpeedTable } from '@/components/table/SectorSpeedTable';
 import { PaceConsistencyCard } from '@/components/chart/PaceConsistencyCard';
 import { LapHeatmapGrid } from '@/components/chart/LapHeatmapGrid';
 import AppLayout from '@/components/layout/AppLayout';
+import { SectorDurationTable } from '@/components/table/SectorDurationTable';
 
 const parseJsonField = <T,>(field: string | T[] | undefined): T[] => {
     if (!field) return [];
@@ -30,9 +31,9 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
 
     const [results, setResults] = useState<RaceResult[]>([]);
     const [activeSessionKey, setActiveSessionKey] = useState<number | null>(null);
-    const [activeTab, setActiveTab] = useState<'classification' | 'strategy' | 'telemetry'>(
-        'classification',
-    );
+    const [activeTab, setActiveTab] = useState<
+        'classification' | 'strategy' | 'telemetry' | 'performance'
+    >('classification');
 
     const [prevMeetingKey, setPrevMeetingKey] = useState<string>(meetingkey);
     const [loading, setLoading] = useState(true);
@@ -148,23 +149,27 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
 
                 {/* View State Navigation Tabs */}
                 <div className='flex space-x-6 border-b border-zinc-800/80 text-xs font-bold uppercase tracking-wider pb-px'>
-                    {(['classification', 'strategy', 'telemetry'] as const).map((tab) => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={`pb-3 transition-colors ${
-                                activeTab === tab
-                                    ? 'text-blue-500 border-b-2 border-blue-500 font-black'
-                                    : 'text-zinc-400 hover:text-zinc-200'
-                            }`}
-                        >
-                            {tab === 'classification'
-                                ? 'Classification'
-                                : tab === 'strategy'
-                                  ? 'Race Strategy'
-                                  : 'Lap Telemetry'}
-                        </button>
-                    ))}
+                    {(['classification', 'strategy', 'telemetry', 'performance'] as const).map(
+                        (tab) => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`pb-3 transition-colors ${
+                                    activeTab === tab
+                                        ? 'text-blue-500 border-b-2 border-blue-500 font-black'
+                                        : 'text-zinc-400 hover:text-zinc-200'
+                                }`}
+                            >
+                                {tab === 'classification'
+                                    ? 'Classification'
+                                    : tab === 'strategy'
+                                      ? 'Race Strategy'
+                                      : tab === 'telemetry'
+                                        ? 'Lap Telemetry'
+                                        : 'Performance'}
+                            </button>
+                        ),
+                    )}
                 </div>
 
                 {/* Render Selection Context */}
@@ -192,6 +197,15 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                     lookup={driverLookup}
                                 />
                                 <LapPaceChart
+                                    sessionKey={activeRace.sessionKey}
+                                    driversList={activeRace.classification}
+                                    lookup={driverLookup}
+                                />
+                            </div>
+                        )}
+                        {activeTab === 'performance' && (
+                            <div className='space-y-6'>
+                                <SectorDurationTable
                                     sessionKey={activeRace.sessionKey}
                                     driversList={activeRace.classification}
                                     lookup={driverLookup}
