@@ -4,11 +4,12 @@ import { useEffect, useState, use, useMemo } from 'react';
 import { getRaceResults } from '@/lib/app';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
 import { RaceResultsTable } from '@/components/table/RaceResultsTable';
-import { RaceResult, SupabaseRaceResultRow } from '@/types/results';
+import { RaceResult, SupabaseRaceResultRow, DriverResult } from '@/types/results';
 import { RaceStrategyTable } from '@/components/table/RaceStrategyTable';
 import { LapPaceChart } from '@/components/chart/LapPaceChart';
 import { SectorSpeedTable } from '@/components/table/SectorSpeedTable';
 import { PaceConsistencyCard } from '@/components/chart/PaceConsistencyCard';
+import { LapHeatmapGrid } from '@/components/chart/LapHeatmapGrid';
 import AppLayout from '@/components/layout/AppLayout';
 
 const parseJsonField = <T,>(field: string | T[] | undefined): T[] => {
@@ -53,7 +54,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                 meetingKey: r.meeting_key,
                 country: r.country,
                 sessionName: r.session_name,
-                classification: parseJsonField(r.classification_json),
+                classification: parseJsonField<DriverResult>(r.classification_json),
                 pitStops: parseJsonField(r.pit_stops_json),
                 stints: parseJsonField(r.stints_json),
             }));
@@ -147,36 +148,23 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
 
                 {/* View State Navigation Tabs */}
                 <div className='flex space-x-6 border-b border-zinc-800/80 text-xs font-bold uppercase tracking-wider pb-px'>
-                    <button
-                        onClick={() => setActiveTab('classification')}
-                        className={`pb-3 transition-colors ${
-                            activeTab === 'classification'
-                                ? 'text-blue-500 border-b-2 border-blue-500 font-black'
-                                : 'text-zinc-400 hover:text-zinc-200'
-                        }`}
-                    >
-                        Classification
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('strategy')}
-                        className={`pb-3 transition-colors ${
-                            activeTab === 'strategy'
-                                ? 'text-blue-500 border-b-2 border-blue-500 font-black'
-                                : 'text-zinc-400 hover:text-zinc-200'
-                        }`}
-                    >
-                        Race Strategy
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('telemetry')}
-                        className={`pb-3 transition-colors ${
-                            activeTab === 'telemetry'
-                                ? 'text-blue-500 border-b-2 border-blue-500 font-black'
-                                : 'text-zinc-400 hover:text-zinc-200'
-                        }`}
-                    >
-                        Lap Telemetry
-                    </button>
+                    {(['classification', 'strategy', 'telemetry'] as const).map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={`pb-3 transition-colors ${
+                                activeTab === tab
+                                    ? 'text-blue-500 border-b-2 border-blue-500 font-black'
+                                    : 'text-zinc-400 hover:text-zinc-200'
+                            }`}
+                        >
+                            {tab === 'classification'
+                                ? 'Classification'
+                                : tab === 'strategy'
+                                  ? 'Race Strategy'
+                                  : 'Lap Telemetry'}
+                        </button>
+                    ))}
                 </div>
 
                 {/* Render Selection Context */}
@@ -198,7 +186,11 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                         )}
                         {activeTab === 'telemetry' && (
                             <div className='space-y-6'>
-                                {/* Direct link to real, parsed chart visual data */}
+                                <LapHeatmapGrid
+                                    sessionKey={activeRace.sessionKey}
+                                    driversList={activeRace.classification}
+                                    lookup={driverLookup}
+                                />
                                 <LapPaceChart
                                     sessionKey={activeRace.sessionKey}
                                     driversList={activeRace.classification}
