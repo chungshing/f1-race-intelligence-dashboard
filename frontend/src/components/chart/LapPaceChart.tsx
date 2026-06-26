@@ -11,7 +11,8 @@ import {
     ResponsiveContainer,
     Label,
 } from 'recharts';
-import { getSessionChartData } from '@/lib/app';
+import { getLapsBySession } from '@/lib/app';
+import { buildSessionChartData } from '@/utils/performace';
 import { ChartLapData } from '@/types/laps';
 import { Activity } from 'lucide-react';
 import { TABLE_CONTAINER_CLASS } from '@/utils/styles';
@@ -47,17 +48,10 @@ export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartPr
             if (active) setIsMounted(true);
         }, 0);
 
-        getSessionChartData(sessionKey)
-            .then((data) => {
+        getLapsBySession(sessionKey)
+            .then((raw) => {
                 if (!active) return;
-                setChartData(data);
-
-                if (driversList && driversList.length > 1) {
-                    setSelectedDrivers([
-                        Number(driversList[0].driverNumber || driversList[0].driver_number),
-                        Number(driversList[1].driverNumber || driversList[1].driver_number),
-                    ]);
-                }
+                setChartData(buildSessionChartData(raw));
                 setLoading(false);
             })
             .catch((err) => {
@@ -69,7 +63,19 @@ export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartPr
             active = false;
             clearTimeout(timeoutId);
         };
-    }, [sessionKey, driversList]);
+    }, [sessionKey]);
+
+    // Effect 2: set initial driver selection when drivers load
+    useEffect(() => {
+        if (driversList && driversList.length > 1) {
+            queueMicrotask(() => {
+                setSelectedDrivers([
+                    Number(driversList[0].driverNumber || driversList[0].driver_number),
+                    Number(driversList[1].driverNumber || driversList[1].driver_number),
+                ]);
+            });
+        }
+    }, [driversList]);
 
     const toggleDriver = (driverNum: number) => {
         setSelectedDrivers((prev) =>

@@ -44,8 +44,6 @@ export default function Home() {
             .toSorted((a, b) => b.raceDate!.getTime() - a.raceDate!.getTime());
     }, [races, mountTimestamp]);
 
-    const sortedRacesKey = JSON.stringify(sortedRaces.map((r) => r.meetingKey));
-
     // Silent-wake execution on component mount
     useEffect(() => {
         // Fires a safe root ping to wake Render from cold-sleep instantly
@@ -91,44 +89,33 @@ export default function Home() {
         return () => {
             isMounted = false;
         };
-    }, [sortedRaces, sortedRacesKey]);
+    }, [sortedRaces]);
 
     const handleManualSync = async () => {
         if (isSyncing) return;
         setIsSyncing(true);
 
-        const SECRET_TOKEN = process.env.NEXT_PUBLIC_CRON_SECRET_TOKEN || 'local-dev-fallback';
-        const url = 'https://f1-race-intelligence-dashboard.onrender.com/api/v1/automation/trigger';
-
         try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ token: SECRET_TOKEN }),
-            });
+            const response = await fetch('/api/sync', { method: 'POST' });
 
             if (response.status === 202) {
                 alert('Pipeline synchronization started successfully.');
-                // Keep spinning for 5 seconds to provide visual feedback for a successful trigger
                 setTimeout(() => setIsSyncing(false), 5000);
             } else if (response.status === 401) {
                 alert('Unauthorized: Invalid backend validation token.');
+                setIsSyncing(false);
+            } else if (response.status === 404) {
+                alert('Sync endpoint not found. Check your API route.');
                 setIsSyncing(false);
             } else {
                 throw new Error(`Server returned status: ${response.status}`);
             }
         } catch (error) {
-            console.warn(
-                'Backend waking up or network dropped. Retrying sync in 10 seconds...',
-                error,
-            );
-            // Only retry if it failed due to a crash, network error, or cold start (not 401 Unauthorized)
+            console.warn('Backend unreachable, retrying in 60s...', error);
             setTimeout(() => {
-                setIsSyncing(false); // Clear lock right before retrying
+                setIsSyncing(false);
                 handleManualSync();
-            }, 10000);
+            }, 60000);
         }
     };
 

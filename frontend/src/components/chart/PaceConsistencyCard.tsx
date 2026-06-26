@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getPaceConsistency, PaceConsistencyRow } from '@/lib/app';
+import { getLapsBySession } from '@/lib/app';
+import { buildPaceConsistency, PaceConsistencyRow } from '@/utils/performace';
 
 interface PaceConsistencyCardProps {
     sessionKey: number;
-    // Synced with your precise lookup configuration shape structure
     lookup: Record<number, { name: string; team: string; teamColor: string }>;
 }
 
@@ -14,11 +14,25 @@ export function PaceConsistencyCard({ sessionKey, lookup }: PaceConsistencyCardP
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getPaceConsistency(sessionKey).then((data) => {
-            const sorted = data.sort((a, b) => a.lapVariance - b.lapVariance);
-            setConsistency(sorted);
-            setLoading(false);
-        });
+        if (!sessionKey) return;
+        let isMounted = true;
+
+        getLapsBySession(sessionKey)
+            .then((raw) => {
+                if (!isMounted) return;
+                setConsistency(
+                    buildPaceConsistency(raw).sort((a, b) => a.lapVariance - b.lapVariance),
+                );
+                setLoading(false);
+            })
+            .catch(console.error)
+            .finally(() => {
+                if (isMounted) setLoading(false);
+            });
+
+        return () => {
+            isMounted = false;
+        };
     }, [sessionKey]);
 
     const formatLapTime = (secs: number) => {
@@ -27,7 +41,12 @@ export function PaceConsistencyCard({ sessionKey, lookup }: PaceConsistencyCardP
         return mins > 0 ? `${mins}:${Number(rem) < 10 ? '0' : ''}${rem}` : `${rem}s`;
     };
 
-    if (loading || consistency.length === 0) return null;
+    if (loading)
+        return (
+            <div className='text-center py-6 text-zinc-600 text-[10px] font-bold tracking-wider uppercase animate-pulse'>
+                Loading...
+            </div>
+        );
 
     return (
         <div className='bg-zinc-950/40 border border-zinc-800/80 rounded-xl p-5 backdrop-blur-md space-y-4'>
