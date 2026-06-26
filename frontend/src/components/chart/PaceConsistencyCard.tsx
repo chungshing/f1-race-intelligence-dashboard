@@ -74,7 +74,7 @@ export function PaceConsistencyCard({ sessionKey, lookup }: PaceConsistencyCardP
                         >
                             <div className='flex items-center gap-3 min-w-0'>
                                 <span className='font-mono font-bold text-[10px] text-zinc-500 w-4 shrink-0'>
-                                    #{index + 1}
+                                    {index + 1}
                                 </span>
                                 <div
                                     className='w-1 h-4 rounded-full shrink-0'

@@ -65,7 +65,7 @@ export function SectorDurationTable({ sessionKey, driversList, lookup }: Props) 
                 </span>
             </div>
 
-            <div className='overflow-x-auto'>
+            <div className='overflow-x-auto overflow-y-auto max-h-83.5 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent'>
                 {loading ? (
                     <div className='text-center py-6 text-zinc-600 text-[10px] font-bold tracking-wider uppercase animate-pulse'>
                         Calculating Sector Bests...

@@ -1,4 +1,5 @@
 import { ChartLapData, SupabaseLapRow } from '@/types/laps';
+import { PitStop } from '@/types/results';
 
 export interface SectorSpeedLeader {
     driverNumber: number;
@@ -11,6 +12,13 @@ export interface PaceConsistencyRow {
     driverNumber: number;
     averageLapTime: number;
     lapVariance: number;
+}
+
+export interface DriverPitSummary {
+    driverNumber: number;
+    bestStop: number;
+    avgStop: number;
+    totalStops: number;
 }
 
 export function buildSessionChartData(rawLaps: SupabaseLapRow[]): ChartLapData[] {
@@ -72,4 +80,23 @@ export function buildPaceConsistency(rawLaps: SupabaseLapRow[]): PaceConsistency
 
         return { driverNumber, averageLapTime: avg, lapVariance: stdDev };
     });
+}
+
+export function buildPitStopLeaderboard(pitStops: PitStop[]): DriverPitSummary[] {
+    const map: Record<number, number[]> = {};
+
+    for (const pit of pitStops) {
+        if (!pit.stop_duration) continue;
+        if (!map[pit.driver_number]) map[pit.driver_number] = [];
+        map[pit.driver_number].push(pit.stop_duration);
+    }
+
+    return Object.entries(map)
+        .map(([driverNumber, stops]) => ({
+            driverNumber: Number(driverNumber),
+            bestStop: Math.min(...stops),
+            avgStop: stops.reduce((s, t) => s + t, 0) / stops.length,
+            totalStops: stops.length,
+        }))
+        .sort((a, b) => a.bestStop - b.bestStop);
 }

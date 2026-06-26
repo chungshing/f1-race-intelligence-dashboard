@@ -12,6 +12,7 @@ import { PaceConsistencyCard } from '@/components/chart/PaceConsistencyCard';
 import { LapHeatmapGrid } from '@/components/chart/LapHeatmapGrid';
 import AppLayout from '@/components/layout/AppLayout';
 import { SectorDurationTable } from '@/components/table/SectorDurationTable';
+import { PitStopLeaderboard } from '@/components/chart/PitStopLeaderboard';
 
 const parseJsonField = <T,>(field: string | T[] | undefined): T[] => {
     if (!field) return [];
@@ -205,11 +206,17 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                         )}
                         {activeTab === 'performance' && (
                             <div className='space-y-6'>
-                                <SectorDurationTable
-                                    sessionKey={activeRace.sessionKey}
-                                    driversList={activeRace.classification}
-                                    lookup={driverLookup}
-                                />
+                                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                                    <PitStopLeaderboard
+                                        pitStops={activeRace.pitStops}
+                                        lookup={driverLookup}
+                                    />
+                                    <SectorDurationTable
+                                        sessionKey={activeRace.sessionKey}
+                                        driversList={activeRace.classification}
+                                        lookup={driverLookup}
+                                    />
+                                </div>
                                 <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                                     <SectorSpeedTable
                                         sessionKey={activeRace.sessionKey}
