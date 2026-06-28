@@ -9,10 +9,11 @@ import { useMemo, useState, useEffect } from 'react';
 import { useRaceWeekends } from '@/hooks/useRaceWeekends';
 import { getNextRaceWeekend } from '@/utils/race';
 import { buildRecentForm } from '@/utils/form';
-import { getRaceResults } from '@/lib/app';
+import { getRaceResults, getLapsBySession } from '@/lib/app';
 import { RaceResultsTable } from '@/components/table/RaceResultsTable';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
 import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
+import { RaceAnalysisBanner } from '@/components/dashboard/RaceAnalysisBanner';
 
 type TabType = 'drivers' | 'constructors';
 
@@ -21,18 +22,22 @@ export default function Home() {
     const { data: teams = [], loading: teamLoading } = useTeamStandings();
     const { data: races = [] } = useRaceWeekends();
     const [activeTab, setActiveTab] = useState<TabType>('drivers');
+    const driverLookup = useDriverLookup();
 
     const [allRaceRows, setAllRaceRows] = useState<SupabaseRaceResultRow[]>([]);
     const [isSyncing, setIsSyncing] = useState(false);
-
-    const nextRace = useMemo(() => getNextRaceWeekend(races), [races]);
-
-    const driverLookup = useDriverLookup();
     const [mountTimestamp] = useState(() => Date.now());
     const [resultsState, setResultsState] = useState<{
         data: DriverResult[];
         loading: boolean;
     }>({ data: [], loading: true });
+    const [latestAnalysis, setLatestAnalysis] = useState<{
+        meetingKey: number;
+        country: string;
+        sessionName: string;
+    } | null>(null);
+
+    const nextRace = useMemo(() => getNextRaceWeekend(races), [races]);
 
     const sortedRaces = useMemo(() => {
         return races
@@ -45,6 +50,25 @@ export default function Home() {
             .toSorted((a, b) => b.raceDate!.getTime() - a.raceDate!.getTime());
     }, [races, mountTimestamp]);
 
+    // Wake Render from cold sleep
+    useEffect(() => {
+        fetch('https://f1-race-intelligence-dashboard.onrender.com/api/health').catch(() => null);
+    }, []);
+
+    // Fetch all race rows once
+    useEffect(() => {
+        let isMounted = true;
+        getRaceResults()
+            .then((data) => {
+                if (isMounted) setAllRaceRows(data);
+            })
+            .catch(console.error);
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    // Find latest completed race classification
     useEffect(() => {
         let isMounted = true;
         if (!sortedRaces.length) return;
@@ -79,21 +103,37 @@ export default function Home() {
         };
     }, [sortedRaces]);
 
+    // Check if latest race has lap data for banner — reuses allRaceRows, no extra fetch
     useEffect(() => {
-        fetch('https://f1-race-intelligence-dashboard.onrender.com/api/health').catch(() => null);
-    }, []);
-
-    useEffect(() => {
+        if (!allRaceRows.length || !sortedRaces.length) return;
         let isMounted = true;
-        getRaceResults()
-            .then((data) => {
-                if (isMounted) setAllRaceRows(data);
-            })
-            .catch(console.error);
+
+        const checkLatestLapData = async () => {
+            for (const race of sortedRaces) {
+                const raceSession = allRaceRows.find(
+                    (r) => r.meeting_key === race.meetingKey && r.session_name === 'Race',
+                );
+                if (!raceSession) continue;
+
+                const laps = await getLapsBySession(raceSession.session_key);
+                if (!isMounted) return;
+
+                if (laps.length > 0) {
+                    setLatestAnalysis({
+                        meetingKey: race.meetingKey,
+                        country: race.country,
+                        sessionName: 'Grand Prix',
+                    });
+                    return;
+                }
+            }
+        };
+
+        checkLatestLapData().catch(console.error);
         return () => {
             isMounted = false;
         };
-    }, []);
+    }, [sortedRaces, allRaceRows]);
 
     const formMap = useMemo(() => {
         const rows = buildRecentForm(
@@ -168,6 +208,7 @@ export default function Home() {
     return (
         <AppLayout>
             <div className='space-y-5 text-zinc-100'>
+                {/* Header */}
                 <div className='mb-5 flex items-center justify-between border-b border-zinc-800/40 pb-4'>
                     <div>
                         <h1 className='text-2xl font-bold text-zinc-100'>Command Hub</h1>
@@ -228,6 +269,16 @@ export default function Home() {
                     </button>
                 </div>
 
+                {/* Analysis Banner */}
+                {latestAnalysis && (
+                    <RaceAnalysisBanner
+                        meetingKey={latestAnalysis.meetingKey}
+                        countryName={latestAnalysis.country}
+                        sessionName={latestAnalysis.sessionName}
+                    />
+                )}
+
+                {/* Stats Cards */}
                 <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
                     {statsCards.map((card, i) => (
                         <div
@@ -261,7 +312,9 @@ export default function Home() {
                     ))}
                 </div>
 
+                {/* Main Grid */}
                 <div className='grid grid-cols-1 lg:grid-cols-3 gap-5 items-start'>
+                    {/* Left: Standings */}
                     <div className='lg:col-span-2 space-y-4 bg-zinc-900/20 border border-zinc-800/40 rounded-xl p-4 backdrop-blur-xs'>
                         <div className='flex items-center justify-between border-b border-zinc-800/60 pb-3 gap-4'>
                             <div className='flex bg-zinc-950 p-1 rounded-lg border border-zinc-800 w-full max-w-60'>
@@ -294,18 +347,19 @@ export default function Home() {
                                 ) : (
                                     <DriverTable
                                         standings={standings}
-                                        limit={7}
+                                        limit={10}
                                         formMap={formMap}
                                     />
                                 )
                             ) : teamLoading ? (
                                 <div className='h-96 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
                             ) : (
-                                <TeamTable standings={teams} limit={7} />
+                                <TeamTable standings={teams} />
                             )}
                         </div>
                     </div>
 
+                    {/* Right: Race Weekend + Latest Results */}
                     <div className='lg:col-span-1 lg:sticky lg:top-6 space-y-5'>
                         <div className='space-y-2'>
                             <h3 className='text-[10px] font-bold uppercase tracking-widest text-zinc-400 px-1'>
@@ -318,7 +372,6 @@ export default function Home() {
                             )}
                         </div>
 
-                        {/* Latest Race Results — inside the same column */}
                         <div className='space-y-2'>
                             <div className='flex items-center justify-between px-1'>
                                 <h3 className='text-[10px] font-bold uppercase tracking-widest text-zinc-400'>
