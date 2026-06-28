@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, use, useMemo } from 'react';
-import { getRaceResults } from '@/lib/app';
+import { getRaceResults, getLapsBySession } from '@/lib/app';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
 import { RaceResultsTable } from '@/components/table/RaceResultsTable';
 import { RaceResult, SupabaseRaceResultRow, DriverResult } from '@/types/results';
@@ -13,6 +13,15 @@ import { LapHeatmapGrid } from '@/components/chart/LapHeatmapGrid';
 import AppLayout from '@/components/layout/AppLayout';
 import { SectorDurationTable } from '@/components/table/SectorDurationTable';
 import { PitStopLeaderboard } from '@/components/chart/PitStopLeaderboard';
+
+type ActiveTab = 'classification' | 'strategy' | 'telemetry' | 'performance';
+
+const TABS = [
+    { key: 'classification' as const, label: 'Classification', requiresLaps: false },
+    { key: 'strategy' as const, label: 'Race Strategy', requiresLaps: false },
+    { key: 'telemetry' as const, label: 'Lap Telemetry', requiresLaps: true },
+    { key: 'performance' as const, label: 'Performance', requiresLaps: true },
+];
 
 const parseJsonField = <T,>(field: string | T[] | undefined): T[] => {
     if (!field) return [];
@@ -32,10 +41,8 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
 
     const [results, setResults] = useState<RaceResult[]>([]);
     const [activeSessionKey, setActiveSessionKey] = useState<number | null>(null);
-    const [activeTab, setActiveTab] = useState<
-        'classification' | 'strategy' | 'telemetry' | 'performance'
-    >('classification');
-
+    const [activeTab, setActiveTab] = useState<ActiveTab>('classification');
+    const [hasLapData, setHasLapData] = useState(false);
     const [prevMeetingKey, setPrevMeetingKey] = useState<string>(meetingkey);
     const [loading, setLoading] = useState(true);
 
@@ -74,9 +81,25 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
         };
     }, [meetingkey]);
 
+    // Reset tab and check lap data when session changes
+    useEffect(() => {
+        if (!activeSessionKey) return;
+
+        queueMicrotask(() => {
+            setActiveTab('classification');
+            setHasLapData(false);
+        });
+
+        getLapsBySession(activeSessionKey)
+            .then((laps) => setHasLapData(laps.length > 0))
+            .catch(() => setHasLapData(false));
+    }, [activeSessionKey]);
+
     const activeRace = useMemo(() => {
         return results.find((r) => r.sessionKey === activeSessionKey);
     }, [results, activeSessionKey]);
+
+    const visibleTabs = TABS.filter((tab) => !tab.requiresLaps || hasLapData);
 
     const countryName = results[0]?.country || 'Race Weekend';
 
@@ -150,27 +173,19 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
 
                 {/* View State Navigation Tabs */}
                 <div className='flex space-x-6 border-b border-zinc-800/80 text-xs font-bold uppercase tracking-wider pb-px'>
-                    {(['classification', 'strategy', 'telemetry', 'performance'] as const).map(
-                        (tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                className={`pb-3 transition-colors ${
-                                    activeTab === tab
-                                        ? 'text-blue-500 border-b-2 border-blue-500 font-black'
-                                        : 'text-zinc-400 hover:text-zinc-200'
-                                }`}
-                            >
-                                {tab === 'classification'
-                                    ? 'Classification'
-                                    : tab === 'strategy'
-                                      ? 'Race Strategy'
-                                      : tab === 'telemetry'
-                                        ? 'Lap Telemetry'
-                                        : 'Performance'}
-                            </button>
-                        ),
-                    )}
+                    {visibleTabs.map((tab) => (
+                        <button
+                            key={tab.key}
+                            onClick={() => setActiveTab(tab.key)}
+                            className={`pb-3 transition-colors ${
+                                activeTab === tab.key
+                                    ? 'text-blue-500 border-b-2 border-blue-500 font-black'
+                                    : 'text-zinc-400 hover:text-zinc-200'
+                            }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
                 </div>
 
                 {/* Render Selection Context */}
@@ -180,6 +195,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                             <RaceResultsTable
                                 classification={activeRace.classification}
                                 lookup={driverLookup}
+                                sessionName={activeRace.sessionName}
                             />
                         )}
                         {activeTab === 'strategy' && (
