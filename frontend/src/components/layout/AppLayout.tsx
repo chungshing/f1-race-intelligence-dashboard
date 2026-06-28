@@ -1,4 +1,5 @@
 import Topbar from '@/components/layout/Topbar';
+import Footer from '@/components/layout/Footer';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -8,6 +9,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className='flex-1 min-w-0 bg-linear-to-b from-zinc-950 via-zinc-900/20 to-zinc-950'>
                 <div className='p-6 md:p-10 max-w-7xl w-full mx-auto'>{children}</div>
             </div>
+            
+            <Footer />
         </main>
     );
 }
