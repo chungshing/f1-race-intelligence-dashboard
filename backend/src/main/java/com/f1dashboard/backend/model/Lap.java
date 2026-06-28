@@ -16,7 +16,7 @@ public class Lap {
     @EmbeddedId
     private LapId id;
 
-    private int meetingKey;
+    private Integer meetingKey;
     private OffsetDateTime dateStart;
 
     private Double durationSector1;

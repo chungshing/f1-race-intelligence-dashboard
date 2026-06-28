@@ -12,7 +12,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.Year;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -67,7 +66,6 @@ public class OpenF1Service {
         return raceWeekendRepository.findByYear(year);
     }
 
-    @Transactional
     public List<DriverStanding> fetchDriverStandings() {
         try {
             String championshipUrl = openF1BaseUrl + "/championship_drivers?session_key=latest";
@@ -117,7 +115,6 @@ public class OpenF1Service {
         }
     }
 
-    @Transactional
     public List<TeamStanding> fetchTeamStandings() {
         try {
             String url = openF1BaseUrl + "/championship_teams?session_key=latest";
@@ -298,72 +295,59 @@ public class OpenF1Service {
     }
 
     @Transactional
-    public List<RaceResult> fetchWeekendSessionResults(Integer meetingKey) {
-        try {
-            String sessionsUrl = openF1BaseUrl + "/sessions";
-            if (meetingKey == null) {
-                sessionsUrl += "?session_key=latest";
-            } else {
-                sessionsUrl += "?meeting_key=" + meetingKey;
-            }
+public List<RaceResult> fetchWeekendSessionResults(int meetingKey) {
+    try {
+        String sessionsUrl = openF1BaseUrl + "/sessions?meeting_key=" + meetingKey;
 
-            delayBetweenRequests();
-            OpenF1SessionDto[] weekendSessions = restTemplate.getForObject(sessionsUrl, OpenF1SessionDto[].class);
+        delayBetweenRequests();
+        OpenF1SessionDto[] weekendSessions = restTemplate.getForObject(sessionsUrl, OpenF1SessionDto[].class);
 
-            if (weekendSessions == null || weekendSessions.length == 0)
-                return List.of();
-
-            Integer targetMeetingKey = (meetingKey != null) ? meetingKey : weekendSessions[0].getMeeting_key();
-
-            if (meetingKey == null) {
-                delayBetweenRequests();
-                weekendSessions = restTemplate.getForObject(
-                        openF1BaseUrl + "/sessions?meeting_key=" + targetMeetingKey,
-                        OpenF1SessionDto[].class);
-            }
-
-            if (weekendSessions == null)
-                return List.of();
-
-            List<RaceResult> allWeekendResults = new ArrayList<>();
-            Instant now = Instant.now();
-
-            List<OpenF1SessionDto> completedSessions = Arrays.stream(weekendSessions)
-                    .filter(s -> s.getDate_start() != null && s.getSession_key() != null)
-                    .filter(s -> {
-                        Instant sessionStart = OffsetDateTime.parse(s.getDate_start()).toInstant();
-                        return sessionStart.isBefore(now);
-                    })
-                    .sorted(Comparator.comparing(OpenF1SessionDto::getDate_start))
-                    .toList();
-
-            for (OpenF1SessionDto session : completedSessions) {
-                log.info("Fetching classification results for completed session: {} (Key: {})",
-                        session.getSession_name(), session.getSession_key());
-
-                List<RaceResult> sessionResult = fetchRaceResults(session.getSession_key());
-                if (!sessionResult.isEmpty()) {
-                    allWeekendResults.addAll(sessionResult);
-                }
-            }
-
-            // FILTERING LAYER: Deduplicate by session_key before returning to cache
-            // coordinator
-            return allWeekendResults.stream()
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toMap(
-                            RaceResult::getSessionKey, // Uses the proper camelCase getter
-                            r -> r,
-                            (existing, replacement) -> existing))
-                    .values()
-                    .stream()
-                    .toList();
-
-        } catch (Exception e) {
-            log.error("Failed to compile weekend session results for meeting key: {}", meetingKey, e);
+        if (weekendSessions == null || weekendSessions.length == 0)
             return List.of();
+
+        List<RaceResult> allWeekendResults = new ArrayList<>();
+        Instant now = Instant.now();
+
+        List<OpenF1SessionDto> completedSessions = Arrays.stream(weekendSessions)
+                .filter(s -> s.getDate_start() != null && s.getSession_key() != null)
+                .filter(s -> {
+                    Instant sessionStart = OffsetDateTime.parse(s.getDate_start()).toInstant();
+                    return sessionStart.isBefore(now);
+                })
+                .sorted(Comparator.comparing(OpenF1SessionDto::getDate_start))
+                .toList();
+
+        for (OpenF1SessionDto session : completedSessions) {
+            log.info("Fetching classification results for completed session: {} (Key: {})",
+                    session.getSession_name(), session.getSession_key());
+
+            long start = System.currentTimeMillis();
+            List<RaceResult> sessionResult = fetchRaceResults(session.getSession_key());
+            log.info("Session {} (Key: {}) fetch took {}ms",
+                    session.getSession_name(), session.getSession_key(),
+                    System.currentTimeMillis() - start);
+
+            if (!sessionResult.isEmpty()) {
+                allWeekendResults.addAll(sessionResult);
+            }
         }
+
+        // Deduplicate by session_key before returning
+        return allWeekendResults.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(
+                        RaceResult::getSessionKey,
+                        r -> r,
+                        (existing, replacement) -> existing))
+                .values()
+                .stream()
+                .toList();
+
+    } catch (Exception e) {
+        log.error("Failed to compile weekend session results for meeting key: {}", meetingKey, e);
+        return List.of();
     }
+}
 
     @Transactional
     public List<RaceResult> getCachedWeekendResults(Integer meetingKey) {
@@ -387,7 +371,9 @@ public class OpenF1Service {
         }
 
         // 3. Check for structural updates OR content changes
-        boolean cacheNeedsRefresh = localRecords.size() != liveResults.size() || !localRecords.equals(liveResults);
+        Set<Integer> localKeys = localRecords.stream().map(RaceResult::getSessionKey).collect(Collectors.toSet());
+        Set<Integer> liveKeys = liveResults.stream().map(RaceResult::getSessionKey).collect(Collectors.toSet());
+        boolean cacheNeedsRefresh = !localKeys.equals(liveKeys);
 
         if (cacheNeedsRefresh) {
             log.info("Cache updates detected. Upserting fresh matrices to database...");
@@ -481,6 +467,9 @@ public class OpenF1Service {
         String latestGap = "0.0";
         Object rawGap = dto.getGap_to_leader();
 
+        String formattedDuration = "—";
+        Object rawDuration = dto.getDuration();
+
         if (rawGap != null) {
             if (rawGap instanceof List<?>) {
                 List<?> gapList = (List<?>) rawGap;
@@ -491,6 +480,17 @@ public class OpenF1Service {
             } else {
                 latestGap = rawGap.toString();
             }
+        }
+
+        if (rawDuration instanceof List<?> list && !list.isEmpty()) {
+            // Qualifying: array of [Q1, Q2, Q3] — take the last non-null
+            formattedDuration = list.stream()
+                    .filter(Objects::nonNull)
+                    .reduce((a, b) -> b)
+                    .map(Object::toString)
+                    .orElse("—");
+        } else if (rawDuration != null) {
+            formattedDuration = rawDuration.toString();
         }
 
         // 2. Format numerical gaps slightly to make them look uniform (e.g., adding '+'
@@ -510,6 +510,7 @@ public class OpenF1Service {
                 dto.getPosition(),
                 dto.getDriver_number(),
                 latestGap,
+                formattedDuration,
                 isDnf,
                 isDns,
                 isDsq);
@@ -517,39 +518,16 @@ public class OpenF1Service {
 
     private Integer resolveLatestMeetingKey() {
         try {
-            int currentYear = Year.now().getValue();
-            String url = openF1BaseUrl + "/sessions?year=" + currentYear;
+            String url = openF1BaseUrl + "/sessions?meeting_key=latest";
+            delayBetweenRequests();
             OpenF1SessionDto[] sessions = restTemplate.getForObject(url, OpenF1SessionDto[].class);
-
-            // If the current year has no sessions yet (e.g., off-season early in the year),
-            // fallback to last year
-            if (sessions == null || sessions.length == 0) {
-                log.info("No sessions found for current year {}. Checking previous year...", currentYear);
-                url = openF1BaseUrl + "/sessions?year=" + (currentYear - 1);
-                sessions = restTemplate.getForObject(url, OpenF1SessionDto[].class);
-            }
 
             if (sessions == null || sessions.length == 0)
                 return null;
 
-            Instant now = Instant.now();
-            Integer latestKey = null;
-            Instant latestTrackedTime = Instant.MIN;
-
-            for (OpenF1SessionDto session : sessions) {
-                if (session.getMeeting_key() == null || session.getDate_start() == null)
-                    continue;
-
-                Instant sessionStart = OffsetDateTime.parse(session.getDate_start()).toInstant();
-
-                if (sessionStart.isBefore(now) && sessionStart.isAfter(latestTrackedTime)) {
-                    latestTrackedTime = sessionStart;
-                    latestKey = session.getMeeting_key();
-                }
-            }
-            return latestKey;
+            return sessions[0].getMeeting_key();
         } catch (Exception e) {
-            log.error("Error encountered while resolving the latest active meeting key", e);
+            log.error("Error resolving latest meeting key", e);
             return null;
         }
     }

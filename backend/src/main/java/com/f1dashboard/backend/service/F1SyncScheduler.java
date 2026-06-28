@@ -76,18 +76,27 @@ public class F1SyncScheduler {
 
                 if (!currentSessionKeys.isEmpty()) {
                     log.info("Evicting old weekend telemetry data to preserve free Supabase limits...");
+                    log.info("Retaining laps for {} sessions: {}", currentSessionKeys.size(), currentSessionKeys);
                     lapRepo.deleteBySessionKeyNotIn(currentSessionKeys);
                 }
 
-                log.info("Starting fresh lap telemetry synchronization...");
+                boolean anySynced = false;
+
                 for (RaceResult result : weekendResults) {
                     String sessionName = result.getSessionName();
 
                     if (sessionName != null && !sessionName.toLowerCase().contains("practice")) {
                         if (result.getSessionKey() != null) {
+                            int before = lapRepo.findByIdSessionKey(result.getSessionKey()).size();
                             List<Lap> lapsSynced = openF1Service.getCachedSessionLaps(result.getSessionKey());
-                            log.info("Synced {} laps for {} (Key: {})", lapsSynced.size(), sessionName,
-                                    result.getSessionKey());
+                            if (lapsSynced.size() != before) {
+                                if (!anySynced) {
+                                    log.info("Starting fresh lap telemetry synchronization...");
+                                    anySynced = true;
+                                }
+                                log.info("Synced {} laps for {} (Key: {})", lapsSynced.size(), sessionName,
+                                        result.getSessionKey());
+                            }
                         }
                     }
                 }
