@@ -5,7 +5,7 @@ export async function POST() {
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token: process.env.CRON_SECRET_TOKEN }),
+                body: JSON.stringify({ token: process.env.NEXT_PUBLIC_CRON_SECRET_TOKEN }),
             },
         );
         return Response.json({}, { status: res.status });
