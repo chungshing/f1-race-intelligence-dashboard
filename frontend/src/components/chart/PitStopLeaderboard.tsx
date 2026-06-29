@@ -13,10 +13,10 @@ interface Props {
 
 export function PitStopLeaderboard({ pitStops, lookup }: Props) {
     const rows = buildPitStopLeaderboard(pitStops);
-
     if (!rows.length) return null;
 
     const bestOverall = rows[0].bestStop;
+    const isLaneFallback = rows.some((r) => r.usingLaneDuration);
 
     return (
         <div className={TABLE_CONTAINER_CLASS}>
@@ -26,6 +26,14 @@ export function PitStopLeaderboard({ pitStops, lookup }: Props) {
                     <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
                         Pit Stop Leaderboard
                     </h3>
+                    {isLaneFallback && (
+                        <span
+                            className='text-[9px] font-bold text-amber-500/60 border border-amber-500/30 px-1.5 py-0.5 rounded cursor-help'
+                            title='Stop duration unavailable from OpenF1 — showing pit lane duration instead'
+                        >
+                            LANE
+                        </span>
+                    )}
                 </div>
                 <span className='text-[10px] text-zinc-600 font-medium uppercase tracking-wider'>
                     Ranked by best stop

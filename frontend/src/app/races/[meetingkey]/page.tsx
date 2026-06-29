@@ -17,10 +17,25 @@ import { PitStopLeaderboard } from '@/components/chart/PitStopLeaderboard';
 type ActiveTab = 'classification' | 'strategy' | 'telemetry' | 'performance';
 
 const TABS = [
-    { key: 'classification' as const, label: 'Classification', requiresLaps: false },
-    { key: 'strategy' as const, label: 'Race Strategy', requiresLaps: false },
-    { key: 'telemetry' as const, label: 'Lap Telemetry', requiresLaps: true },
-    { key: 'performance' as const, label: 'Performance', requiresLaps: true },
+    {
+        key: 'classification' as const,
+        label: 'Classification',
+        requiresLaps: false,
+        requiresStints: false,
+    },
+    { key: 'strategy' as const, label: 'Race Strategy', requiresLaps: false, requiresStints: true },
+    {
+        key: 'telemetry' as const,
+        label: 'Lap Telemetry',
+        requiresLaps: true,
+        requiresStints: false,
+    },
+    {
+        key: 'performance' as const,
+        label: 'Performance',
+        requiresLaps: true,
+        requiresStints: false,
+    },
 ];
 
 const parseJsonField = <T,>(field: string | T[] | undefined): T[] => {
@@ -58,15 +73,17 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
         getRaceResults(Number(meetingkey)).then((data: SupabaseRaceResultRow[]) => {
             if (!isMounted) return;
 
-            const normalizedResults: RaceResult[] = data.map((r) => ({
-                sessionKey: r.session_key,
-                meetingKey: r.meeting_key,
-                country: r.country,
-                sessionName: r.session_name,
-                classification: parseJsonField<DriverResult>(r.classification_json),
-                pitStops: parseJsonField(r.pit_stops_json),
-                stints: parseJsonField(r.stints_json),
-            }));
+            const normalizedResults: RaceResult[] = data
+                .map((r) => ({
+                    sessionKey: r.session_key,
+                    meetingKey: r.meeting_key,
+                    country: r.country,
+                    sessionName: r.session_name,
+                    classification: parseJsonField<DriverResult>(r.classification_json),
+                    pitStops: parseJsonField(r.pit_stops_json),
+                    stints: parseJsonField(r.stints_json),
+                }))
+                .sort((a, b) => a.sessionKey - b.sessionKey);
 
             setResults(normalizedResults);
 
@@ -99,7 +116,11 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
         return results.find((r) => r.sessionKey === activeSessionKey);
     }, [results, activeSessionKey]);
 
-    const visibleTabs = TABS.filter((tab) => !tab.requiresLaps || hasLapData);
+    const hasStintData = (activeRace?.stints?.length ?? 0) > 0;
+
+    const visibleTabs = TABS.filter(
+        (tab) => (!tab.requiresLaps || hasLapData) && (!tab.requiresStints || hasStintData),
+    );
 
     const countryName = results[0]?.country || 'Race Weekend';
 
@@ -222,7 +243,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                         )}
                         {activeTab === 'performance' && (
                             <div className='space-y-6'>
-                                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                                <div className='grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch '>
                                     <PitStopLeaderboard
                                         pitStops={activeRace.pitStops}
                                         lookup={driverLookup}
@@ -233,7 +254,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                         lookup={driverLookup}
                                     />
                                 </div>
-                                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                                <div className='grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch '>
                                     <SectorSpeedTable
                                         sessionKey={activeRace.sessionKey}
                                         lookup={driverLookup}

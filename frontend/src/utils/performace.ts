@@ -19,6 +19,7 @@ export interface DriverPitSummary {
     bestStop: number;
     avgStop: number;
     totalStops: number;
+    usingLaneDuration: boolean;
 }
 
 export function buildSessionChartData(rawLaps: SupabaseLapRow[]): ChartLapData[] {
@@ -83,20 +84,25 @@ export function buildPaceConsistency(rawLaps: SupabaseLapRow[]): PaceConsistency
 }
 
 export function buildPitStopLeaderboard(pitStops: PitStop[]): DriverPitSummary[] {
-    const map: Record<number, number[]> = {};
+    const map: Record<number, { durations: number[]; hasStopDuration: boolean }> = {};
 
     for (const pit of pitStops) {
-        if (!pit.stop_duration) continue;
-        if (!map[pit.driver_number]) map[pit.driver_number] = [];
-        map[pit.driver_number].push(pit.stop_duration);
+        const hasStop = pit.stop_duration !== null && pit.stop_duration !== undefined;
+        const duration = hasStop ? pit.stop_duration! : pit.lane_duration;
+        if (!duration) continue;
+
+        if (!map[pit.driver_number]) map[pit.driver_number] = { durations: [], hasStopDuration: hasStop };
+        map[pit.driver_number].durations.push(duration);
+        if (hasStop) map[pit.driver_number].hasStopDuration = true;
     }
 
     return Object.entries(map)
-        .map(([driverNumber, stops]) => ({
+        .map(([driverNumber, { durations, hasStopDuration }]) => ({
             driverNumber: Number(driverNumber),
-            bestStop: Math.min(...stops),
-            avgStop: stops.reduce((s, t) => s + t, 0) / stops.length,
-            totalStops: stops.length,
+            bestStop: Math.min(...durations),
+            avgStop: durations.reduce((s, t) => s + t, 0) / durations.length,
+            totalStops: durations.length,
+            usingLaneDuration: !hasStopDuration,
         }))
         .sort((a, b) => a.bestStop - b.bestStop);
 }
