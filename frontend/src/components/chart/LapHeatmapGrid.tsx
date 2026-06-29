@@ -64,7 +64,7 @@ export function LapHeatmapGrid({ sessionKey, driversList, lookup }: Props) {
                     Mini-Sector Heatmap
                 </h3>
                 <span className='text-[10px] text-zinc-600 font-medium uppercase tracking-wider'>
-                    Worst  segment per lap
+                    Best segment per lap
                 </span>
             </div>
 
