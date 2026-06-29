@@ -229,7 +229,10 @@ public class OpenF1Service {
 
             Integer activeKey = activeSession.getSession_key();
 
-            // 1. Fetch Classifications
+            boolean isPractice = activeSession.getSession_name() != null &&
+                    activeSession.getSession_name().toLowerCase().contains("practice");
+
+            // 1. Fetch Classifications (always)
             delayBetweenRequests();
             OpenF1SessionResultDto[] res = restTemplate.getForObject(
                     openF1BaseUrl + "/session_result?session_key=" + activeKey,
@@ -244,33 +247,60 @@ public class OpenF1Service {
                     .sorted(Comparator.comparing(DriverResult::getPosition, Comparator.nullsLast(Integer::compareTo)))
                     .collect(Collectors.toList());
 
-            // 2. Fetch and Attach Pit Stops Data
+            // 2. Fetch Pit Stops (non-practice only)
             List<PitStop> pitStopsList = new ArrayList<>();
-            try {
-                delayBetweenRequests();
-                String pitUrl = openF1BaseUrl + "/pit?session_key=" + activeKey;
-                PitStop[] fetchedPits = restTemplate.getForObject(pitUrl, PitStop[].class);
-                if (fetchedPits != null) {
-                    pitStopsList = Arrays.asList(fetchedPits);
+            if (!isPractice) {
+                try {
+                    delayBetweenRequests();
+                    String pitUrl = openF1BaseUrl + "/pit?session_key=" + activeKey;
+                    PitStop[] fetchedPits = restTemplate.getForObject(pitUrl, PitStop[].class);
+                    if (fetchedPits != null) {
+                        pitStopsList = Arrays.asList(fetchedPits);
+                    }
+                } catch (Exception e) {
+                    log.warn("Pit stops data empty or unavailable for session key: {}", activeKey);
                 }
-            } catch (Exception e) {
-                log.warn("Pit stops data empty or unavailable for session key: {}", activeKey);
             }
 
-            // 3. Fetch and Attach Stints Data
+            // 3. Fetch Stints (non-practice only)
             List<Stint> stintsList = new ArrayList<>();
-            try {
-                delayBetweenRequests();
-                String stintUrl = openF1BaseUrl + "/stints?session_key=" + activeKey;
-                Stint[] fetchedStints = restTemplate.getForObject(stintUrl, Stint[].class);
-                if (fetchedStints != null) {
-                    stintsList = Arrays.asList(fetchedStints);
+            if (!isPractice) {
+                try {
+                    delayBetweenRequests();
+                    String stintUrl = openF1BaseUrl + "/stints?session_key=" + activeKey;
+                    Stint[] fetchedStints = restTemplate.getForObject(stintUrl, Stint[].class);
+                    if (fetchedStints != null) {
+                        stintsList = Arrays.asList(fetchedStints);
+                    }
+                } catch (Exception e) {
+                    log.warn("Stints data empty or unavailable for session key: {}", activeKey);
                 }
-            } catch (Exception e) {
-                log.warn("Stints data empty or unavailable for session key: {}", activeKey);
             }
 
-            // 4. Construct complete, enriched entity directly
+            // 4. Fetch Weather (always)
+            List<WeatherSnapshot> weatherList = new ArrayList<>();
+            try {
+                delayBetweenRequests();
+                String weatherUrl = openF1BaseUrl + "/weather?session_key=" + activeKey;
+                OpenF1WeatherDto[] fetchedWeather = restTemplate.getForObject(weatherUrl, OpenF1WeatherDto[].class);
+                if (fetchedWeather != null) {
+                    weatherList = Arrays.stream(fetchedWeather)
+                            .map(w -> new WeatherSnapshot(
+                                    w.getDate(),
+                                    w.getAir_temperature(),
+                                    w.getTrack_temperature(),
+                                    w.getHumidity(),
+                                    w.getPressure(),
+                                    w.getRainfall(),
+                                    w.getWind_direction(),
+                                    w.getWind_speed()))
+                            .toList();
+                }
+            } catch (Exception e) {
+                log.warn("Weather data unavailable for session key: {}", activeKey);
+            }
+
+            // 5. Construct complete, enriched entity directly
             RaceResult result = new RaceResult(
                     activeSession.getMeeting_key(),
                     activeKey,
@@ -278,7 +308,8 @@ public class OpenF1Service {
                     activeSession.getSession_name(),
                     driverResults,
                     pitStopsList,
-                    stintsList);
+                    stintsList,
+                    weatherList);
 
             return List.of(result);
 
@@ -295,59 +326,59 @@ public class OpenF1Service {
     }
 
     @Transactional
-public List<RaceResult> fetchWeekendSessionResults(int meetingKey) {
-    try {
-        String sessionsUrl = openF1BaseUrl + "/sessions?meeting_key=" + meetingKey;
+    public List<RaceResult> fetchWeekendSessionResults(int meetingKey) {
+        try {
+            String sessionsUrl = openF1BaseUrl + "/sessions?meeting_key=" + meetingKey;
 
-        delayBetweenRequests();
-        OpenF1SessionDto[] weekendSessions = restTemplate.getForObject(sessionsUrl, OpenF1SessionDto[].class);
+            delayBetweenRequests();
+            OpenF1SessionDto[] weekendSessions = restTemplate.getForObject(sessionsUrl, OpenF1SessionDto[].class);
 
-        if (weekendSessions == null || weekendSessions.length == 0)
-            return List.of();
+            if (weekendSessions == null || weekendSessions.length == 0)
+                return List.of();
 
-        List<RaceResult> allWeekendResults = new ArrayList<>();
-        Instant now = Instant.now();
+            List<RaceResult> allWeekendResults = new ArrayList<>();
+            Instant now = Instant.now();
 
-        List<OpenF1SessionDto> completedSessions = Arrays.stream(weekendSessions)
-                .filter(s -> s.getDate_start() != null && s.getSession_key() != null)
-                .filter(s -> {
-                    Instant sessionStart = OffsetDateTime.parse(s.getDate_start()).toInstant();
-                    return sessionStart.isBefore(now);
-                })
-                .sorted(Comparator.comparing(OpenF1SessionDto::getDate_start))
-                .toList();
+            List<OpenF1SessionDto> completedSessions = Arrays.stream(weekendSessions)
+                    .filter(s -> s.getDate_start() != null && s.getSession_key() != null)
+                    .filter(s -> {
+                        Instant sessionStart = OffsetDateTime.parse(s.getDate_start()).toInstant();
+                        return sessionStart.isBefore(now);
+                    })
+                    .sorted(Comparator.comparing(OpenF1SessionDto::getDate_start))
+                    .toList();
 
-        for (OpenF1SessionDto session : completedSessions) {
-            log.info("Fetching classification results for completed session: {} (Key: {})",
-                    session.getSession_name(), session.getSession_key());
+            for (OpenF1SessionDto session : completedSessions) {
+                log.info("Fetching classification results for completed session: {} (Key: {})",
+                        session.getSession_name(), session.getSession_key());
 
-            long start = System.currentTimeMillis();
-            List<RaceResult> sessionResult = fetchRaceResults(session.getSession_key());
-            log.info("Session {} (Key: {}) fetch took {}ms",
-                    session.getSession_name(), session.getSession_key(),
-                    System.currentTimeMillis() - start);
+                long start = System.currentTimeMillis();
+                List<RaceResult> sessionResult = fetchRaceResults(session.getSession_key());
+                log.info("Session {} (Key: {}) fetch took {}ms",
+                        session.getSession_name(), session.getSession_key(),
+                        System.currentTimeMillis() - start);
 
-            if (!sessionResult.isEmpty()) {
-                allWeekendResults.addAll(sessionResult);
+                if (!sessionResult.isEmpty()) {
+                    allWeekendResults.addAll(sessionResult);
+                }
             }
+
+            // Deduplicate by session_key before returning
+            return allWeekendResults.stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toMap(
+                            RaceResult::getSessionKey,
+                            r -> r,
+                            (existing, replacement) -> existing))
+                    .values()
+                    .stream()
+                    .toList();
+
+        } catch (Exception e) {
+            log.error("Failed to compile weekend session results for meeting key: {}", meetingKey, e);
+            return List.of();
         }
-
-        // Deduplicate by session_key before returning
-        return allWeekendResults.stream()
-                .filter(Objects::nonNull)
-                .collect(Collectors.toMap(
-                        RaceResult::getSessionKey,
-                        r -> r,
-                        (existing, replacement) -> existing))
-                .values()
-                .stream()
-                .toList();
-
-    } catch (Exception e) {
-        log.error("Failed to compile weekend session results for meeting key: {}", meetingKey, e);
-        return List.of();
     }
-}
 
     @Transactional
     public List<RaceResult> getCachedWeekendResults(Integer meetingKey) {
