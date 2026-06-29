@@ -8,10 +8,12 @@ import { useStandings, useTeamStandings } from '@/hooks/useStandings';
 import { useMemo, useState, useEffect } from 'react';
 import { useRaceWeekends } from '@/hooks/useRaceWeekends';
 import { getNextRaceWeekend } from '@/utils/race';
+import { buildRecentForm } from '@/utils/form';
+import { getRaceResults, getLapsBySession } from '@/lib/app';
 import { RaceResultsTable } from '@/components/table/RaceResultsTable';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
-import { getRaceResults } from '@/lib/app';
 import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
+import { RaceAnalysisBanner } from '@/components/dashboard/RaceAnalysisBanner';
 
 type TabType = 'drivers' | 'constructors';
 
@@ -22,14 +24,18 @@ export default function Home() {
     const [activeTab, setActiveTab] = useState<TabType>('drivers');
     const driverLookup = useDriverLookup();
 
+    const [allRaceRows, setAllRaceRows] = useState<SupabaseRaceResultRow[]>([]);
+    const [isSyncing, setIsSyncing] = useState(false);
     const [mountTimestamp] = useState(() => Date.now());
     const [resultsState, setResultsState] = useState<{
         data: DriverResult[];
         loading: boolean;
     }>({ data: [], loading: true });
-
-    // Syncing state for UI button feedback
-    const [isSyncing, setIsSyncing] = useState(false);
+    const [latestAnalysis, setLatestAnalysis] = useState<{
+        meetingKey: number;
+        country: string;
+        sessionName: string;
+    } | null>(null);
 
     const nextRace = useMemo(() => getNextRaceWeekend(races), [races]);
 
@@ -44,14 +50,25 @@ export default function Home() {
             .toSorted((a, b) => b.raceDate!.getTime() - a.raceDate!.getTime());
     }, [races, mountTimestamp]);
 
-    const sortedRacesKey = JSON.stringify(sortedRaces.map((r) => r.meetingKey));
-
-    // Silent-wake execution on component mount
+    // Wake Render from cold sleep
     useEffect(() => {
-        // Fires a safe root ping to wake Render from cold-sleep instantly
         fetch('https://f1-race-intelligence-dashboard.onrender.com/api/health').catch(() => null);
     }, []);
 
+    // Fetch all race rows once
+    useEffect(() => {
+        let isMounted = true;
+        getRaceResults()
+            .then((data) => {
+                if (isMounted) setAllRaceRows(data);
+            })
+            .catch(console.error);
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    // Find latest completed race classification
     useEffect(() => {
         let isMounted = true;
         if (!sortedRaces.length) return;
@@ -65,15 +82,10 @@ export default function Home() {
                     const mainRaceSession = data.find((s) => s.session_name === 'Race');
                     if (mainRaceSession) {
                         let rawData = mainRaceSession.classification_json;
-                        if (typeof rawData === 'string') {
-                            rawData = JSON.parse(rawData);
-                        }
+                        if (typeof rawData === 'string') rawData = JSON.parse(rawData);
 
                         if (Array.isArray(rawData) && rawData.length > 0) {
-                            setResultsState({
-                                data: rawData as DriverResult[],
-                                loading: false,
-                            });
+                            setResultsState({ data: rawData as DriverResult[], loading: false });
                             return;
                         }
                     }
@@ -81,9 +93,7 @@ export default function Home() {
             } catch (err) {
                 console.error('Failed to fetch latest race data:', err);
             } finally {
-                if (isMounted) {
-                    setResultsState((prev) => ({ ...prev, loading: false }));
-                }
+                if (isMounted) setResultsState((prev) => ({ ...prev, loading: false }));
             }
         };
 
@@ -91,44 +101,73 @@ export default function Home() {
         return () => {
             isMounted = false;
         };
-    }, [sortedRaces, sortedRacesKey]);
+    }, [sortedRaces]);
+
+    // Check if latest race has lap data for banner — reuses allRaceRows, no extra fetch
+    useEffect(() => {
+        if (!allRaceRows.length || !sortedRaces.length) return;
+        let isMounted = true;
+
+        const checkLatestLapData = async () => {
+            for (const race of sortedRaces) {
+                const raceSession = allRaceRows.find(
+                    (r) => r.meeting_key === race.meetingKey && r.session_name === 'Race',
+                );
+                if (!raceSession) continue;
+
+                const laps = await getLapsBySession(raceSession.session_key);
+                if (!isMounted) return;
+
+                if (laps.length > 0) {
+                    setLatestAnalysis({
+                        meetingKey: race.meetingKey,
+                        country: race.country,
+                        sessionName: 'Grand Prix',
+                    });
+                    return;
+                }
+            }
+        };
+
+        checkLatestLapData().catch(console.error);
+        return () => {
+            isMounted = false;
+        };
+    }, [sortedRaces, allRaceRows]);
+
+    const formMap = useMemo(() => {
+        const rows = buildRecentForm(
+            allRaceRows,
+            standings.map((s) => s.driverNumber),
+        );
+        return Object.fromEntries(rows.map((r) => [r.driverNumber, r.results]));
+    }, [allRaceRows, standings]);
 
     const handleManualSync = async () => {
         if (isSyncing) return;
         setIsSyncing(true);
 
-        const SECRET_TOKEN = process.env.NEXT_PUBLIC_CRON_SECRET_TOKEN || 'local-dev-fallback';
-        const url = 'https://f1-race-intelligence-dashboard.onrender.com/api/v1/automation/trigger';
-
         try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ token: SECRET_TOKEN }),
-            });
+            const response = await fetch('/api/sync', { method: 'POST' });
 
             if (response.status === 202) {
                 alert('Pipeline synchronization started successfully.');
-                // Keep spinning for 5 seconds to provide visual feedback for a successful trigger
                 setTimeout(() => setIsSyncing(false), 5000);
             } else if (response.status === 401) {
                 alert('Unauthorized: Invalid backend validation token.');
+                setIsSyncing(false);
+            } else if (response.status === 404) {
+                alert('Sync endpoint not found. Check your API route.');
                 setIsSyncing(false);
             } else {
                 throw new Error(`Server returned status: ${response.status}`);
             }
         } catch (error) {
-            console.warn(
-                'Backend waking up or network dropped. Retrying sync in 10 seconds...',
-                error,
-            );
-            // Only retry if it failed due to a crash, network error, or cold start (not 401 Unauthorized)
+            console.warn('Backend unreachable, retrying in 60s...', error);
             setTimeout(() => {
-                setIsSyncing(false); // Clear lock right before retrying
+                setIsSyncing(false);
                 handleManualSync();
-            }, 10000);
+            }, 60000);
         }
     };
 
@@ -169,7 +208,7 @@ export default function Home() {
     return (
         <AppLayout>
             <div className='space-y-5 text-zinc-100'>
-                {/* HEADER WITH REINSTATED SUBTITLE & MANUAL SYNC BUTTON */}
+                {/* Header */}
                 <div className='mb-5 flex items-center justify-between border-b border-zinc-800/40 pb-4'>
                     <div>
                         <h1 className='text-2xl font-bold text-zinc-100'>Command Hub</h1>
@@ -230,7 +269,16 @@ export default function Home() {
                     </button>
                 </div>
 
-                {/* COMPACT OVERVIEW STATS GRID */}
+                {/* Analysis Banner */}
+                {latestAnalysis && (
+                    <RaceAnalysisBanner
+                        meetingKey={latestAnalysis.meetingKey}
+                        countryName={latestAnalysis.country}
+                        sessionName={latestAnalysis.sessionName}
+                    />
+                )}
+
+                {/* Stats Cards */}
                 <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
                     {statsCards.map((card, i) => (
                         <div
@@ -245,7 +293,6 @@ export default function Home() {
                                     {card.caption}
                                 </span>
                             </div>
-
                             <div className='mt-2 flex items-baseline justify-between gap-4'>
                                 {card.val === null ? (
                                     <div className='h-6 w-24 bg-zinc-800 animate-pulse rounded-md' />
@@ -265,9 +312,9 @@ export default function Home() {
                     ))}
                 </div>
 
-                {/* PRIMARY DASHBOARD LAYOUT GRID */}
+                {/* Main Grid */}
                 <div className='grid grid-cols-1 lg:grid-cols-3 gap-5 items-start'>
-                    {/* LEFT SIDEBAR: CHAMPIONSHIP TABLES */}
+                    {/* Left: Standings */}
                     <div className='lg:col-span-2 space-y-4 bg-zinc-900/20 border border-zinc-800/40 rounded-xl p-4 backdrop-blur-xs'>
                         <div className='flex items-center justify-between border-b border-zinc-800/60 pb-3 gap-4'>
                             <div className='flex bg-zinc-950 p-1 rounded-lg border border-zinc-800 w-full max-w-60'>
@@ -285,7 +332,6 @@ export default function Home() {
                                     </button>
                                 ))}
                             </div>
-
                             <a
                                 href={activeTab === 'drivers' ? '/drivers' : '/constructors'}
                                 className='text-[11px] font-bold text-zinc-400 hover:text-zinc-200 transition-colors tracking-tight whitespace-nowrap'
@@ -299,19 +345,22 @@ export default function Home() {
                                 driverLoading ? (
                                     <div className='h-96 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
                                 ) : (
-                                    <DriverTable standings={standings} limit={7} />
+                                    <DriverTable
+                                        standings={standings}
+                                        limit={10}
+                                        formMap={formMap}
+                                    />
                                 )
                             ) : teamLoading ? (
                                 <div className='h-96 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
                             ) : (
-                                <TeamTable standings={teams} limit={7} />
+                                <TeamTable standings={teams} />
                             )}
                         </div>
                     </div>
 
-                    {/* RIGHT SIDEBAR: SESSIONS & LIVE CLASSIFICATION */}
+                    {/* Right: Race Weekend + Latest Results */}
                     <div className='lg:col-span-1 lg:sticky lg:top-6 space-y-5'>
-                        {/* UPCOMING EVENTS SCHEDULE */}
                         <div className='space-y-2'>
                             <h3 className='text-[10px] font-bold uppercase tracking-widest text-zinc-400 px-1'>
                                 Next Race Weekend
@@ -323,13 +372,11 @@ export default function Home() {
                             )}
                         </div>
 
-                        {/* HISTORIC COMPLETED CLASSIFICATIONS */}
                         <div className='space-y-2'>
                             <div className='flex items-center justify-between px-1'>
                                 <h3 className='text-[10px] font-bold uppercase tracking-widest text-zinc-400'>
                                     Latest Race Results
                                 </h3>
-
                                 {sortedRaces.length > 0 && (
                                     <a
                                         href={`/races/${sortedRaces[0].meetingKey}`}

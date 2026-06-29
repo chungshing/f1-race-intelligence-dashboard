@@ -2,6 +2,7 @@ export interface DriverResult {
     position: number | null;
     driverNumber: number;
     gapToLeader: string;
+    formattedDuration: string | string[] | null; // string for race/practice, string[] for qualifying
     dnf: boolean;
     dns: boolean;
     dsq: boolean;

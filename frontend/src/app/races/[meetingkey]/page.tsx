@@ -1,12 +1,27 @@
 'use client';
 
 import { useEffect, useState, use, useMemo } from 'react';
-import { getRaceResults } from '@/lib/app';
+import { getRaceResults, getLapsBySession } from '@/lib/app';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
 import { RaceResultsTable } from '@/components/table/RaceResultsTable';
-import { RaceResult, SupabaseRaceResultRow } from '@/types/results';
+import { RaceResult, SupabaseRaceResultRow, DriverResult } from '@/types/results';
 import { RaceStrategyTable } from '@/components/table/RaceStrategyTable';
+import { LapPaceChart } from '@/components/chart/LapPaceChart';
+import { SectorSpeedTable } from '@/components/table/SectorSpeedTable';
+import { PaceConsistencyCard } from '@/components/chart/PaceConsistencyCard';
+import { LapHeatmapGrid } from '@/components/chart/LapHeatmapGrid';
 import AppLayout from '@/components/layout/AppLayout';
+import { SectorDurationTable } from '@/components/table/SectorDurationTable';
+import { PitStopLeaderboard } from '@/components/chart/PitStopLeaderboard';
+
+type ActiveTab = 'classification' | 'strategy' | 'telemetry' | 'performance';
+
+const TABS = [
+    { key: 'classification' as const, label: 'Classification', requiresLaps: false },
+    { key: 'strategy' as const, label: 'Race Strategy', requiresLaps: false },
+    { key: 'telemetry' as const, label: 'Lap Telemetry', requiresLaps: true },
+    { key: 'performance' as const, label: 'Performance', requiresLaps: true },
+];
 
 const parseJsonField = <T,>(field: string | T[] | undefined): T[] => {
     if (!field) return [];
@@ -26,8 +41,16 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
 
     const [results, setResults] = useState<RaceResult[]>([]);
     const [activeSessionKey, setActiveSessionKey] = useState<number | null>(null);
-    const [activeTab, setActiveTab] = useState<'classification' | 'strategy'>('classification');
+    const [activeTab, setActiveTab] = useState<ActiveTab>('classification');
+    const [hasLapData, setHasLapData] = useState(false);
+    const [prevMeetingKey, setPrevMeetingKey] = useState<string>(meetingkey);
     const [loading, setLoading] = useState(true);
+
+    if (meetingkey !== prevMeetingKey) {
+        setPrevMeetingKey(meetingkey);
+        setLoading(true);
+        setResults([]);
+    }
 
     useEffect(() => {
         let isMounted = true;
@@ -40,7 +63,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                 meetingKey: r.meeting_key,
                 country: r.country,
                 sessionName: r.session_name,
-                classification: parseJsonField(r.classification_json),
+                classification: parseJsonField<DriverResult>(r.classification_json),
                 pitStops: parseJsonField(r.pit_stops_json),
                 stints: parseJsonField(r.stints_json),
             }));
@@ -58,9 +81,25 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
         };
     }, [meetingkey]);
 
+    // Reset tab and check lap data when session changes
+    useEffect(() => {
+        if (!activeSessionKey) return;
+
+        queueMicrotask(() => {
+            setActiveTab('classification');
+            setHasLapData(false);
+        });
+
+        getLapsBySession(activeSessionKey)
+            .then((laps) => setHasLapData(laps.length > 0))
+            .catch(() => setHasLapData(false));
+    }, [activeSessionKey]);
+
     const activeRace = useMemo(() => {
         return results.find((r) => r.sessionKey === activeSessionKey);
     }, [results, activeSessionKey]);
+
+    const visibleTabs = TABS.filter((tab) => !tab.requiresLaps || hasLapData);
 
     const countryName = results[0]?.country || 'Race Weekend';
 
@@ -134,43 +173,77 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
 
                 {/* View State Navigation Tabs */}
                 <div className='flex space-x-6 border-b border-zinc-800/80 text-xs font-bold uppercase tracking-wider pb-px'>
-                    <button
-                        onClick={() => setActiveTab('classification')}
-                        className={`pb-3 transition-colors ${
-                            activeTab === 'classification'
-                                ? 'text-blue-500 border-b-2 border-blue-500 font-black'
-                                : 'text-zinc-400 hover:text-zinc-200'
-                        }`}
-                    >
-                        Classification
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('strategy')}
-                        className={`pb-3 transition-colors ${
-                            activeTab === 'strategy'
-                                ? 'text-blue-500 border-b-2 border-blue-500 font-black'
-                                : 'text-zinc-400 hover:text-zinc-200'
-                        }`}
-                    >
-                        Race Strategy
-                    </button>
+                    {visibleTabs.map((tab) => (
+                        <button
+                            key={tab.key}
+                            onClick={() => setActiveTab(tab.key)}
+                            className={`pb-3 transition-colors ${
+                                activeTab === tab.key
+                                    ? 'text-blue-500 border-b-2 border-blue-500 font-black'
+                                    : 'text-zinc-400 hover:text-zinc-200'
+                            }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
                 </div>
 
                 {/* Render Selection Context */}
                 {activeRace && (
                     <section className='animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out'>
-                        {activeTab === 'classification' ? (
+                        {activeTab === 'classification' && (
                             <RaceResultsTable
                                 classification={activeRace.classification}
                                 lookup={driverLookup}
+                                sessionName={activeRace.sessionName}
                             />
-                        ) : (
+                        )}
+                        {activeTab === 'strategy' && (
                             <RaceStrategyTable
                                 pitStops={activeRace.pitStops}
                                 stints={activeRace.stints}
                                 lookup={driverLookup}
                                 results={activeRace.classification}
                             />
+                        )}
+                        {activeTab === 'telemetry' && (
+                            <div className='space-y-6'>
+                                <LapHeatmapGrid
+                                    sessionKey={activeRace.sessionKey}
+                                    driversList={activeRace.classification}
+                                    lookup={driverLookup}
+                                />
+                                <LapPaceChart
+                                    sessionKey={activeRace.sessionKey}
+                                    driversList={activeRace.classification}
+                                    lookup={driverLookup}
+                                />
+                            </div>
+                        )}
+                        {activeTab === 'performance' && (
+                            <div className='space-y-6'>
+                                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                                    <PitStopLeaderboard
+                                        pitStops={activeRace.pitStops}
+                                        lookup={driverLookup}
+                                    />
+                                    <SectorDurationTable
+                                        sessionKey={activeRace.sessionKey}
+                                        driversList={activeRace.classification}
+                                        lookup={driverLookup}
+                                    />
+                                </div>
+                                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                                    <SectorSpeedTable
+                                        sessionKey={activeRace.sessionKey}
+                                        lookup={driverLookup}
+                                    />
+                                    <PaceConsistencyCard
+                                        sessionKey={activeRace.sessionKey}
+                                        lookup={driverLookup}
+                                    />
+                                </div>
+                            </div>
                         )}
                     </section>
                 )}

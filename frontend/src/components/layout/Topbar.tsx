@@ -7,7 +7,7 @@ import { LayoutDashboard, Users, ShieldAlert, Flag } from 'lucide-react';
 
 export default function Topbar() {
     const pathname = usePathname();
-    const [time, setTime] = useState<string>('');
+    const [time, setTime] = useState<string>('00:00:00 LCL');
 
     useEffect(() => {
         const updateClock = () => {

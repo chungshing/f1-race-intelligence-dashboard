@@ -79,7 +79,8 @@ export default function SeasonTimeline({ weekends }: Props) {
             clearTimeout(initialSync);
             clearInterval(clockInterval);
         };
-    }, [currentIndex, processedWeekends]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Smooth scroll position directly to current item
     useEffect(() => {
