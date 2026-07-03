@@ -1,13 +1,13 @@
 import { SupabaseLapRow } from '@/types/laps';
 
 const SEGMENT_PRIORITY: Record<number, number> = {
-    2068: 6, // red    - worst
-    2064: 5, // pit
-    2048: 4, // yellow
-    2050: 3, // gray
-    2049: 2, // green
-    2051: 1, // purple - best
-    0:    0, // none
+    2051: 6, // purple - highest priority = best
+    2049: 5, // green
+    2050: 4, // gray
+    2048: 3, // yellow
+    2064: 2, // pit
+    2068: 1, // red
+    0:    0,
 };
 
 export const parseSegments = (field: string | number[] | null | undefined): number[] => {
