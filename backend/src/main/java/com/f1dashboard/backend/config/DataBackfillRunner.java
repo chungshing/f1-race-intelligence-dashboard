@@ -1,22 +1,23 @@
 package com.f1dashboard.backend.config;
 
-import com.f1dashboard.backend.dto.OpenF1SessionDto;
-import com.f1dashboard.backend.model.RaceResult;
-import com.f1dashboard.backend.model.RaceWeekend;
-import com.f1dashboard.backend.repository.RaceResultRepository;
-import com.f1dashboard.backend.repository.RaceWeekendRepository;
-import com.f1dashboard.backend.service.OpenF1Service;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
-
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 
-// @Component // Uncomment to enable the backfill runner on application startup. Use with caution!
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.web.client.RestTemplate;
+
+import com.f1dashboard.backend.dto.OpenF1SessionDto;
+import com.f1dashboard.backend.model.RaceResult;
+import com.f1dashboard.backend.repository.RaceResultRepository;
+import com.f1dashboard.backend.repository.RaceWeekendRepository;
+import com.f1dashboard.backend.service.OpenF1Service;
+
+import lombok.extern.slf4j.Slf4j;
+
+// @Component // Uncomment to enable the backfill runner on application startup. Use with
+// caution!
 @SuppressWarnings("unused")
 @Slf4j
 public class DataBackfillRunner implements CommandLineRunner {
@@ -45,8 +46,9 @@ public class DataBackfillRunner implements CommandLineRunner {
             // log.info("Backfilling 2026 season calendar and weekend structure...");
             // List<RaceWeekend> weekends = openF1Service.fetchRaceWeekends(2026);
             // if (!weekends.isEmpty()) {
-            //     raceWeekendRepository.saveAll(weekends);
-            //     log.info("Successfully persisted {} race weekends to the database.", weekends.size());
+            // raceWeekendRepository.saveAll(weekends);
+            // log.info("Successfully persisted {} race weekends to the database.",
+            // weekends.size());
             // }
 
             // 2. Fetch historical session data
@@ -54,8 +56,8 @@ public class DataBackfillRunner implements CommandLineRunner {
             OpenF1SessionDto[] sessions = restTemplate.getForObject(url, OpenF1SessionDto[].class);
 
             // if (sessions == null || sessions.length == 0) {
-            //     log.warn("No historical sessions found for 2026.");
-            //     return;
+            // log.warn("No historical sessions found for 2026.");
+            // return;
             // }
 
             log.info("Found {} total historical sessions to evaluate.", sessions.length);
@@ -70,8 +72,8 @@ public class DataBackfillRunner implements CommandLineRunner {
 
                 // Guard: Skip if already processed
                 // if (raceResultRepository.existsById(sessionKey)) {
-                //     log.debug("Skipping session {} - already backfilled.", sessionKey);
-                //     continue;
+                // log.debug("Skipping session {} - already backfilled.", sessionKey);
+                // continue;
                 // }
 
                 // Guard: Skip future sessions
@@ -93,9 +95,38 @@ public class DataBackfillRunner implements CommandLineRunner {
                         session.getCountry_name(), sessionKey, session.getSession_name());
 
                 // Fetch AND Save the individual session results
+                // Fetch latest session results
                 List<RaceResult> results = openF1Service.fetchRaceResults(sessionKey);
+
                 if (!results.isEmpty()) {
-                    raceResultRepository.saveAll(results);
+                    RaceResult fetched = results.get(0);
+
+                    raceResultRepository.findById(sessionKey).ifPresentOrElse(existing -> {
+
+                        // Preserve existing data if the API returns empty payloads
+                        if (fetched.getClassification() == null || fetched.getClassification().isEmpty()) {
+                            fetched.setClassification(existing.getClassification());
+                        }
+
+                        if (fetched.getPitStops() == null || fetched.getPitStops().isEmpty()) {
+                            fetched.setPitStops(existing.getPitStops());
+                        }
+
+                        if (fetched.getStints() == null || fetched.getStints().isEmpty()) {
+                            fetched.setStints(existing.getStints());
+                        }
+
+                        // New weather column
+                        if (fetched.getWeather() == null || fetched.getWeather().isEmpty()) {
+                            fetched.setWeather(existing.getWeather());
+                        }
+
+                        raceResultRepository.save(fetched);
+
+                    }, () -> {
+                        // Session wasn't previously in the database
+                        raceResultRepository.save(fetched);
+                    });
                 }
 
                 Thread.sleep(2500);

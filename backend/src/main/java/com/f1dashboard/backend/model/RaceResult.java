@@ -3,6 +3,8 @@ package com.f1dashboard.backend.model;
 import com.f1dashboard.backend.converter.DriverResultListConverter;
 import com.f1dashboard.backend.converter.PitStopListConverter;
 import com.f1dashboard.backend.converter.StintListConverter;
+import com.f1dashboard.backend.converter.WeatherSnapshotListConverter;
+
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -40,8 +42,13 @@ public class RaceResult {
     @Column(name = "stints_json", columnDefinition = "TEXT")
     private List<Stint> stints = new ArrayList<>();
 
+    @Convert(converter = WeatherSnapshotListConverter.class)
+    @Column(name = "weather_json", columnDefinition = "TEXT")
+    private List<WeatherSnapshot> weather = new ArrayList<>();
+
     public RaceResult(Integer meetingKey, Integer sessionKey, String country, String sessionName,
-            List<DriverResult> classification, List<PitStop> pitStops, List<Stint> stints) {
+            List<DriverResult> classification, List<PitStop> pitStops, List<Stint> stints,
+            List<WeatherSnapshot> weather) {
         this.meetingKey = meetingKey;
         this.sessionKey = sessionKey;
         this.country = country;
@@ -49,5 +56,6 @@ public class RaceResult {
         this.classification = classification;
         this.pitStops = pitStops;
         this.stints = stints;
+        this.weather = weather;
     }
 }
