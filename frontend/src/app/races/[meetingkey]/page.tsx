@@ -1,18 +1,19 @@
 'use client';
 
-import { useEffect, useState, use, useMemo } from 'react';
-import { getRaceResults, getLapsBySession } from '@/lib/app';
-import { useDriverLookup } from '@/hooks/useDriverLookup';
-import { RaceResultsTable } from '@/components/table/RaceResultsTable';
-import { RaceResult, SupabaseRaceResultRow, DriverResult } from '@/types/results';
-import { RaceStrategyTable } from '@/components/table/RaceStrategyTable';
-import { LapPaceChart } from '@/components/chart/LapPaceChart';
-import { SectorSpeedTable } from '@/components/table/SectorSpeedTable';
-import { PaceConsistencyCard } from '@/components/chart/PaceConsistencyCard';
 import { LapHeatmapGrid } from '@/components/chart/LapHeatmapGrid';
-import AppLayout from '@/components/layout/AppLayout';
-import { SectorDurationTable } from '@/components/table/SectorDurationTable';
+import { LapPaceChart } from '@/components/chart/LapPaceChart';
+import { PaceConsistencyCard } from '@/components/chart/PaceConsistencyCard';
 import { PitStopLeaderboard } from '@/components/chart/PitStopLeaderboard';
+import { WeatherPanel } from '@/components/chart/WeatherPanel';
+import AppLayout from '@/components/layout/AppLayout';
+import { RaceResultsTable } from '@/components/table/RaceResultsTable';
+import { RaceStrategyTable } from '@/components/table/RaceStrategyTable';
+import { SectorDurationTable } from '@/components/table/SectorDurationTable';
+import { SectorSpeedTable } from '@/components/table/SectorSpeedTable';
+import { useDriverLookup } from '@/hooks/useDriverLookup';
+import { getLapsBySession, getRaceResults } from '@/lib/app';
+import { DriverResult, RaceResult, SupabaseRaceResultRow, WeatherSnapshot } from '@/types/results';
+import { use, useEffect, useMemo, useState } from 'react';
 
 type ActiveTab = 'classification' | 'strategy' | 'telemetry' | 'performance';
 
@@ -43,14 +44,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
     const [activeSessionKey, setActiveSessionKey] = useState<number | null>(null);
     const [activeTab, setActiveTab] = useState<ActiveTab>('classification');
     const [hasLapData, setHasLapData] = useState(false);
-    const [prevMeetingKey, setPrevMeetingKey] = useState<string>(meetingkey);
     const [loading, setLoading] = useState(true);
-
-    if (meetingkey !== prevMeetingKey) {
-        setPrevMeetingKey(meetingkey);
-        setLoading(true);
-        setResults([]);
-    }
 
     useEffect(() => {
         let isMounted = true;
@@ -58,15 +52,18 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
         getRaceResults(Number(meetingkey)).then((data: SupabaseRaceResultRow[]) => {
             if (!isMounted) return;
 
-            const normalizedResults: RaceResult[] = data.map((r) => ({
-                sessionKey: r.session_key,
-                meetingKey: r.meeting_key,
-                country: r.country,
-                sessionName: r.session_name,
-                classification: parseJsonField<DriverResult>(r.classification_json),
-                pitStops: parseJsonField(r.pit_stops_json),
-                stints: parseJsonField(r.stints_json),
-            }));
+            const normalizedResults: RaceResult[] = data
+                .map((r) => ({
+                    sessionKey: r.session_key,
+                    meetingKey: r.meeting_key,
+                    country: r.country,
+                    sessionName: r.session_name,
+                    classification: parseJsonField<DriverResult>(r.classification_json),
+                    pitStops: parseJsonField(r.pit_stops_json),
+                    stints: parseJsonField(r.stints_json),
+                    weather: parseJsonField<WeatherSnapshot>(r.weather_json),
+                }))
+                .sort((a, b) => a.sessionKey - b.sessionKey);
 
             setResults(normalizedResults);
 
@@ -192,11 +189,14 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                 {activeRace && (
                     <section className='animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out'>
                         {activeTab === 'classification' && (
-                            <RaceResultsTable
-                                classification={activeRace.classification}
-                                lookup={driverLookup}
-                                sessionName={activeRace.sessionName}
-                            />
+                            <div className='space-y-6'>
+                                <WeatherPanel weather={activeRace.weather} />
+                                <RaceResultsTable
+                                    classification={activeRace.classification}
+                                    lookup={driverLookup}
+                                    sessionName={activeRace.sessionName}
+                                />
+                            </div>
                         )}
                         {activeTab === 'strategy' && (
                             <RaceStrategyTable

@@ -25,6 +25,17 @@ export interface Stint {
     compound: string;
 }
 
+export interface WeatherSnapshot {
+    airTemperature: number | null;
+    humidity: number | null;
+    pressure: number | null;
+    rainfall: number | null;
+    trackTemperature: number | null;
+    windDirection: number | null;
+    windSpeed: number | null;
+    date: string | null;
+}
+
 export interface RaceResult {
     sessionKey: number;
     meetingKey: number;
@@ -33,6 +44,7 @@ export interface RaceResult {
     classification: DriverResult[];
     pitStops: PitStop[];
     stints: Stint[];
+    weather: WeatherSnapshot[];
 }
 
 export interface SupabaseRaceResultRow {
@@ -43,4 +55,5 @@ export interface SupabaseRaceResultRow {
     classification_json: string | DriverResult[];
     pit_stops_json?: string | PitStop[];
     stints_json?: string | Stint[];
+    weather_json?: string | WeatherSnapshot[];
 }
