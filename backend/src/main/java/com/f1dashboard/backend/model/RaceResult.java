@@ -1,15 +1,21 @@
 package com.f1dashboard.backend.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.f1dashboard.backend.converter.DriverResultListConverter;
 import com.f1dashboard.backend.converter.PitStopListConverter;
+import com.f1dashboard.backend.converter.RaceControlEventListConverter;
 import com.f1dashboard.backend.converter.StintListConverter;
 import com.f1dashboard.backend.converter.WeatherSnapshotListConverter;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.util.ArrayList;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -46,9 +52,13 @@ public class RaceResult {
     @Column(name = "weather_json", columnDefinition = "TEXT")
     private List<WeatherSnapshot> weather = new ArrayList<>();
 
+    @Convert(converter = RaceControlEventListConverter.class)
+    @Column(name = "race_control_json", columnDefinition = "TEXT")
+    private List<RaceControlEvent> raceControl = new ArrayList<>();
+
     public RaceResult(Integer meetingKey, Integer sessionKey, String country, String sessionName,
             List<DriverResult> classification, List<PitStop> pitStops, List<Stint> stints,
-            List<WeatherSnapshot> weather) {
+            List<WeatherSnapshot> weather, List<RaceControlEvent> raceControl) {
         this.meetingKey = meetingKey;
         this.sessionKey = sessionKey;
         this.country = country;
@@ -57,5 +67,6 @@ public class RaceResult {
         this.pitStops = pitStops;
         this.stints = stints;
         this.weather = weather;
+        this.raceControl = raceControl;
     }
 }
