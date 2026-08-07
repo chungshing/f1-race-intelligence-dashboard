@@ -4,6 +4,7 @@ import { LapHeatmapGrid } from '@/components/chart/LapHeatmapGrid';
 import { LapPaceChart } from '@/components/chart/LapPaceChart';
 import { PaceConsistencyCard } from '@/components/chart/PaceConsistencyCard';
 import { PitStopLeaderboard } from '@/components/chart/PitStopLeaderboard';
+import { RaceControlPanel } from '@/components/chart/RaceControlPanel';
 import { WeatherPanel } from '@/components/chart/WeatherPanel';
 import AppLayout from '@/components/layout/AppLayout';
 import { RaceResultsTable } from '@/components/table/RaceResultsTable';
@@ -12,10 +13,16 @@ import { SectorDurationTable } from '@/components/table/SectorDurationTable';
 import { SectorSpeedTable } from '@/components/table/SectorSpeedTable';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
 import { getLapsBySession, getRaceResults } from '@/lib/app';
-import { DriverResult, RaceResult, SupabaseRaceResultRow, WeatherSnapshot } from '@/types/results';
+import {
+    DriverResult,
+    RaceControlEvent,
+    RaceResult,
+    SupabaseRaceResultRow,
+    WeatherSnapshot,
+} from '@/types/results';
 import { use, useEffect, useMemo, useState } from 'react';
 
-type ActiveTab = 'classification' | 'strategy' | 'telemetry' | 'performance';
+type ActiveTab = 'classification' | 'strategy' | 'racecontrol' | 'telemetry' | 'performance';
 
 const TABS = [
     {
@@ -25,6 +32,13 @@ const TABS = [
         requiresStints: false,
     },
     { key: 'strategy' as const, label: 'Race Strategy', requiresLaps: false, requiresStints: true },
+    {
+        key: 'racecontrol' as const,
+        label: 'Race Control',
+        requiresLaps: false,
+        requiresStints: false,
+        requiresRaceControl: true,
+    },
     {
         key: 'telemetry' as const,
         label: 'Lap Telemetry',
@@ -77,6 +91,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                     pitStops: parseJsonField(r.pit_stops_json),
                     stints: parseJsonField(r.stints_json),
                     weather: parseJsonField<WeatherSnapshot>(r.weather_json),
+                    raceControl: parseJsonField<RaceControlEvent>(r.race_control_json),
                 }))
                 .sort((a, b) => a.sessionKey - b.sessionKey);
 
@@ -113,8 +128,13 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
 
     const hasStintData = (activeRace?.stints?.length ?? 0) > 0;
 
+    const hasRaceControlData = (activeRace?.raceControl?.length ?? 0) > 0;
+
     const visibleTabs = TABS.filter(
-        (tab) => (!tab.requiresLaps || hasLapData) && (!tab.requiresStints || hasStintData),
+        (tab) =>
+            (!tab.requiresLaps || hasLapData) &&
+            (!tab.requiresStints || hasStintData) &&
+            (!tab.requiresRaceControl || hasRaceControlData)
     );
 
     const countryName = results[0]?.country || 'Race Weekend';
@@ -216,6 +236,9 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                     sessionName={activeRace.sessionName}
                                 />
                             </div>
+                        )}
+                        {activeTab === 'racecontrol' && (
+                            <RaceControlPanel raceControl={activeRace.raceControl} />
                         )}
                         {activeTab === 'strategy' && (
                             <RaceStrategyTable

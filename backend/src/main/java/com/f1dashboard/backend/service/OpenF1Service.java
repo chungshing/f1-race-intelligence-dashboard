@@ -1,19 +1,49 @@
 package com.f1dashboard.backend.service;
 
-import com.f1dashboard.backend.dto.*;
-import com.f1dashboard.backend.model.*;
-import com.f1dashboard.backend.repository.*;
-import lombok.extern.slf4j.Slf4j;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.f1dashboard.backend.dto.OpenF1ChampionshipDto;
+import com.f1dashboard.backend.dto.OpenF1DriverDto;
+import com.f1dashboard.backend.dto.OpenF1LapDto;
+import com.f1dashboard.backend.dto.OpenF1MeetingDto;
+import com.f1dashboard.backend.dto.OpenF1RaceControlDto;
+import com.f1dashboard.backend.dto.OpenF1SessionDto;
+import com.f1dashboard.backend.dto.OpenF1SessionResultDto;
+import com.f1dashboard.backend.dto.OpenF1TeamChampionshipDto;
+import com.f1dashboard.backend.dto.OpenF1WeatherDto;
+import com.f1dashboard.backend.model.DriverResult;
+import com.f1dashboard.backend.model.DriverStanding;
+import com.f1dashboard.backend.model.Lap;
+import com.f1dashboard.backend.model.PitStop;
+import com.f1dashboard.backend.model.RaceControlEvent;
+import com.f1dashboard.backend.model.RaceResult;
+import com.f1dashboard.backend.model.RaceSession;
+import com.f1dashboard.backend.model.RaceWeekend;
+import com.f1dashboard.backend.model.Stint;
+import com.f1dashboard.backend.model.TeamStanding;
+import com.f1dashboard.backend.model.WeatherSnapshot;
+import com.f1dashboard.backend.repository.DriverStandingRepository;
+import com.f1dashboard.backend.repository.LapRepository;
+import com.f1dashboard.backend.repository.RaceResultRepository;
+import com.f1dashboard.backend.repository.RaceWeekendRepository;
+import com.f1dashboard.backend.repository.TeamStandingRepository;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -300,7 +330,32 @@ public class OpenF1Service {
                 log.warn("Weather data unavailable for session key: {}", activeKey);
             }
 
-            // 5. Construct complete, enriched entity directly
+            // 5. Fetch Race Control (always)
+            List<RaceControlEvent> raceControlList = new ArrayList<>();
+            try {
+                delayBetweenRequests();
+                String raceControlUrl = openF1BaseUrl + "/race_control?session_key=" + activeKey;
+                OpenF1RaceControlDto[] fetchedEvents = restTemplate.getForObject(raceControlUrl,
+                        OpenF1RaceControlDto[].class);
+                if (fetchedEvents != null) {
+                    raceControlList = Arrays.stream(fetchedEvents)
+                            .map(e -> new RaceControlEvent(
+                                    e.getCategory(),
+                                    e.getDate(),
+                                    e.getDriver_number(),
+                                    e.getFlag(),
+                                    e.getLap_number(),
+                                    e.getMessage(),
+                                    e.getQualifying_phase(),
+                                    e.getScope(),
+                                    e.getSector()))
+                            .toList();
+                }
+            } catch (Exception e) {
+                log.warn("Race control data unavailable for session key: {}", activeKey);
+            }
+
+            // 6. Construct entity
             RaceResult result = new RaceResult(
                     activeSession.getMeeting_key(),
                     activeKey,
@@ -309,7 +364,8 @@ public class OpenF1Service {
                     driverResults,
                     pitStopsList,
                     stintsList,
-                    weatherList);
+                    weatherList,
+                    raceControlList);
 
             return List.of(result);
 
@@ -404,7 +460,12 @@ public class OpenF1Service {
         // 3. Check for structural updates OR content changes
         Set<Integer> localKeys = localRecords.stream().map(RaceResult::getSessionKey).collect(Collectors.toSet());
         Set<Integer> liveKeys = liveResults.stream().map(RaceResult::getSessionKey).collect(Collectors.toSet());
-        boolean cacheNeedsRefresh = !localKeys.equals(liveKeys);
+        boolean cacheNeedsRefresh = !localKeys.equals(liveKeys) ||
+                localRecords.stream()
+                        .filter(r -> r.getSessionName() != null
+                                && !r.getSessionName().toLowerCase().contains("practice"))
+                        .anyMatch(r -> (r.getWeather() == null || r.getWeather().isEmpty()) ||
+                                (r.getRaceControl() == null || r.getRaceControl().isEmpty()));
 
         if (cacheNeedsRefresh) {
             log.info("Cache updates detected. Upserting fresh matrices to database...");
@@ -419,6 +480,12 @@ public class OpenF1Service {
                     }
                     if (live.getStints() == null || live.getStints().isEmpty()) {
                         live.setStints(local.getStints());
+                    }
+                    if (live.getWeather() == null || live.getWeather().isEmpty()) {
+                        live.setWeather(local.getWeather());
+                    }
+                    if (live.getRaceControl() == null || live.getRaceControl().isEmpty()) {
+                        live.setRaceControl(local.getRaceControl());
                     }
                 });
             }

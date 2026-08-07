@@ -1,8 +1,8 @@
 import { SupabaseLapRow } from '@/types/laps';
-import { supabase } from './supabaseClient';
 import { SupabaseRaceRow } from '@/types/race';
 import { SupabaseRaceResultRow } from '@/types/results';
 import { RawDriverStanding, RawTeamStanding } from '@/types/standing';
+import { supabase } from './supabaseClient';
 
 /**
  * Fetches driver standings
@@ -59,9 +59,7 @@ export async function getRaces(): Promise<SupabaseRaceRow[]> {
  * Fetches race results with optional filtering by meetingKey
  * Fields: session_key, meeting_key, country, session_name, classification_json, pit_stops_json, stints_json
  */
-export async function getRaceResults(
-    meetingKey: number | null = null,
-): Promise<SupabaseRaceResultRow[]> {
+export async function getRaceResults(meetingKey?: number): Promise<SupabaseRaceResultRow[]> {
     let dbQuery = supabase.from('race_results').select('*');
 
     if (meetingKey) {
@@ -74,6 +72,15 @@ export async function getRaceResults(
         console.error('Error fetching race results:', error);
         throw new Error(error.message);
     }
+    return data || [];
+}
+
+export async function getRaceResultsSummary(): Promise<SupabaseRaceResultRow[]> {
+    const { data, error } = await supabase
+        .from('race_results')
+        .select('session_key, meeting_key, country, session_name, classification_json');
+
+    if (error) throw new Error(error.message);
     return data || [];
 }
 

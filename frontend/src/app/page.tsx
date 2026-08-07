@@ -1,19 +1,19 @@
 'use client';
 
+import { RaceAnalysisBanner } from '@/components/dashboard/RaceAnalysisBanner';
 import AppLayout from '@/components/layout/AppLayout';
 import { DriverTable } from '@/components/table/DriverTable';
-import { TeamTable } from '@/components/table/TeamTable';
-import RaceWeekendCard from '@/components/table/RaceWeekendCard';
-import { useStandings, useTeamStandings } from '@/hooks/useStandings';
-import { useMemo, useState, useEffect } from 'react';
-import { useRaceWeekends } from '@/hooks/useRaceWeekends';
-import { getNextRaceWeekend } from '@/utils/race';
-import { buildRecentForm } from '@/utils/form';
-import { getRaceResults, getLapsBySession } from '@/lib/app';
 import { RaceResultsTable } from '@/components/table/RaceResultsTable';
+import RaceWeekendCard from '@/components/table/RaceWeekendCard';
+import { TeamTable } from '@/components/table/TeamTable';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
+import { useRaceWeekends } from '@/hooks/useRaceWeekends';
+import { useStandings, useTeamStandings } from '@/hooks/useStandings';
+import { getRaceResultsSummary } from '@/lib/app';
 import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
-import { RaceAnalysisBanner } from '@/components/dashboard/RaceAnalysisBanner';
+import { buildRecentForm } from '@/utils/form';
+import { getNextRaceWeekend } from '@/utils/race';
+import { useEffect, useMemo, useState } from 'react';
 
 type TabType = 'drivers' | 'constructors';
 
@@ -58,7 +58,7 @@ export default function Home() {
     // Fetch all race rows once
     useEffect(() => {
         let isMounted = true;
-        getRaceResults()
+        getRaceResultsSummary()
             .then((data) => {
                 if (isMounted) setAllRaceRows(data);
             })
@@ -68,57 +68,22 @@ export default function Home() {
         };
     }, []);
 
-    // Find latest completed race classification
-    useEffect(() => {
-        let isMounted = true;
-        if (!sortedRaces.length) return;
-
-        const fetchLatestCompletedRace = async () => {
-            try {
-                for (const race of sortedRaces) {
-                    const data: SupabaseRaceResultRow[] = await getRaceResults(race.meetingKey);
-                    if (!isMounted) return;
-
-                    const mainRaceSession = data.find((s) => s.session_name === 'Race');
-                    if (mainRaceSession) {
-                        let rawData = mainRaceSession.classification_json;
-                        if (typeof rawData === 'string') rawData = JSON.parse(rawData);
-
-                        if (Array.isArray(rawData) && rawData.length > 0) {
-                            setResultsState({ data: rawData as DriverResult[], loading: false });
-                            return;
-                        }
-                    }
-                }
-            } catch (err) {
-                console.error('Failed to fetch latest race data:', err);
-            } finally {
-                if (isMounted) setResultsState((prev) => ({ ...prev, loading: false }));
-            }
-        };
-
-        fetchLatestCompletedRace();
-        return () => {
-            isMounted = false;
-        };
-    }, [sortedRaces]);
-
-    // Check if latest race has lap data for banner — reuses allRaceRows, no extra fetch
+    // Derive latest race classification + set latestAnalysis banner from allRaceRows
     useEffect(() => {
         if (!allRaceRows.length || !sortedRaces.length) return;
-        let isMounted = true;
 
-        const checkLatestLapData = async () => {
+        queueMicrotask(() => {
             for (const race of sortedRaces) {
                 const raceSession = allRaceRows.find(
-                    (r) => r.meeting_key === race.meetingKey && r.session_name === 'Race',
+                    (r) => r.meeting_key === race.meetingKey && r.session_name === 'Race'
                 );
                 if (!raceSession) continue;
 
-                const laps = await getLapsBySession(raceSession.session_key);
-                if (!isMounted) return;
+                let rawData = raceSession.classification_json;
+                if (typeof rawData === 'string') rawData = JSON.parse(rawData);
 
-                if (laps.length > 0) {
+                if (Array.isArray(rawData) && rawData.length > 0) {
+                    setResultsState({ data: rawData as DriverResult[], loading: false });
                     setLatestAnalysis({
                         meetingKey: race.meetingKey,
                         country: race.country,
@@ -127,18 +92,15 @@ export default function Home() {
                     return;
                 }
             }
-        };
 
-        checkLatestLapData().catch(console.error);
-        return () => {
-            isMounted = false;
-        };
-    }, [sortedRaces, allRaceRows]);
+            setResultsState((prev) => ({ ...prev, loading: false }));
+        });
+    }, [allRaceRows, sortedRaces]);
 
     const formMap = useMemo(() => {
         const rows = buildRecentForm(
             allRaceRows,
-            standings.map((s) => s.driverNumber),
+            standings.map((s) => s.driverNumber)
         );
         return Object.fromEntries(rows.map((r) => [r.driverNumber, r.results]));
     }, [allRaceRows, standings]);
