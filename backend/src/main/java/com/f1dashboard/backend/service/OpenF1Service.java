@@ -460,7 +460,9 @@ public class OpenF1Service {
         // 3. Check for structural updates OR content changes
         Set<Integer> localKeys = localRecords.stream().map(RaceResult::getSessionKey).collect(Collectors.toSet());
         Set<Integer> liveKeys = liveResults.stream().map(RaceResult::getSessionKey).collect(Collectors.toSet());
-        boolean cacheNeedsRefresh = !localKeys.equals(liveKeys);
+        boolean cacheNeedsRefresh = !localKeys.equals(liveKeys) ||
+                localRecords.stream().anyMatch(r -> (r.getWeather() == null || r.getWeather().isEmpty()) ||
+                        (r.getRaceControl() == null || r.getRaceControl().isEmpty()));
 
         if (cacheNeedsRefresh) {
             log.info("Cache updates detected. Upserting fresh matrices to database...");
