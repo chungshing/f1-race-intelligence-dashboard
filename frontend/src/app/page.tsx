@@ -9,7 +9,7 @@ import { TeamTable } from '@/components/table/TeamTable';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
 import { useRaceWeekends } from '@/hooks/useRaceWeekends';
 import { useStandings, useTeamStandings } from '@/hooks/useStandings';
-import { getRaceResults } from '@/lib/app';
+import { getRaceResultsSummary } from '@/lib/app';
 import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
 import { buildRecentForm } from '@/utils/form';
 import { getNextRaceWeekend } from '@/utils/race';
@@ -58,7 +58,7 @@ export default function Home() {
     // Fetch all race rows once
     useEffect(() => {
         let isMounted = true;
-        getRaceResults()
+        getRaceResultsSummary()
             .then((data) => {
                 if (isMounted) setAllRaceRows(data);
             })
