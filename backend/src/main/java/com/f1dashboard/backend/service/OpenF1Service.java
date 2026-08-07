@@ -461,8 +461,11 @@ public class OpenF1Service {
         Set<Integer> localKeys = localRecords.stream().map(RaceResult::getSessionKey).collect(Collectors.toSet());
         Set<Integer> liveKeys = liveResults.stream().map(RaceResult::getSessionKey).collect(Collectors.toSet());
         boolean cacheNeedsRefresh = !localKeys.equals(liveKeys) ||
-                localRecords.stream().anyMatch(r -> (r.getWeather() == null || r.getWeather().isEmpty()) ||
-                        (r.getRaceControl() == null || r.getRaceControl().isEmpty()));
+                localRecords.stream()
+                        .filter(r -> r.getSessionName() != null
+                                && !r.getSessionName().toLowerCase().contains("practice"))
+                        .anyMatch(r -> (r.getWeather() == null || r.getWeather().isEmpty()) ||
+                                (r.getRaceControl() == null || r.getRaceControl().isEmpty()));
 
         if (cacheNeedsRefresh) {
             log.info("Cache updates detected. Upserting fresh matrices to database...");
@@ -477,6 +480,9 @@ public class OpenF1Service {
                     }
                     if (live.getStints() == null || live.getStints().isEmpty()) {
                         live.setStints(local.getStints());
+                    }
+                    if (live.getWeather() == null || live.getWeather().isEmpty()) {
+                        live.setWeather(local.getWeather());
                     }
                     if (live.getRaceControl() == null || live.getRaceControl().isEmpty()) {
                         live.setRaceControl(local.getRaceControl());
