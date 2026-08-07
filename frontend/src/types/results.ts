@@ -36,6 +36,18 @@ export interface WeatherSnapshot {
     date: string | null;
 }
 
+export interface RaceControlEvent {
+    category: string | null;
+    date: string | null;
+    driverNumber: number | null;
+    flag: string | null;
+    lapNumber: number | null;
+    message: string | null;
+    qualifyingPhase: string | null;
+    scope: string | null;
+    sector: number | null;
+}
+
 export interface RaceResult {
     sessionKey: number;
     meetingKey: number;
@@ -45,6 +57,7 @@ export interface RaceResult {
     pitStops: PitStop[];
     stints: Stint[];
     weather: WeatherSnapshot[];
+    raceControl: RaceControlEvent[];
 }
 
 export interface SupabaseRaceResultRow {
@@ -56,4 +69,5 @@ export interface SupabaseRaceResultRow {
     pit_stops_json?: string | PitStop[];
     stints_json?: string | Stint[];
     weather_json?: string | WeatherSnapshot[];
+    race_control_json?: string | RaceControlEvent[];
 }
