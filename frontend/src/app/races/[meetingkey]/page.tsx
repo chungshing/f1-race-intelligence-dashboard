@@ -7,12 +7,14 @@ import { PitStopLeaderboard } from '@/components/chart/PitStopLeaderboard';
 import { RaceControlPanel } from '@/components/chart/RaceControlPanel';
 import { WeatherPanel } from '@/components/chart/WeatherPanel';
 import AppLayout from '@/components/layout/AppLayout';
+import { GridVsRaceUnavailable, GridVsRaceView } from '@/components/table/GridVsRaceView';
 import { RaceResultsTable } from '@/components/table/RaceResultsTable';
 import { RaceStrategyTable } from '@/components/table/RaceStrategyTable';
 import { SectorDurationTable } from '@/components/table/SectorDurationTable';
 import { SectorSpeedTable } from '@/components/table/SectorSpeedTable';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
 import { getLapsBySession, getRaceResults } from '@/lib/app';
+import { findGridRacePairs } from '@/utils/gridVsRace';
 import {
     DriverResult,
     RaceControlEvent,
@@ -22,12 +24,24 @@ import {
 } from '@/types/results';
 import { use, useEffect, useMemo, useState } from 'react';
 
-type ActiveTab = 'classification' | 'strategy' | 'racecontrol' | 'telemetry' | 'performance';
+type ActiveTab =
+    | 'classification'
+    | 'gridvsrace'
+    | 'strategy'
+    | 'racecontrol'
+    | 'telemetry'
+    | 'performance';
 
 const TABS = [
     {
         key: 'classification' as const,
         label: 'Classification',
+        requiresLaps: false,
+        requiresStints: false,
+    },
+    {
+        key: 'gridvsrace' as const,
+        label: 'Grid vs Race',
         requiresLaps: false,
         requiresStints: false,
     },
@@ -113,7 +127,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
         if (!activeSessionKey) return;
 
         queueMicrotask(() => {
-            setActiveTab('classification');
+            setActiveTab((tab) => (tab === 'gridvsrace' ? tab : 'classification'));
             setHasLapData(false);
         });
 
@@ -129,6 +143,8 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
     const hasStintData = (activeRace?.stints?.length ?? 0) > 0;
 
     const hasRaceControlData = (activeRace?.raceControl?.length ?? 0) > 0;
+
+    const gridRacePairs = useMemo(() => findGridRacePairs(results), [results]);
 
     const visibleTabs = TABS.filter(
         (tab) =>
@@ -208,12 +224,12 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                 </div>
 
                 {/* View State Navigation Tabs */}
-                <div className='flex space-x-6 border-b border-zinc-800/80 text-xs font-bold uppercase tracking-wider pb-px'>
+                <div className='flex space-x-6 border-b border-zinc-800/80 text-xs font-bold uppercase tracking-wider pb-px overflow-x-auto scrollbar-none'>
                     {visibleTabs.map((tab) => (
                         <button
                             key={tab.key}
                             onClick={() => setActiveTab(tab.key)}
-                            className={`pb-3 transition-colors ${
+                            className={`pb-3 whitespace-nowrap transition-colors ${
                                 activeTab === tab.key
                                     ? 'text-blue-500 border-b-2 border-blue-500 font-black'
                                     : 'text-zinc-400 hover:text-zinc-200'
@@ -237,6 +253,12 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                 />
                             </div>
                         )}
+                        {activeTab === 'gridvsrace' &&
+                            (gridRacePairs.length > 0 ? (
+                                <GridVsRaceView pairs={gridRacePairs} lookup={driverLookup} />
+                            ) : (
+                                <GridVsRaceUnavailable results={results} />
+                            ))}
                         {activeTab === 'racecontrol' && (
                             <RaceControlPanel raceControl={activeRace.raceControl} />
                         )}
