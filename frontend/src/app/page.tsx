@@ -13,6 +13,7 @@ import { getRaceResultsSummary } from '@/lib/app';
 import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
 import { buildRecentForm } from '@/utils/form';
 import { getNextRaceWeekend } from '@/utils/race';
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 type TabType = 'drivers' | 'constructors';
@@ -290,12 +291,12 @@ export default function Home() {
                                     </button>
                                 ))}
                             </div>
-                            <a
+                            <Link
                                 href={activeTab === 'drivers' ? '/drivers' : '/constructors'}
                                 className='text-[11px] font-bold text-zinc-400 hover:text-zinc-200 transition-colors tracking-tight whitespace-nowrap'
                             >
                                 View Full Standings →
-                            </a>
+                            </Link>
                         </div>
 
                         <div className='w-full'>
@@ -336,12 +337,12 @@ export default function Home() {
                                     Latest Race Results
                                 </h3>
                                 {sortedRaces.length > 0 && (
-                                    <a
+                                    <Link
                                         href={`/races/${sortedRaces[0].meetingKey}`}
                                         className='text-[11px] font-bold text-zinc-400 hover:text-zinc-200 transition-colors tracking-tight'
                                     >
                                         Full Session Breakdown →
-                                    </a>
+                                    </Link>
                                 )}
                             </div>
 
