@@ -47,7 +47,7 @@ export function TeamTable({ standings, limit }: TeamTableProps) {
                                 <td className='p-0'>
                                     <div
                                         className='w-1 h-8 rounded-full'
-                                        style={{ backgroundColor: row.teamColor }}
+                                        style={{ backgroundColor: `#${row.teamColor}` }}
                                     />
                                 </td>
                                 <td className='p-4 font-bold text-zinc-100 tracking-tight text-sm'>

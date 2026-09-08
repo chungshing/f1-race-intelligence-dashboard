@@ -161,7 +161,9 @@ public class OpenF1Service {
             Map<String, String> teamColorMap = drivers == null ? Map.of()
                     : Arrays.stream(drivers)
                             .filter(d -> d.getTeamName() != null && d.getTeamColour() != null)
-                            .collect(Collectors.toMap(OpenF1DriverDto::getTeamName, OpenF1DriverDto::getTeamColour,
+                            .collect(Collectors.toMap(
+                                    OpenF1DriverDto::getTeamName,
+                                    d -> d.getTeamColour().replaceFirst("^#", ""),
                                     (a, b) -> a));
 
             return Arrays.stream(teams)
@@ -173,7 +175,7 @@ public class OpenF1Service {
                             t.getPointsCurrent(),
                             t.getPointsStart() != null ? t.getPointsStart() : t.getPointsCurrent(),
                             t.getPointsEarned(),
-                            teamColorMap.getOrDefault(t.getTeamName(), "#999999")))
+                            teamColorMap.getOrDefault(t.getTeamName(), "999999")))
                     .sorted(Comparator.comparingInt(TeamStanding::getPosition))
                     .toList();
         } catch (RestClientException e) {

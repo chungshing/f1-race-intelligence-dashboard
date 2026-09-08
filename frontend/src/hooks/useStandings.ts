@@ -22,7 +22,7 @@ function mapDriverStandings(apiData: RawDriverStanding[]): DriverStanding[] {
             points,
             pointsStart: Number(item.points_start ?? points - pointsEarned),
             pointsEarned,
-            teamColor: item.team_color || '#CCCCCC',
+            teamColor: item.team_color || 'CCCCCC',
             headshotUrl: item.headshot_url || null,
         };
     });
@@ -43,7 +43,7 @@ function mapTeamStandings(apiData: RawTeamStanding[]): Team[] {
             points,
             pointsStart: Number(item.points_start ?? points - pointsEarned),
             pointsEarned,
-            teamColor: item.team_color || '#999999',
+            teamColor: item.team_color || '999999',
         };
     });
 }
