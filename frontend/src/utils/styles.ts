@@ -6,7 +6,7 @@ export const getPositionColor = (position: number): string => {
 };
 
 export const TABLE_CONTAINER_CLASS =
-    'border border-zinc-800 rounded-xl overflow-x-auto bg-linear-to-b from-zinc-900 to-zinc-950 shadow-2xl';
+    'border border-zinc-800 rounded-xl overflow-x-auto bg-linear-to-b from-zinc-900 to-zinc-950';
 
 export const TABLE_THEAD_CLASS =
     'border-b border-zinc-800 bg-zinc-900/40 text-xs font-semibold tracking-wider text-zinc-400 uppercase';
