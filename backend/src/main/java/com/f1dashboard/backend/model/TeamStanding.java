@@ -20,9 +20,10 @@ public class TeamStanding {
     private int points;
     private int pointsStart;
     private int pointsEarned;
+    private String teamColor;
 
     public TeamStanding(int position, int positionStart, int positionsGained,
-            String teamName, int points, int pointsStart, int pointsEarned) {
+            String teamName, int points, int pointsStart, int pointsEarned, String teamColor) {
         this.position = position;
         this.positionStart = positionStart;
         this.positionsGained = positionsGained;
@@ -30,5 +31,6 @@ public class TeamStanding {
         this.points = points;
         this.pointsStart = pointsStart;
         this.pointsEarned = pointsEarned;
+        this.teamColor = teamColor;
     }
 }
