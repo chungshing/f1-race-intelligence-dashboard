@@ -24,6 +24,7 @@ export function TeamTable({ standings, limit }: TeamTableProps) {
                 <thead>
                     <tr className={TABLE_THEAD_CLASS}>
                         <th className='p-4 w-16 text-center'>Pos</th>
+                        <th className='p-4 w-2'></th>
                         <th className='p-4'>Team</th>
                         <th className='p-4 text-center w-24'>Change</th>
                         <th className='p-4 text-right w-28'>Points</th>
@@ -42,6 +43,12 @@ export function TeamTable({ standings, limit }: TeamTableProps) {
                                     className={`p-4 font-black text-center text-base ${getPositionColor(row.position)}`}
                                 >
                                     {row.position}
+                                </td>
+                                <td className='p-0'>
+                                    <div
+                                        className='w-1 h-8 rounded-full'
+                                        style={{ backgroundColor: row.teamColor }}
+                                    />
                                 </td>
                                 <td className='p-4 font-bold text-zinc-100 tracking-tight text-sm'>
                                     {row.teamName}
