@@ -154,6 +154,16 @@ public class OpenF1Service {
             if (teams == null || teams.length == 0)
                 return List.of();
 
+            String driversUrl = openF1BaseUrl + "/drivers?session_key=latest";
+            delayBetweenRequests();
+            OpenF1DriverDto[] drivers = restTemplate.getForObject(driversUrl, OpenF1DriverDto[].class);
+
+            Map<String, String> teamColorMap = drivers == null ? Map.of()
+                    : Arrays.stream(drivers)
+                            .filter(d -> d.getTeamName() != null && d.getTeamColour() != null)
+                            .collect(Collectors.toMap(OpenF1DriverDto::getTeamName, OpenF1DriverDto::getTeamColour,
+                                    (a, b) -> a));
+
             return Arrays.stream(teams)
                     .map(t -> new TeamStanding(
                             t.getPositionCurrent(),
@@ -162,14 +172,14 @@ public class OpenF1Service {
                             t.getTeamName(),
                             t.getPointsCurrent(),
                             t.getPointsStart() != null ? t.getPointsStart() : t.getPointsCurrent(),
-                            t.getPointsEarned()))
+                            t.getPointsEarned(),
+                            teamColorMap.getOrDefault(t.getTeamName(), "#999999")))
                     .sorted(Comparator.comparingInt(TeamStanding::getPosition))
                     .toList();
         } catch (RestClientException e) {
             log.warn(
                     "Team standings unavailable due to OpenF1 race weekend restrictions. Loading cached data from DB.");
 
-            // Fetch existing records from your database instead of returning empty
             return teamRepo.findAll().stream()
                     .sorted(Comparator.comparingInt(TeamStanding::getPosition))
                     .toList();
