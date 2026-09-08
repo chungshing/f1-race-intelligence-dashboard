@@ -1,11 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
-import AppLayout from '@/components/layout/AppLayout';
-import { useRaceWeekends } from '@/hooks/useRaceWeekends';
-import RaceWeekendCard from '@/components/table/RaceWeekendCard';
 import SeasonTimeline from '@/components/dashboard/SeasonTimeline';
+import AppLayout from '@/components/layout/AppLayout';
+import RaceWeekendCard from '@/components/table/RaceWeekendCard';
+import { useRaceWeekends } from '@/hooks/useRaceWeekends';
 import { getNextRaceWeekend } from '@/utils/race';
+import { useMemo } from 'react';
 
 export default function RacesPage() {
     const { data, loading, error } = useRaceWeekends();
@@ -17,7 +17,7 @@ export default function RacesPage() {
             <AppLayout>
                 <div className='flex items-center justify-center min-h-[50vh]'>
                     <div className='flex flex-col items-center gap-3 text-zinc-500'>
-                        <div className='w-6 h-6 border-2 border-zinc-700 border-t-blue-500 rounded-full animate-spin' />
+                        <div className='w-6 h-6 border-2 border-zinc-700 border-t-red-500 rounded-full animate-spin' />
                         <p className='text-xs font-semibold uppercase tracking-wider animate-pulse'>
                             Loading Race Calendar
                         </p>
