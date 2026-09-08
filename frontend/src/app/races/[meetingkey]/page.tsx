@@ -14,7 +14,6 @@ import { SectorDurationTable } from '@/components/table/SectorDurationTable';
 import { SectorSpeedTable } from '@/components/table/SectorSpeedTable';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
 import { getLapsBySession, getRaceResults } from '@/lib/app';
-import { findGridRacePairs } from '@/utils/gridVsRace';
 import {
     DriverResult,
     RaceControlEvent,
@@ -22,6 +21,7 @@ import {
     SupabaseRaceResultRow,
     WeatherSnapshot,
 } from '@/types/results';
+import { findGridRacePairs } from '@/utils/gridVsRace';
 import { use, useEffect, useMemo, useState } from 'react';
 
 type ActiveTab =
@@ -160,7 +160,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
             <AppLayout>
                 <div className='flex items-center justify-center min-h-[50vh]'>
                     <div className='flex flex-col items-center gap-3 text-zinc-500'>
-                        <div className='w-6 h-6 border-2 border-zinc-700 border-t-blue-500 rounded-full animate-spin' />
+                        <div className='w-6 h-6 border-2 border-zinc-700 border-t-red-500 rounded-full animate-spin' />
                         <p className='text-xs font-semibold uppercase tracking-wider animate-pulse'>
                             Loading Weekend Results
                         </p>
@@ -191,9 +191,9 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
 
     return (
         <AppLayout>
-            <div className='max-w-5xl mx-auto px-4 py-8 space-y-6'>
-                <div className='relative pl-5 before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-blue-500 before:rounded-full'>
-                    <span className='text-[10px] font-bold text-blue-500 tracking-widest uppercase'>
+            <div className='space-y-6'>
+                <div className='relative pl-5 before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-red-500 before:rounded-full'>
+                    <span className='text-[10px] font-bold text-red-500 tracking-widest uppercase'>
                         Grand Prix Results
                     </span>
                     <h1 className='text-3xl sm:text-4xl font-black text-white tracking-tight mt-0.5'>
@@ -231,7 +231,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                             onClick={() => setActiveTab(tab.key)}
                             className={`pb-3 whitespace-nowrap transition-colors ${
                                 activeTab === tab.key
-                                    ? 'text-blue-500 border-b-2 border-blue-500 font-black'
+                                    ? 'text-red-500 border-b-2 border-red-500 font-black'
                                     : 'text-zinc-400 hover:text-zinc-200'
                             }`}
                         >

@@ -13,6 +13,7 @@ import { getRaceResultsSummary } from '@/lib/app';
 import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
 import { buildRecentForm } from '@/utils/form';
 import { getNextRaceWeekend } from '@/utils/race';
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 type TabType = 'drivers' | 'constructors';
@@ -142,15 +143,15 @@ export default function Home() {
             {
                 label: 'Championship Leader',
                 val: driverLoading ? null : leader?.driverName,
-                sub: leader?.teamName ?? 'No Active Team',
-                caption: leader?.points ? `${leader.points} PTS` : '0 PTS',
+                sub: leader
+                    ? `${leader.teamName ?? 'No Active Team'} · ${leader.points ?? 0} PTS`
+                    : '—',
                 color: leader?.teamColor ? `#${leader.teamColor}` : '#71717a',
             },
             {
                 label: 'Constructor Leader',
                 val: teamLoading ? null : topTeam?.teamName,
-                sub: 'Factory Lead',
-                caption: topTeam?.points ? `${topTeam.points} PTS` : '0 PTS',
+                sub: topTeam ? `Factory Lead · ${topTeam.points ?? 0} PTS` : '—',
                 color: '#e4e4e7',
             },
             {
@@ -160,8 +161,7 @@ export default function Home() {
                     : leader && runnerUp
                       ? `+${leader.points - runnerUp.points}`
                       : '—',
-                sub: 'Points Delta',
-                caption: 'Top 2 Drivers',
+                sub: 'Top 2 Drivers · Points Delta',
                 color: '#a1a1aa',
             },
         ];
@@ -251,15 +251,12 @@ export default function Home() {
                                 <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-500 truncate'>
                                     {card.label}
                                 </p>
-                                <span className='text-[10px] font-mono font-bold text-zinc-400 bg-zinc-800/60 px-1.5 py-0.5 rounded border border-zinc-700/30 whitespace-nowrap'>
-                                    {card.caption}
-                                </span>
                             </div>
                             <div className='mt-2 flex items-baseline justify-between gap-4'>
                                 {card.val === null ? (
-                                    <div className='h-6 w-24 bg-zinc-800 animate-pulse rounded-md' />
+                                    <div className='h-9 w-24 bg-zinc-800 animate-pulse rounded-md' />
                                 ) : (
-                                    <h2 className='text-base font-bold truncate tracking-tight text-zinc-200'>
+                                    <h2 className='text-3xl font-mono font-bold truncate tracking-tight text-zinc-100'>
                                         {card.val || '—'}
                                     </h2>
                                 )}
@@ -277,7 +274,7 @@ export default function Home() {
                 {/* Main Grid */}
                 <div className='grid grid-cols-1 lg:grid-cols-3 gap-5 items-start'>
                     {/* Left: Standings */}
-                    <div className='lg:col-span-2 space-y-4 bg-zinc-900/20 border border-zinc-800/40 rounded-xl p-4 backdrop-blur-xs'>
+                    <div className='lg:col-span-2 space-y-4'>
                         <div className='flex items-center justify-between border-b border-zinc-800/60 pb-3 gap-4'>
                             <div className='flex bg-zinc-950 p-1 rounded-lg border border-zinc-800 w-full max-w-60'>
                                 {(['drivers', 'constructors'] as const).map((tab) => (
@@ -294,12 +291,12 @@ export default function Home() {
                                     </button>
                                 ))}
                             </div>
-                            <a
+                            <Link
                                 href={activeTab === 'drivers' ? '/drivers' : '/constructors'}
                                 className='text-[11px] font-bold text-zinc-400 hover:text-zinc-200 transition-colors tracking-tight whitespace-nowrap'
                             >
                                 View Full Standings →
-                            </a>
+                            </Link>
                         </div>
 
                         <div className='w-full'>
@@ -340,12 +337,12 @@ export default function Home() {
                                     Latest Race Results
                                 </h3>
                                 {sortedRaces.length > 0 && (
-                                    <a
+                                    <Link
                                         href={`/races/${sortedRaces[0].meetingKey}`}
                                         className='text-[11px] font-bold text-zinc-400 hover:text-zinc-200 transition-colors tracking-tight'
                                     >
                                         Full Session Breakdown →
-                                    </a>
+                                    </Link>
                                 )}
                             </div>
 

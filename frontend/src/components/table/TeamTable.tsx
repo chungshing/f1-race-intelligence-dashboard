@@ -1,6 +1,6 @@
 import { Team } from '@/types/standing';
-import { ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import { getPositionColor, TABLE_CONTAINER_CLASS, TABLE_THEAD_CLASS } from '@/utils/styles';
+import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
 
 interface TeamTableProps {
     standings: Team[];
@@ -20,7 +20,7 @@ export function TeamTable({ standings, limit }: TeamTableProps) {
 
     return (
         <div className={TABLE_CONTAINER_CLASS}>
-            <table className='w-full text-left border-collapse text-sm min-w-125'>
+            <table className='w-full text-left border-collapse text-sm'>
                 <thead>
                     <tr className={TABLE_THEAD_CLASS}>
                         <th className='p-4 w-16 text-center'>Pos</th>

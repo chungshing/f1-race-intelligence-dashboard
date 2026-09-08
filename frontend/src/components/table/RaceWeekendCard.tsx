@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { getNextSession, getTimeRemaining, getWeekendLabel } from '@/utils/race';
 import { RaceWeekend } from '@/types/race';
-import { Check, Play, Circle, Timer, MapPin, Calendar, Trophy } from 'lucide-react';
+import { getNextSession, getTimeRemaining, getWeekendLabel } from '@/utils/race';
+import { Calendar, Check, Circle, MapPin, Play, Timer, Trophy } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 type Props = {
     variant?: 'card' | 'sticky';
@@ -28,7 +29,7 @@ export default function RaceWeekendCard({ variant = 'card', data }: Props) {
     }
 
     const sortedSessions = [...data.sessions].sort(
-        (a, b) => new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime(),
+        (a, b) => new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime()
     );
 
     const nextSession = getNextSession(sortedSessions);
@@ -80,15 +81,13 @@ export default function RaceWeekendCard({ variant = 'card', data }: Props) {
                         </div>
                     )}
 
-                    {hasWeekendStarted && (
-                        <a
-                            href={`/races/${data.meetingKey}`}
-                            className='text-xs font-bold px-3 py-1.5 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-200 rounded-lg transition-colors shrink-0 flex items-center gap-1.5'
-                        >
-                            <Trophy className='w-3.5 h-3.5 text-zinc-400 shrink-0' />
-                            Dashboard
-                        </a>
-                    )}
+                    <Link
+                        href={`/races/${data.meetingKey}`}
+                        className='text-xs font-bold px-3 py-1.5 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-200 rounded-lg transition-colors shrink-0 flex items-center gap-1.5'
+                    >
+                        <Trophy className='w-3.5 h-3.5 text-zinc-400 shrink-0' />
+                        {hasWeekendStarted ? 'Dashboard' : 'Preview'}
+                    </Link>
                 </div>
             </div>
         );
@@ -233,15 +232,13 @@ export default function RaceWeekendCard({ variant = 'card', data }: Props) {
                 })}
             </div>
 
-            {hasWeekendStarted && (
-                <a
-                    href={`/races/${data.meetingKey}`}
-                    className='flex w-full items-center justify-center gap-2 text-xs font-bold py-2.5 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-200 rounded-lg transition-colors'
-                >
-                    <Trophy className='w-4 h-4 text-zinc-400 shrink-0' />
-                    View Results Dashboard
-                </a>
-            )}
+            <Link
+                href={`/races/${data.meetingKey}`}
+                className='flex w-full items-center justify-center gap-2 text-xs font-bold py-2.5 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-200 rounded-lg transition-colors'
+            >
+                <Trophy className='w-4 h-4 text-zinc-400 shrink-0' />
+                {hasWeekendStarted ? 'View Results Dashboard' : 'Preview Weekend'}
+            </Link>
         </div>
     );
 }
