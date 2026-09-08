@@ -20,6 +20,7 @@ export interface Team {
     points: number;
     pointsStart: number;
     pointsEarned: number;
+    teamColor: string;
 }
 
 export interface RawDriverStanding {
@@ -44,4 +45,5 @@ export interface RawTeamStanding {
     points?: number | string | null;
     points_start?: number | string | null;
     points_earned?: number | string | null;
+    team_color?: string | null;
 }
