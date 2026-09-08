@@ -273,7 +273,7 @@ export default function Home() {
                 {/* Main Grid */}
                 <div className='grid grid-cols-1 lg:grid-cols-3 gap-5 items-start'>
                     {/* Left: Standings */}
-                    <div className='lg:col-span-2 space-y-4 bg-zinc-900/20 border border-zinc-800/40 rounded-xl p-4 backdrop-blur-xs'>
+                    <div className='lg:col-span-2 space-y-4'>
                         <div className='flex items-center justify-between border-b border-zinc-800/60 pb-3 gap-4'>
                             <div className='flex bg-zinc-950 p-1 rounded-lg border border-zinc-800 w-full max-w-60'>
                                 {(['drivers', 'constructors'] as const).map((tab) => (
