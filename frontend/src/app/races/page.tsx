@@ -49,7 +49,7 @@ export default function RacesPage() {
             <RaceWeekendCard variant='sticky' data={nextRace} />
 
             {/* Structured Main Content Grid */}
-            <div className='max-w-7xl mx-auto px-4 py-8 space-y-8'>
+            <div className='space-y-8'>
                 <div className='relative pl-4 before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-blue-500 before:rounded-full'>
                     <h1 className='text-2xl font-black text-white tracking-tight uppercase'>
                         Race Calendar

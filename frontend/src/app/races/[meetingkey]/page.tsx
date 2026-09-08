@@ -191,7 +191,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
 
     return (
         <AppLayout>
-            <div className='max-w-5xl mx-auto px-4 py-8 space-y-6'>
+            <div className='space-y-6'>
                 <div className='relative pl-5 before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-red-500 before:rounded-full'>
                     <span className='text-[10px] font-bold text-red-500 tracking-widest uppercase'>
                         Grand Prix Results
