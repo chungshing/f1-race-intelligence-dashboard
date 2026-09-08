@@ -1,8 +1,8 @@
-import NextImage from 'next/image';
 import { DriverStanding } from '@/types/standing';
 import { formatHexColor } from '@/utils/sessions';
-import { ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import { getPositionColor, TABLE_CONTAINER_CLASS, TABLE_THEAD_CLASS } from '@/utils/styles';
+import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
+import NextImage from 'next/image';
 
 interface DriverTableProps {
     standings: DriverStanding[];
@@ -47,7 +47,7 @@ export function DriverTable({ standings, limit, formMap }: DriverTableProps) {
 
     return (
         <div className={TABLE_CONTAINER_CLASS}>
-            <table className='w-full text-left border-collapse text-sm min-w-162.5'>
+            <table className='w-full text-left border-collapse text-sm'>
                 <thead>
                     <tr className={TABLE_THEAD_CLASS}>
                         <th className='p-4 w-16 text-center'>Pos</th>
