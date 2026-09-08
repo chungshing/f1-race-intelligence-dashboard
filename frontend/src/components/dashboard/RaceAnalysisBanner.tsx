@@ -15,13 +15,13 @@ export function RaceAnalysisBanner({ meetingKey, countryName, sessionName }: Pro
     if (dismissed) return null;
 
     return (
-        <div className='relative flex items-center justify-between gap-4 px-4 py-3 bg-blue-500/10 border border-blue-500/30 rounded-xl'>
+        <div className='relative flex items-center justify-between gap-4 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-xl'>
             <div className='flex items-center gap-3 min-w-0'>
-                <div className='shrink-0 w-7 h-7 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center'>
-                    <Activity className='w-3.5 h-3.5 text-blue-400' />
+                <div className='shrink-0 w-7 h-7 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center'>
+                    <Activity className='w-3.5 h-3.5 text-red-400' />
                 </div>
                 <div className='min-w-0'>
-                    <p className='text-xs font-bold text-blue-400 uppercase tracking-wider'>
+                    <p className='text-xs font-bold text-red-400 uppercase tracking-wider'>
                         Post-Race Analysis Available
                     </p>
                     <p className='text-[11px] text-zinc-400 mt-0.5 truncate'>
@@ -35,7 +35,7 @@ export function RaceAnalysisBanner({ meetingKey, countryName, sessionName }: Pro
             <div className='flex items-center gap-2 shrink-0'>
                 <a
                     href={`/races/${meetingKey}`}
-                    className='flex items-center gap-1 text-[11px] font-bold text-blue-400 hover:text-blue-300 transition-colors whitespace-nowrap'
+                    className='flex items-center gap-1 text-[11px] font-bold text-red-400 hover:text-red-300 transition-colors whitespace-nowrap'
                 >
                     View Analysis <ChevronRight className='w-3.5 h-3.5' />
                 </a>
