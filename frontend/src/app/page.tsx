@@ -251,15 +251,12 @@ export default function Home() {
                                 <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-500 truncate'>
                                     {card.label}
                                 </p>
-                                <span className='text-[10px] font-mono font-bold text-zinc-400 bg-zinc-800/60 px-1.5 py-0.5 rounded border border-zinc-700/30 whitespace-nowrap'>
-                                    {card.caption}
-                                </span>
                             </div>
                             <div className='mt-2 flex items-baseline justify-between gap-4'>
                                 {card.val === null ? (
-                                    <div className='h-6 w-24 bg-zinc-800 animate-pulse rounded-md' />
+                                    <div className='h-9 w-24 bg-zinc-800 animate-pulse rounded-md' />
                                 ) : (
-                                    <h2 className='text-base font-bold truncate tracking-tight text-zinc-200'>
+                                    <h2 className='text-3xl font-mono font-bold truncate tracking-tight text-zinc-100'>
                                         {card.val || '—'}
                                     </h2>
                                 )}
