@@ -142,15 +142,15 @@ export default function Home() {
             {
                 label: 'Championship Leader',
                 val: driverLoading ? null : leader?.driverName,
-                sub: leader?.teamName ?? 'No Active Team',
-                caption: leader?.points ? `${leader.points} PTS` : '0 PTS',
+                sub: leader
+                    ? `${leader.teamName ?? 'No Active Team'} · ${leader.points ?? 0} PTS`
+                    : '—',
                 color: leader?.teamColor ? `#${leader.teamColor}` : '#71717a',
             },
             {
                 label: 'Constructor Leader',
                 val: teamLoading ? null : topTeam?.teamName,
-                sub: 'Factory Lead',
-                caption: topTeam?.points ? `${topTeam.points} PTS` : '0 PTS',
+                sub: topTeam ? `Factory Lead · ${topTeam.points ?? 0} PTS` : '—',
                 color: '#e4e4e7',
             },
             {
@@ -160,8 +160,7 @@ export default function Home() {
                     : leader && runnerUp
                       ? `+${leader.points - runnerUp.points}`
                       : '—',
-                sub: 'Points Delta',
-                caption: 'Top 2 Drivers',
+                sub: 'Top 2 Drivers · Points Delta',
                 color: '#a1a1aa',
             },
         ];
