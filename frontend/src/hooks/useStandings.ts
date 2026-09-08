@@ -1,11 +1,6 @@
-import { useEffect, useState } from "react";
-import { getStandings, getTeamStandings } from "@/lib/app";
-import {
-    DriverStanding,
-    Team,
-    RawDriverStanding,
-    RawTeamStanding,
-} from "@/types/standing";
+import { getStandings, getTeamStandings } from '@/lib/app';
+import { DriverStanding, RawDriverStanding, RawTeamStanding, Team } from '@/types/standing';
+import { useEffect, useState } from 'react';
 
 // ==========================================
 // Data Mapping Helpers
@@ -20,16 +15,14 @@ function mapDriverStandings(apiData: RawDriverStanding[]): DriverStanding[] {
         return {
             driverNumber: Number(item.driver_number),
             position,
-            positionStart: Number(
-                item.position_start ?? position - positionsGained,
-            ),
+            positionStart: Number(item.position_start ?? position - positionsGained),
             positionsGained,
-            driverName: item.driver_name || "",
-            teamName: item.team_name || "",
+            driverName: item.driver_name || '',
+            teamName: item.team_name || '',
             points,
             pointsStart: Number(item.points_start ?? points - pointsEarned),
             pointsEarned,
-            teamColor: item.team_color || "#CCCCCC",
+            teamColor: item.team_color || '#CCCCCC',
             headshotUrl: item.headshot_url || null,
         };
     });
@@ -43,15 +36,14 @@ function mapTeamStandings(apiData: RawTeamStanding[]): Team[] {
         const pointsEarned = Number(item.points_earned ?? 0);
 
         return {
-            teamName: item.team_name || "",
+            teamName: item.team_name || '',
             position,
-            positionStart: Number(
-                item.position_start ?? position - positionsGained,
-            ),
+            positionStart: Number(item.position_start ?? position - positionsGained),
             positionsGained,
             points,
             pointsStart: Number(item.points_start ?? points - pointsEarned),
             pointsEarned,
+            teamColor: item.team_color || '#999999',
         };
     });
 }
@@ -73,7 +65,7 @@ export function useStandings() {
                 if (isMounted) setData(mapDriverStandings(result));
             })
             .catch(() => {
-                if (isMounted) setError("Failed to load standings");
+                if (isMounted) setError('Failed to load standings');
             })
             .finally(() => {
                 if (isMounted) setLoading(false);
@@ -101,7 +93,7 @@ export function useTeamStandings() {
                 if (isMounted) setData(mapTeamStandings(result));
             })
             .catch(() => {
-                if (isMounted) setError("Failed to load team standings");
+                if (isMounted) setError('Failed to load team standings');
             })
             .finally(() => {
                 if (isMounted) setLoading(false);
