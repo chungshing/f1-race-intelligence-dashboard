@@ -254,7 +254,7 @@ export function GridVsRaceView({ pairs, lookup }: Props) {
                     </span>
                 </div>
 
-                <table className='w-full text-left border-collapse min-w-[640px]'>
+                <table className='w-full text-left border-collapse min-w-160'>
                     <thead>
                         <tr className={TABLE_THEAD_CLASS}>
                             <th className='p-4 pl-5 w-16'>Finish</th>
