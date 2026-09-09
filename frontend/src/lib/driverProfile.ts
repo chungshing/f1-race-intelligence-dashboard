@@ -1,5 +1,6 @@
 import { DriverResult, Stint, SupabaseRaceResultRow } from '@/types/results';
 import { DriverStanding } from '@/types/standing';
+import { parseJsonField } from '@/utils/form';
 
 const RACE_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 const SPRINT_POINTS = [8, 7, 6, 5, 4, 3, 2, 1];
@@ -10,18 +11,6 @@ function pointsFor(result: DriverResult, isSprint: boolean): number {
 
     const table = isSprint ? SPRINT_POINTS : RACE_POINTS;
     return table[result.position - 1] ?? 0;
-}
-
-function parseJsonField<T>(raw: string | T[] | undefined): T[] {
-    if (!raw) return [];
-    if (typeof raw === 'string') {
-        try {
-            return JSON.parse(raw);
-        } catch {
-            return [];
-        }
-    }
-    return raw;
 }
 
 export interface RoundResult {
