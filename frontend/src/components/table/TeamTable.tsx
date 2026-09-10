@@ -1,4 +1,5 @@
 import { Team } from '@/types/standing';
+import { formatHexColor } from '@/utils/sessions';
 import { getPositionColor, TABLE_CONTAINER_CLASS, TABLE_THEAD_CLASS } from '@/utils/styles';
 import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
 
@@ -47,7 +48,7 @@ export function TeamTable({ standings, limit }: TeamTableProps) {
                                 <td className='p-0'>
                                     <div
                                         className='w-1 h-8 rounded-full'
-                                        style={{ backgroundColor: `#${row.teamColor}` }}
+                                        style={{ backgroundColor: formatHexColor(row.teamColor) }}
                                     />
                                 </td>
                                 <td className='p-4 font-bold text-zinc-100 tracking-tight text-sm'>
