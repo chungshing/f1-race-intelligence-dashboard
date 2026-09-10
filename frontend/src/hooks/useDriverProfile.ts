@@ -1,7 +1,7 @@
-import { mapDriverStandings } from '@/hooks/useStandings';
-import { getRaceResultsWithStints, getStandings } from '@/lib/app';
-import { buildDriverProfile, DriverProfile } from '@/lib/driverProfile';
 import { useEffect, useState } from 'react';
+import { getStandings, getRaceResultsWithStints } from '@/lib/app';
+import { buildDriverProfile, DriverProfile } from '@/lib/driverProfile';
+import { mapDriverStandings } from '@/hooks/useStandings';
 
 export function useDriverProfile(driverNumber: number) {
     const [data, setData] = useState<DriverProfile | null>(null);
