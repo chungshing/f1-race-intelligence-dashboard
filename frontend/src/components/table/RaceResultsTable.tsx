@@ -70,13 +70,13 @@ export const RaceResultsTable = ({
                             className='flex items-center justify-between text-xs border-b border-zinc-800/50 pb-2 last:border-0 last:pb-0'
                         >
                             <div className='flex items-center gap-3'>
-                                <span className='font-mono font-black text-zinc-500 w-4'>
+                                <span className='font-mono font-black text-zinc-400 w-4'>
                                     {r.position || '-'}
                                 </span>
                                 <div className='w-1 h-3 rounded-full' style={{ backgroundColor: info.teamColor }} />
                                 <div>
                                     <p className='font-bold text-zinc-200'>{info.name}</p>
-                                    <p className='text-[10px] text-zinc-500'>{info.team}</p>
+                                    <p className='text-[10px] text-zinc-400'>{info.team}</p>
                                 </div>
                             </div>
                             <div className='text-right font-mono text-zinc-400 text-[11px] flex items-center gap-1.5'>
@@ -86,7 +86,7 @@ export const RaceResultsTable = ({
                                     </span>
                                 ) : r.gapToLeader != null ? (
                                     <>
-                                        <Timer className='w-3 h-3 text-zinc-600' />
+                                        <Timer className='w-3 h-3 text-zinc-400' />
                                         <span>{r.gapToLeader}</span>
                                     </>
                                 ) : (
@@ -103,7 +103,7 @@ export const RaceResultsTable = ({
     return (
         <div className={TABLE_CONTAINER_CLASS}>
             <div className='p-4 pl-5 border-b border-zinc-900 bg-zinc-900/20 flex items-center gap-2'>
-                <ListOrdered className='w-4 h-4 text-zinc-500' />
+                <ListOrdered className='w-4 h-4 text-zinc-400' />
                 <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
                     Official Classification
                 </h3>
@@ -128,7 +128,7 @@ export const RaceResultsTable = ({
                                 style={{ borderLeft: `4px solid ${info.teamColor}` }}
                             >
                                 {hasStatus ? (
-                                    <span className={r.dsq ? 'text-red-500' : r.dnf ? 'text-zinc-500' : 'text-amber-500'}>
+                                    <span className={r.dsq ? 'text-red-500' : r.dnf ? 'text-zinc-400' : 'text-amber-500'}>
                                         {statusText}
                                     </span>
                                 ) : (
@@ -136,7 +136,7 @@ export const RaceResultsTable = ({
                                 )}
                             </td>
                             <td className='p-4 font-semibold text-zinc-200'>{info.name}</td>
-                            <td className='p-4 text-zinc-500 text-xs tracking-tight'>{info.team}</td>
+                            <td className='p-4 text-zinc-400 text-xs tracking-tight'>{info.team}</td>
                             <td className='p-4 text-right font-mono text-zinc-400 tabular-nums'>
                                 {hasStatus ? (
                                     statusText
@@ -145,7 +145,7 @@ export const RaceResultsTable = ({
                                         <div className='flex flex-col items-end gap-0.5'>
                                             {r.formattedDuration.map((t, i) => (
                                                 <span key={i} className='text-[10px]'>
-                                                    <span className='text-zinc-600 mr-1'>Q{i + 1}</span>
+                                                    <span className='text-zinc-400 mr-1'>Q{i + 1}</span>
                                                     {t || '—'}
                                                 </span>
                                             ))}

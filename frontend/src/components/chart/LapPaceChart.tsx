@@ -101,7 +101,7 @@ export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartPr
 
     if (loading || !isMounted) {
         return (
-            <div className='text-zinc-500 text-xs py-20 text-center animate-pulse tracking-wider uppercase font-semibold'>
+            <div className='text-zinc-400 text-xs py-20 text-center animate-pulse tracking-wider uppercase font-semibold'>
                 Processing Lap Telemetry...
             </div>
         );
@@ -111,7 +111,7 @@ export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartPr
         <div className={TABLE_CONTAINER_CLASS}>
             {/* Header section */}
             <div className='p-4 pl-5 border-b border-zinc-900 bg-zinc-900/20 flex items-center gap-2'>
-                <Activity className='w-4 h-4 text-zinc-500' />
+                <Activity className='w-4 h-4 text-zinc-400' />
                 <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
                     Lap Telemetry & Pace Analysis
                 </h3>
@@ -121,7 +121,7 @@ export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartPr
                 {/* 1. Top-aligned Compact Horizontal Driver List */}
                 <div className='w-full min-w-0'>
                     <div className='flex items-center justify-between mb-2.5'>
-                        <h4 className='text-[10px] font-bold text-zinc-500 tracking-widest uppercase mb-2.5'>
+                        <h4 className='text-[10px] font-bold text-zinc-400 tracking-widest uppercase mb-2.5'>
                             Filter Drivers
                         </h4>
                         <div className='flex gap-3'>
@@ -133,13 +133,13 @@ export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartPr
                                             .filter(Boolean),
                                     )
                                 }
-                                className='text-[10px] font-bold text-zinc-500 hover:text-zinc-300 uppercase tracking-wider transition-colors'
+                                className='text-[10px] font-bold text-zinc-400 hover:text-zinc-300 uppercase tracking-wider transition-colors'
                             >
                                 All
                             </button>
                             <button
                                 onClick={() => setSelectedDrivers([])}
-                                className='text-[10px] font-bold text-zinc-500 hover:text-zinc-300 uppercase tracking-wider transition-colors'
+                                className='text-[10px] font-bold text-zinc-400 hover:text-zinc-300 uppercase tracking-wider transition-colors'
                             >
                                 Clear
                             </button>
@@ -163,7 +163,7 @@ export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartPr
                                     className={`px-2 py-1 text-[11px] font-medium rounded transition-colors flex items-center gap-2 whitespace-nowrap ${
                                         isSelected
                                             ? 'bg-zinc-900 text-zinc-100 font-bold'
-                                            : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30'
+                                            : 'text-zinc-400 hover:text-zinc-300 hover:bg-zinc-900/30'
                                     }`}
                                 >
                                     <span

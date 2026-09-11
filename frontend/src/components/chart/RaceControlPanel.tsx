@@ -36,7 +36,7 @@ export function RaceControlPanel({ raceControl }: Props) {
                 <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
                     Race Control
                 </h3>
-                <span className='text-[10px] text-zinc-600 font-medium uppercase tracking-wider'>
+                <span className='text-[10px] text-zinc-400 font-medium uppercase tracking-wider'>
                     {events.length} events
                 </span>
             </div>
@@ -56,7 +56,7 @@ export function RaceControlPanel({ raceControl }: Props) {
                             key={i}
                             className='flex items-start gap-4 px-5 py-3 hover:bg-zinc-900/30 transition-colors'
                         >
-                            <span className='text-[10px] font-mono text-zinc-600 w-8 pt-0.5 shrink-0'>
+                            <span className='text-[10px] font-mono text-zinc-400 w-8 pt-0.5 shrink-0'>
                                 {event.lapNumber != null ? `L${event.lapNumber}` : '—'}
                             </span>
 
@@ -77,7 +77,7 @@ export function RaceControlPanel({ raceControl }: Props) {
                                         </span>
                                     )}
                                     {event.driverNumber && (
-                                        <span className='text-[10px] font-mono text-zinc-500'>
+                                        <span className='text-[10px] font-mono text-zinc-400'>
                                             #{event.driverNumber}
                                         </span>
                                     )}

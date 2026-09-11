@@ -66,7 +66,7 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup }: Props) 
     return (
         <div className={TABLE_CONTAINER_CLASS}>
             <div className='p-4 pl-5 border-b border-zinc-900 bg-zinc-900/20 flex items-center gap-2'>
-                <History className='w-4 h-4 text-zinc-500' />
+                <History className='w-4 h-4 text-zinc-400' />
                 <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
                     Tire & Pit Strategies
                 </h3>
@@ -97,10 +97,10 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup }: Props) 
                                     <h4 className='font-bold text-zinc-200 text-xs tracking-tight truncate max-w-23.75'>
                                         {info.name}
                                     </h4>
-                                    <div className='text-zinc-500 text-[10px] font-mono font-bold leading-none'>
+                                    <div className='text-zinc-400 text-[10px] font-mono font-bold leading-none'>
                                         #{driverNum}
                                     </div>
-                                    <p className='text-[9px] text-zinc-500 truncate leading-none'>
+                                    <p className='text-[9px] text-zinc-400 truncate leading-none'>
                                         {info.team}
                                     </p>
                                 </div>
@@ -132,7 +132,7 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup }: Props) 
                                                         Laps {stint.lap_start}–{stint.lap_end}
                                                     </div>
                                                 </div>
-                                                <span className='text-zinc-500 font-mono text-[10px] shrink-0 ml-1'>
+                                                <span className='text-zinc-400 font-mono text-[10px] shrink-0 ml-1'>
                                                     {totalLaps}L
                                                 </span>
                                             </div>
@@ -140,7 +140,7 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup }: Props) 
                                             {/* Pit Interval Box */}
                                             {matchingPit && (
                                                 <div className='flex items-center gap-2 h-11.5 shrink-0'>
-                                                    <ArrowRight className='w-4 h-4 text-zinc-500 stroke-[2.5]' />
+                                                    <ArrowRight className='w-4 h-4 text-zinc-400 stroke-[2.5]' />
 
                                                     <div className='flex flex-col bg-zinc-950/70 border border-zinc-700/60 rounded-lg w-25 h-full justify-between py-1.5 px-2 shadow-sm'>
                                                         <span className='text-[8px] font-bold text-red-400/90 uppercase tracking-wider flex items-center gap-1 shrink-0'>
@@ -151,7 +151,7 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup }: Props) 
                                                         <div className='space-y-0.5 font-mono text-[9px] w-full leading-none'>
                                                             <div className='flex justify-between items-center text-zinc-400'>
                                                                 <span className='flex items-center gap-0.5'>
-                                                                    <Timer className='w-2 h-2 text-zinc-500' />{' '}
+                                                                    <Timer className='w-2 h-2 text-zinc-400' />{' '}
                                                                     Stop:
                                                                 </span>
                                                                 <span className='font-bold text-zinc-200 tabular-nums'>
@@ -162,7 +162,7 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup }: Props) 
                                                             </div>
                                                             <div className='flex justify-between items-center text-zinc-400'>
                                                                 <span className='flex items-center gap-0.5'>
-                                                                    <Timer className='w-2 h-2 text-zinc-500' />{' '}
+                                                                    <Timer className='w-2 h-2 text-zinc-400' />{' '}
                                                                     Lane:
                                                                 </span>
                                                                 <span className='font-bold text-zinc-300 tabular-nums'>
@@ -176,7 +176,7 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup }: Props) 
 
                                                     {/* Conditional tracking arrow to prevent redundant endings */}
                                                     {hasNextStint && (
-                                                        <ArrowRight className='w-4 h-4 text-zinc-500 stroke-[2.5]' />
+                                                        <ArrowRight className='w-4 h-4 text-zinc-400 stroke-[2.5]' />
                                                     )}
                                                 </div>
                                             )}

@@ -64,7 +64,7 @@ export default function DriverProfilePage({ params }: { params: Promise<{ number
                     </div>
                     <div className='ml-auto flex items-baseline gap-6'>
                         <div className='text-right'>
-                            <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-500'>
+                            <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400'>
                                 Position
                             </p>
                             <h2
@@ -74,7 +74,7 @@ export default function DriverProfilePage({ params }: { params: Promise<{ number
                             </h2>
                         </div>
                         <div className='text-right'>
-                            <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-500'>
+                            <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400'>
                                 Points
                             </p>
                             <h2 className='text-3xl font-mono font-bold text-zinc-100'>
@@ -103,7 +103,7 @@ export default function DriverProfilePage({ params }: { params: Promise<{ number
                                         key={r.meetingKey}
                                         className='hover:bg-zinc-800/20 transition-colors'
                                     >
-                                        <td className='p-3 text-center font-mono text-zinc-500'>
+                                        <td className='p-3 text-center font-mono text-zinc-400'>
                                             {r.round}
                                         </td>
                                         <td className='p-3 text-zinc-200'>
@@ -148,10 +148,10 @@ export default function DriverProfilePage({ params }: { params: Promise<{ number
                                     className='bg-zinc-950 border border-zinc-800 rounded-xl p-4 flex items-center justify-between'
                                 >
                                     <div>
-                                        <p className='text-xs text-zinc-500'>
+                                        <p className='text-xs text-zinc-400'>
                                             vs {h2h.teammateName}
                                         </p>
-                                        <p className='text-[10px] text-zinc-600 mt-0.5'>
+                                        <p className='text-[10px] text-zinc-500 mt-0.5'>
                                             {h2h.roundsCompared} rounds compared
                                         </p>
                                     </div>
@@ -173,13 +173,13 @@ export default function DriverProfilePage({ params }: { params: Promise<{ number
                                     key={t.compound}
                                     className='bg-zinc-950 border border-zinc-800 rounded-xl p-4'
                                 >
-                                    <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-500'>
+                                    <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400'>
                                         {t.compound}
                                     </p>
                                     <p className='text-xl font-mono font-bold text-zinc-100 mt-1'>
                                         {t.stintCount} stints
                                     </p>
-                                    <p className='text-xs text-zinc-500 mt-0.5'>
+                                    <p className='text-xs text-zinc-400 mt-0.5'>
                                         avg {t.averageStintLength.toFixed(1)} laps
                                     </p>
                                 </div>

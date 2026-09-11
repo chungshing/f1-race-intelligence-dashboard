@@ -60,30 +60,30 @@ export function SectorDurationTable({ sessionKey, driversList, lookup }: Props) 
                 <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
                     Sector Duration Bests
                 </h3>
-                <span className='text-[10px] text-zinc-600 font-medium uppercase tracking-wider'>
+                <span className='text-[10px] text-zinc-400 font-medium uppercase tracking-wider'>
                     Best sector time per driver
                 </span>
             </div>
 
             <div className='overflow-x-auto overflow-y-auto max-h-83.5 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent'>
                 {loading ? (
-                    <div className='text-center py-6 text-zinc-600 text-[10px] font-bold tracking-wider uppercase animate-pulse'>
+                    <div className='text-center py-6 text-zinc-400 text-[10px] font-bold tracking-wider uppercase animate-pulse'>
                         Calculating Sector Bests...
                     </div>
                 ) : (
                     <table className='w-full text-xs'>
                         <thead>
                             <tr className='border-b border-zinc-900'>
-                                <th className='text-left py-2.5 px-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider w-8'>
+                                <th className='text-left py-2.5 px-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider w-8'>
                                     P
                                 </th>
-                                <th className='text-left py-2.5 px-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider'>
+                                <th className='text-left py-2.5 px-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider'>
                                     Driver
                                 </th>
                                 {['S1', 'S2', 'S3'].map((s) => (
                                     <th
                                         key={s}
-                                        className='text-right py-2.5 px-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider'
+                                        className='text-right py-2.5 px-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider'
                                     >
                                         {s}
                                     </th>
@@ -102,7 +102,7 @@ export function SectorDurationTable({ sessionKey, driversList, lookup }: Props) 
                                         key={driverNumber}
                                         className='border-b border-zinc-900/50 hover:bg-zinc-900/30 transition-colors'
                                     >
-                                        <td className='py-2.5 px-4 text-zinc-600 font-mono text-[10px]'>
+                                        <td className='py-2.5 px-4 text-zinc-400 font-mono text-[10px]'>
                                             {idx + 1}
                                         </td>
                                         <td className='py-2.5 px-4'>

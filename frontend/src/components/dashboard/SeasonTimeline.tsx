@@ -104,7 +104,7 @@ export default function SeasonTimeline({ weekends }: Props) {
                 <h2 className='text-xs font-black text-zinc-400 tracking-widest uppercase'>
                     2026 Season Timeline
                 </h2>
-                <span className='text-[10px] font-mono bg-zinc-900 text-zinc-500 px-2 py-0.5 rounded border border-zinc-800'>
+                <span className='text-[10px] font-mono bg-zinc-900 text-zinc-400 px-2 py-0.5 rounded border border-zinc-800'>
                     {processedWeekends.length} Rounds
                 </span>
             </div>
@@ -166,7 +166,7 @@ export default function SeasonTimeline({ weekends }: Props) {
                                             <h3 className='font-bold text-sm tracking-tight text-zinc-100 truncate'>
                                                 {weekend.country}
                                             </h3>
-                                            <p className='text-xs text-zinc-500 truncate mt-0.5'>
+                                            <p className='text-xs text-zinc-400 truncate mt-0.5'>
                                                 {weekend.circuit}
                                             </p>
                                         </div>
@@ -212,7 +212,7 @@ export default function SeasonTimeline({ weekends }: Props) {
                                         {/* Expanded Row Subtitle Layout Badge + Mini Map Grid Split */}
                                         <div className='flex justify-between items-center bg-zinc-950 border border-zinc-900/60 p-2.5 rounded-lg gap-4'>
                                             <div className='space-y-0.5'>
-                                                <span className='text-[9px] font-bold text-zinc-500 uppercase tracking-wider block'>
+                                                <span className='text-[9px] font-bold text-zinc-400 uppercase tracking-wider block'>
                                                     Track Layout
                                                 </span>
                                                 <span className='text-[11px] font-semibold text-zinc-300 tracking-tight uppercase'>
@@ -251,12 +251,12 @@ export default function SeasonTimeline({ weekends }: Props) {
                                                         className='flex justify-between items-center text-xs px-1'
                                                     >
                                                         <span
-                                                            className={`font-medium ${isSessionLive ? 'text-red-400' : isSessionPast ? 'text-zinc-500' : 'text-zinc-400'}`}
+                                                            className={`font-medium ${isSessionLive ? 'text-red-400' : isSessionPast ? 'text-zinc-400' : 'text-zinc-400'}`}
                                                         >
                                                             {s.sessionName}
                                                         </span>
                                                         <span
-                                                            className={`font-mono text-[11px] ${isSessionLive ? 'text-red-400 font-bold' : 'text-zinc-500'}`}
+                                                            className={`font-mono text-[11px] ${isSessionLive ? 'text-red-400 font-bold' : 'text-zinc-400'}`}
                                                             suppressHydrationWarning
                                                         >
                                                             {isSessionLive

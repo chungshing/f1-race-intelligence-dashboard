@@ -73,7 +73,7 @@ export function TeamTable({ standings, limit }: TeamTableProps) {
                                                 {Math.abs(row.positionsGained)}
                                             </span>
                                         ) : (
-                                            <Minus className='w-3 h-3 text-zinc-600 stroke-3' />
+                                            <Minus className='w-3 h-3 text-zinc-400 stroke-3' />
                                         )}
                                     </div>
                                 </td>

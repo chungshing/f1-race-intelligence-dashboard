@@ -12,7 +12,7 @@ interface DriverTableProps {
 }
 function getFormColor(result: number | string | null): string {
     // 1. Handle non-finishes and missing data first
-    if (result === null) return 'bg-zinc-800/30 text-zinc-600';
+    if (result === null) return 'bg-zinc-800/30 text-zinc-400';
     if (typeof result === 'string') return 'bg-red-500/10 text-red-400 border border-red-500/20'; // DNF/DNS/DSQ
 
     // 2. Podium Finishes (P1, P2, P3)
@@ -26,7 +26,7 @@ function getFormColor(result: number | string | null): string {
     // 4. Lower Points Positions
     if (result <= 10) return 'bg-cyan-500/15 text-cyan-400'; // P6-P10: Standard Points
 
-    return 'bg-zinc-800/50 text-zinc-500'; // Very back of the grid
+    return 'bg-zinc-800/50 text-zinc-400'; // Very back of the grid
 }
 
 function getFormLabel(result: number | string | null): string {
@@ -56,7 +56,7 @@ export function DriverTable({ standings, limit, formMap }: DriverTableProps) {
                         <th className='p-4'>Driver</th>
                         <th className='p-4'>Team</th>
                         {formMap && (
-                            <th className='p-4 text-center text-[10px] font-bold text-zinc-500 uppercase tracking-wider'>
+                            <th className='p-4 text-center text-[10px] font-bold text-zinc-400 uppercase tracking-wider'>
                                 Last 5
                             </th>
                         )}
@@ -80,7 +80,7 @@ export function DriverTable({ standings, limit, formMap }: DriverTableProps) {
                                 >
                                     {row.position}
                                 </td>
-                                <td className='p-4 text-zinc-500 text-center font-mono font-bold group-hover:text-zinc-300 transition-colors'>
+                                <td className='p-4 text-zinc-400 text-center font-mono font-bold group-hover:text-zinc-300 transition-colors'>
                                     {row.driverNumber}
                                 </td>
                                 <td
@@ -141,7 +141,7 @@ export function DriverTable({ standings, limit, formMap }: DriverTableProps) {
                                                 {Math.abs(row.positionsGained)}
                                             </span>
                                         ) : (
-                                            <Minus className='w-3 h-3 text-zinc-600 stroke-3' />
+                                            <Minus className='w-3 h-3 text-zinc-400 stroke-3' />
                                         )}
                                     </div>
                                 </td>

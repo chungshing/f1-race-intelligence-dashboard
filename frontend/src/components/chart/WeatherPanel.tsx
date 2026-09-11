@@ -72,7 +72,7 @@ export function WeatherPanel({ weather }: Props) {
                 <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
                     Session Weather
                 </h3>
-                <span className='text-[10px] text-zinc-600 font-medium uppercase tracking-wider'>
+                <span className='text-[10px] text-zinc-400 font-medium uppercase tracking-wider'>
                     Avg across session
                 </span>
             </div>
@@ -83,10 +83,10 @@ export function WeatherPanel({ weather }: Props) {
                         <div className='flex items-center gap-2'>
                             <Icon
                                 className={`w-3.5 h-3.5 ${
-                                    highlight ? 'text-blue-400' : 'text-zinc-500'
+                                    highlight ? 'text-blue-400' : 'text-zinc-400'
                                 }`}
                             />
-                            <span className='text-[10px] font-bold text-zinc-500 uppercase tracking-wider'>
+                            <span className='text-[10px] font-bold text-zinc-400 uppercase tracking-wider'>
                                 {label}
                             </span>
                         </div>
@@ -101,7 +101,7 @@ export function WeatherPanel({ weather }: Props) {
 
                         <p
                             className={`text-[10px] font-medium ${
-                                highlight ? 'text-blue-400/70' : 'text-zinc-600'
+                                highlight ? 'text-blue-400/70' : 'text-zinc-400'
                             }`}
                         >
                             {sub}

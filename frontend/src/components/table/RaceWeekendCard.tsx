@@ -59,7 +59,7 @@ export default function RaceWeekendCard({ variant = 'card', data }: Props) {
                         <p className='text-zinc-100 font-bold text-sm tracking-tight'>
                             {data.country}
                         </p>
-                        <p className='text-zinc-500 text-xs font-medium flex items-center gap-1 mt-0.5'>
+                        <p className='text-zinc-400 text-xs font-medium flex items-center gap-1 mt-0.5'>
                             <MapPin className='w-3 h-3 shrink-0' /> {data.circuit}
                         </p>
                     </div>
@@ -131,10 +131,10 @@ export default function RaceWeekendCard({ variant = 'card', data }: Props) {
                 <div className='flex justify-between items-end mt-3 gap-4'>
                     <div className='space-y-1'>
                         <p className='text-zinc-400 text-xs font-medium flex items-center gap-1'>
-                            <MapPin className='w-3 h-3 text-zinc-500 shrink-0' /> {data.circuit}
+                            <MapPin className='w-3 h-3 text-zinc-400 shrink-0' /> {data.circuit}
                         </p>
-                        <p className='text-zinc-500 font-mono text-[11px] font-semibold flex items-center gap-1'>
-                            <Calendar className='w-3 h-3 text-zinc-600' />{' '}
+                        <p className='text-zinc-400 font-mono text-[11px] font-semibold flex items-center gap-1'>
+                            <Calendar className='w-3 h-3 text-zinc-400' />{' '}
                             {getWeekendLabel(sortedSessions)}
                         </p>
                     </div>
@@ -168,7 +168,7 @@ export default function RaceWeekendCard({ variant = 'card', data }: Props) {
                         </p>
                     </div>
                     <div className='text-right'>
-                        <p className='text-[10px] font-bold text-zinc-500 uppercase tracking-wider flex items-center justify-end gap-1'>
+                        <p className='text-[10px] font-bold text-zinc-400 uppercase tracking-wider flex items-center justify-end gap-1'>
                             <Timer className='w-3 h-3' /> Starts In
                         </p>
                         <p className='text-red-400 font-mono font-black text-base mt-0.5'>
@@ -198,7 +198,7 @@ export default function RaceWeekendCard({ variant = 'card', data }: Props) {
                                             ? 'bg-emerald-950 text-emerald-400 border-emerald-800/30'
                                             : isNext
                                               ? 'bg-red-950 text-red-400 border-red-800/50 animate-pulse'
-                                              : 'bg-zinc-800/50 text-zinc-500 border-transparent'
+                                              : 'bg-zinc-800/50 text-zinc-400 border-transparent'
                                     }`}
                                 >
                                     {isDone ? (
@@ -212,13 +212,13 @@ export default function RaceWeekendCard({ variant = 'card', data }: Props) {
 
                                 <span
                                     className={`font-medium tracking-tight transition-colors
-                                    ${isNext ? 'text-zinc-100 font-bold' : isDone ? 'text-zinc-500 line-through decoration-zinc-800' : 'text-zinc-400'}`}
+                                    ${isNext ? 'text-zinc-100 font-bold' : isDone ? 'text-zinc-400 line-through decoration-zinc-800' : 'text-zinc-400'}`}
                                 >
                                     {s.sessionName}
                                 </span>
                             </div>
 
-                            <span className='text-zinc-500 font-mono text-xs font-medium group-hover:text-zinc-400 transition-colors'>
+                            <span className='text-zinc-400 font-mono text-xs font-medium group-hover:text-zinc-400 transition-colors'>
                                 {new Date(s.dateStart).toLocaleString('en-GB', {
                                     day: '2-digit',
                                     month: 'short',

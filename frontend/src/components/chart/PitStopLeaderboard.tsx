@@ -22,7 +22,7 @@ export function PitStopLeaderboard({ pitStops, lookup }: Props) {
         <div className={TABLE_CONTAINER_CLASS}>
             <div className='p-4 pl-5 border-b border-zinc-900 bg-zinc-900/20 flex items-center justify-between'>
                 <div className='flex items-center gap-2'>
-                    <Timer className='w-4 h-4 text-zinc-500' />
+                    <Timer className='w-4 h-4 text-zinc-400' />
                     <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
                         Pit Stop Leaderboard
                     </h3>
@@ -35,7 +35,7 @@ export function PitStopLeaderboard({ pitStops, lookup }: Props) {
                         </span>
                     )}
                 </div>
-                <span className='text-[10px] text-zinc-600 font-medium uppercase tracking-wider'>
+                <span className='text-[10px] text-zinc-400 font-medium uppercase tracking-wider'>
                     Ranked by best stop
                 </span>
             </div>
@@ -44,19 +44,19 @@ export function PitStopLeaderboard({ pitStops, lookup }: Props) {
                 <table className='w-full text-xs'>
                     <thead>
                         <tr className='border-b border-zinc-900'>
-                            <th className='text-left py-2.5 px-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider w-8'>
+                            <th className='text-left py-2.5 px-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider w-8'>
                                 P
                             </th>
-                            <th className='text-left py-2.5 px-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider'>
+                            <th className='text-left py-2.5 px-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider'>
                                 Driver
                             </th>
-                            <th className='text-right py-2.5 px-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider'>
+                            <th className='text-right py-2.5 px-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider'>
                                 Best
                             </th>
-                            <th className='text-right py-2.5 px-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider'>
+                            <th className='text-right py-2.5 px-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider'>
                                 Avg
                             </th>
-                            <th className='text-right py-2.5 px-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider'>
+                            <th className='text-right py-2.5 px-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider'>
                                 Stops
                             </th>
                         </tr>
@@ -71,7 +71,7 @@ export function PitStopLeaderboard({ pitStops, lookup }: Props) {
                                     key={driverNumber}
                                     className='border-b border-zinc-900/50 hover:bg-zinc-900/30 transition-colors'
                                 >
-                                    <td className='py-2.5 px-4 text-zinc-600 font-mono text-[10px]'>
+                                    <td className='py-2.5 px-4 text-zinc-400 font-mono text-[10px]'>
                                         {idx + 1}
                                     </td>
                                     <td className='py-2.5 px-4'>
@@ -92,10 +92,10 @@ export function PitStopLeaderboard({ pitStops, lookup }: Props) {
                                     >
                                         {bestStop.toFixed(2)}s
                                     </td>
-                                    <td className='py-2.5 px-4 text-right font-mono text-zinc-500'>
+                                    <td className='py-2.5 px-4 text-right font-mono text-zinc-400'>
                                         {avgStop.toFixed(2)}s
                                     </td>
-                                    <td className='py-2.5 px-4 text-right font-mono text-zinc-500'>
+                                    <td className='py-2.5 px-4 text-right font-mono text-zinc-400'>
                                         {totalStops}
                                     </td>
                                 </tr>

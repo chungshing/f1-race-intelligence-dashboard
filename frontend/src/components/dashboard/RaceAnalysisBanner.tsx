@@ -41,7 +41,7 @@ export function RaceAnalysisBanner({ meetingKey, countryName, sessionName }: Pro
                 </a>
                 <button
                     onClick={() => setDismissed(true)}
-                    className='text-zinc-600 hover:text-zinc-400 transition-colors'
+                    className='text-zinc-400 hover:text-zinc-400 transition-colors'
                 >
                     <X className='w-3.5 h-3.5' />
                 </button>

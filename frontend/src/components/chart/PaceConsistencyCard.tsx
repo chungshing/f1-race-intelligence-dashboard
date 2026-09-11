@@ -43,7 +43,7 @@ export function PaceConsistencyCard({ sessionKey, lookup }: PaceConsistencyCardP
 
     if (loading)
         return (
-            <div className='text-center py-6 text-zinc-600 text-[10px] font-bold tracking-wider uppercase animate-pulse'>
+            <div className='text-center py-6 text-zinc-400 text-[10px] font-bold tracking-wider uppercase animate-pulse'>
                 Loading...
             </div>
         );
@@ -54,7 +54,7 @@ export function PaceConsistencyCard({ sessionKey, lookup }: PaceConsistencyCardP
                 <h3 className='text-sm font-black text-white uppercase tracking-wider'>
                     Race Pace Consistency
                 </h3>
-                <p className='text-[11px] text-zinc-500'>
+                <p className='text-[11px] text-zinc-400'>
                     Ranked by lowest lap time variability (Standard Deviation) during green flags
                 </p>
             </div>
@@ -73,7 +73,7 @@ export function PaceConsistencyCard({ sessionKey, lookup }: PaceConsistencyCardP
                             className='flex items-center justify-between p-2.5 bg-zinc-900/40 border border-zinc-900 rounded-lg hover:border-zinc-800 transition-all'
                         >
                             <div className='flex items-center gap-3 min-w-0'>
-                                <span className='font-mono font-bold text-[10px] text-zinc-500 w-4 shrink-0'>
+                                <span className='font-mono font-bold text-[10px] text-zinc-400 w-4 shrink-0'>
                                     {index + 1}
                                 </span>
                                 <div
@@ -84,7 +84,7 @@ export function PaceConsistencyCard({ sessionKey, lookup }: PaceConsistencyCardP
                                     <p className='text-xs font-bold text-white truncate'>
                                         {driver.name}
                                     </p>
-                                    <p className='text-[10px] text-zinc-500 font-medium font-mono'>
+                                    <p className='text-[10px] text-zinc-400 font-medium font-mono'>
                                         Avg: {formatLapTime(driverRow.averageLapTime)}
                                     </p>
                                 </div>
@@ -93,7 +93,7 @@ export function PaceConsistencyCard({ sessionKey, lookup }: PaceConsistencyCardP
                                 <p className='text-xs font-mono font-black text-emerald-400'>
                                     ±{driverRow.lapVariance.toFixed(3)}s
                                 </p>
-                                <p className='text-[9px] font-bold text-zinc-500 uppercase tracking-wider'>
+                                <p className='text-[9px] font-bold text-zinc-400 uppercase tracking-wider'>
                                     Variation
                                 </p>
                             </div>

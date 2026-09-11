@@ -88,7 +88,7 @@ export default function Topbar() {
                                     className={`w-3.5 h-3.5 transition-transform duration-300 ${
                                         isActive
                                             ? 'text-red-500 scale-105'
-                                            : 'text-zinc-500 group-hover:text-zinc-400'
+                                            : 'text-zinc-400 group-hover:text-zinc-400'
                                     }`}
                                 />
                                 <span>{item.label}</span>
@@ -122,7 +122,7 @@ export default function Topbar() {
                             key={item.href}
                             href={item.href}
                             className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all duration-200 ${
-                                isActive ? 'text-red-500' : 'text-zinc-500 hover:text-zinc-300'
+                                isActive ? 'text-red-500' : 'text-zinc-400 hover:text-zinc-300'
                             }`}
                         >
                             <Icon className='w-4 h-4' />

@@ -67,7 +67,7 @@ export default function ConstructorProfilePage({
                     </div>
                     <div className='ml-auto flex items-baseline gap-6'>
                         <div className='text-right'>
-                            <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-500'>
+                            <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400'>
                                 Position
                             </p>
                             <h2
@@ -77,7 +77,7 @@ export default function ConstructorProfilePage({
                             </h2>
                         </div>
                         <div className='text-right'>
-                            <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-500'>
+                            <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400'>
                                 Points
                             </p>
                             <h2 className='text-3xl font-mono font-bold text-zinc-100'>
@@ -106,7 +106,7 @@ export default function ConstructorProfilePage({
                                         key={r.meetingKey}
                                         className='hover:bg-zinc-800/20 transition-colors'
                                     >
-                                        <td className='p-3 text-center font-mono text-zinc-500'>
+                                        <td className='p-3 text-center font-mono text-zinc-400'>
                                             {r.round}
                                         </td>
                                         <td className='p-3 text-zinc-200'>

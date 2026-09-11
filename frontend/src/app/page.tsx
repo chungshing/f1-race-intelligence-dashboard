@@ -168,7 +168,7 @@ export default function Home() {
                             className='bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-3.5 flex flex-col justify-between'
                         >
                             <div className='flex items-center justify-between gap-2'>
-                                <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-500 truncate'>
+                                <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400 truncate'>
                                     {card.label}
                                 </p>
                             </div>
@@ -204,7 +204,7 @@ export default function Home() {
                                         className={`flex-1 py-1 text-[11px] font-bold uppercase rounded-md transition-all ${
                                             activeTab === tab
                                                 ? 'bg-zinc-800 text-zinc-100 shadow-xs'
-                                                : 'text-zinc-500 hover:text-zinc-300'
+                                                : 'text-zinc-400 hover:text-zinc-300'
                                         }`}
                                     >
                                         {tab}
@@ -275,7 +275,7 @@ export default function Home() {
                                     variant='landing'
                                 />
                             ) : (
-                                <div className='text-xs text-zinc-500 bg-zinc-900/20 border border-zinc-800/60 rounded-xl p-6 text-center shadow-inner'>
+                                <div className='text-xs text-zinc-400 bg-zinc-900/20 border border-zinc-800/60 rounded-xl p-6 text-center shadow-inner'>
                                     No completed race sessions found.
                                 </div>
                             )}

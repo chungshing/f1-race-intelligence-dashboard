@@ -63,14 +63,14 @@ export function LapHeatmapGrid({ sessionKey, driversList, lookup }: Props) {
                 <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
                     Mini-Sector Heatmap
                 </h3>
-                <span className='text-[10px] text-zinc-600 font-medium uppercase tracking-wider'>
+                <span className='text-[10px] text-zinc-400 font-medium uppercase tracking-wider'>
                     Best segment per lap
                 </span>
             </div>
 
             <div className='p-4 space-y-4 overflow-x-auto'>
                 {loading ? (
-                    <div className='text-center py-6 text-zinc-600 text-[10px] font-bold tracking-wider uppercase animate-pulse'>
+                    <div className='text-center py-6 text-zinc-400 text-[10px] font-bold tracking-wider uppercase animate-pulse'>
                         Building Heatmap...
                     </div>
                 ) : (
@@ -136,7 +136,7 @@ export function LapHeatmapGrid({ sessionKey, driversList, lookup }: Props) {
                             <span
                                 className={`w-2.5 h-2.5 rounded-sm shrink-0 ${TELEMETRY_COLORS[code].bg}`}
                             />
-                            <span className='text-zinc-500'>{TELEMETRY_COLORS[code].label}</span>
+                            <span className='text-zinc-400'>{TELEMETRY_COLORS[code].label}</span>
                         </div>
                     ))}
                 </div>

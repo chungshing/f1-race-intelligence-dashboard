@@ -41,7 +41,7 @@ export function SectorSpeedTable({ sessionKey, lookup }: SectorSpeedTableProps) 
 
     if (loading)
         return (
-            <div className='text-center py-6 text-zinc-600 text-[10px] font-bold tracking-wider uppercase animate-pulse'>
+            <div className='text-center py-6 text-zinc-400 text-[10px] font-bold tracking-wider uppercase animate-pulse'>
                 Loading...
             </div>
         );
@@ -52,7 +52,7 @@ export function SectorSpeedTable({ sessionKey, lookup }: SectorSpeedTableProps) 
                 <h3 className='text-sm font-black text-white uppercase tracking-wider'>
                     Speed Trap Leaders
                 </h3>
-                <p className='text-[11px] text-zinc-500'>
+                <p className='text-[11px] text-zinc-400'>
                     Maximum recorded trap speeds across track sectors in km/h
                 </p>
             </div>

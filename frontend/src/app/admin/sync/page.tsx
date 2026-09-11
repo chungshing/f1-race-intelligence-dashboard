@@ -49,14 +49,14 @@ export default function AdminSyncPage() {
                     disabled={isSyncing}
                     className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border transition-all ${
                         isSyncing
-                            ? 'bg-zinc-900 border-zinc-800 text-zinc-500 cursor-not-allowed'
+                            ? 'bg-zinc-900 border-zinc-800 text-zinc-400 cursor-not-allowed'
                             : 'bg-zinc-950 hover:bg-zinc-900 border-zinc-800 text-zinc-200 active:scale-95'
                     }`}
                 >
                     {isSyncing ? (
                         <>
                             <svg
-                                className='animate-spin h-3.5 w-3.5 text-zinc-500'
+                                className='animate-spin h-3.5 w-3.5 text-zinc-400'
                                 fill='none'
                                 viewBox='0 0 24 24'
                             >

@@ -159,7 +159,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
         return (
             <AppLayout>
                 <div className='flex items-center justify-center min-h-[50vh]'>
-                    <div className='flex flex-col items-center gap-3 text-zinc-500'>
+                    <div className='flex flex-col items-center gap-3 text-zinc-400'>
                         <div className='w-6 h-6 border-2 border-zinc-700 border-t-red-500 rounded-full animate-spin' />
                         <p className='text-xs font-semibold uppercase tracking-wider animate-pulse'>
                             Loading Weekend Results
@@ -179,7 +179,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                     </div>
                     <div className='space-y-1.5'>
                         <p className='text-zinc-200 font-bold tracking-tight'>No data available</p>
-                        <p className='text-zinc-500 text-xs leading-relaxed'>
+                        <p className='text-zinc-400 text-xs leading-relaxed'>
                             Results for this race weekend haven&apos;t been published or loaded yet.
                             Check back once track sessions finish!
                         </p>

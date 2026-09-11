@@ -16,7 +16,7 @@ export default function RacesPage() {
         return (
             <AppLayout>
                 <div className='flex items-center justify-center min-h-[50vh]'>
-                    <div className='flex flex-col items-center gap-3 text-zinc-500'>
+                    <div className='flex flex-col items-center gap-3 text-zinc-400'>
                         <div className='w-6 h-6 border-2 border-zinc-700 border-t-red-500 rounded-full animate-spin' />
                         <p className='text-xs font-semibold uppercase tracking-wider animate-pulse'>
                             Loading Race Calendar
@@ -34,7 +34,7 @@ export default function RacesPage() {
                     <p className='text-red-400 font-bold tracking-tight text-sm uppercase'>
                         Connection Error
                     </p>
-                    <p className='text-zinc-500 text-xs'>
+                    <p className='text-zinc-400 text-xs'>
                         Failed to fetch the current season timeline. Please check your network
                         connection.
                     </p>

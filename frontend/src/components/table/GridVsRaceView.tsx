@@ -33,9 +33,9 @@ function formatDelta(delta: number | null, statusLabel: string | null) {
 
 function deltaClass(delta: number | null, statusLabel: string | null) {
     if (statusLabel === 'DSQ') return 'text-red-500';
-    if (statusLabel === 'DNF') return 'text-zinc-500';
+    if (statusLabel === 'DNF') return 'text-zinc-400';
     if (statusLabel === 'DNS') return 'text-amber-500';
-    if (delta == null || delta === 0) return 'text-zinc-500';
+    if (delta == null || delta === 0) return 'text-zinc-400';
     if (delta > 0) return 'text-emerald-400';
     return 'text-red-400';
 }
@@ -61,7 +61,7 @@ function DriverName({
             />
             <div className='min-w-0'>
                 <p className='font-semibold text-zinc-200 truncate'>{info.name}</p>
-                <p className='text-[10px] text-zinc-500 truncate'>{info.team}</p>
+                <p className='text-[10px] text-zinc-400 truncate'>{info.team}</p>
             </div>
         </div>
     );
@@ -118,12 +118,12 @@ function StatCard({
 
     return (
         <div className='border border-zinc-800 rounded-xl bg-linear-to-b from-zinc-900 to-zinc-950 p-4'>
-            <p className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>{label}</p>
+            <p className='text-[10px] font-bold text-zinc-400 uppercase tracking-widest'>{label}</p>
             {row && info ? (
                 <div className='mt-2 flex items-end justify-between gap-3'>
                     <div className='min-w-0'>
                         <p className='text-sm font-bold text-zinc-100 truncate'>{info.name}</p>
-                        <p className='text-[11px] text-zinc-500 font-mono mt-0.5'>
+                        <p className='text-[11px] text-zinc-400 font-mono mt-0.5'>
                             P{row.gridPosition ?? '—'} → P{row.finishPosition ?? '—'}
                         </p>
                     </div>
@@ -132,7 +132,7 @@ function StatCard({
                     </span>
                 </div>
             ) : (
-                <p className='mt-2 text-sm text-zinc-600'>{empty}</p>
+                <p className='mt-2 text-sm text-zinc-400'>{empty}</p>
             )}
         </div>
     );
@@ -185,7 +185,7 @@ export function GridVsRaceView({ pairs, lookup }: Props) {
                         })}
                     </div>
                 ) : (
-                    <p className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
+                    <p className='text-[10px] font-bold text-zinc-400 uppercase tracking-widest'>
                         {pair.gridSession.sessionName} → {pair.raceSession.sessionName}
                     </p>
                 )}
@@ -226,7 +226,7 @@ export function GridVsRaceView({ pairs, lookup }: Props) {
                     empty='No places lost'
                 />
                 <div className='border border-zinc-800 rounded-xl bg-linear-to-b from-zinc-900 to-zinc-950 p-4'>
-                    <p className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
+                    <p className='text-[10px] font-bold text-zinc-400 uppercase tracking-widest'>
                         Field movement
                     </p>
                     <div className='mt-2 flex items-end justify-between gap-3'>
@@ -237,19 +237,19 @@ export function GridVsRaceView({ pairs, lookup }: Props) {
                             {summary.netPlacesSwung}
                         </span>
                     </div>
-                    <p className='text-[11px] text-zinc-600 mt-1'>places swapped</p>
+                    <p className='text-[11px] text-zinc-400 mt-1'>places swapped</p>
                 </div>
             </div>
 
             <div className={TABLE_CONTAINER_CLASS}>
                 <div className='p-4 pl-5 border-b border-zinc-900 bg-zinc-900/20 flex items-center justify-between gap-3'>
                     <div className='flex items-center gap-2'>
-                        <ArrowRight className='w-4 h-4 text-zinc-500' />
+                        <ArrowRight className='w-4 h-4 text-zinc-400' />
                         <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
                             Grid → Finish
                         </h3>
                     </div>
-                    <span className='text-[10px] text-zinc-600 font-medium uppercase tracking-wider'>
+                    <span className='text-[10px] text-zinc-400 font-medium uppercase tracking-wider'>
                         {pair.gridSession.sessionName} vs {pair.raceSession.sessionName}
                     </span>
                 </div>
@@ -328,7 +328,7 @@ export function GridVsRaceUnavailable({ results }: EmptyPairProps) {
     return (
         <div className='border border-zinc-800 rounded-xl bg-zinc-950 px-5 py-10 text-center'>
             <p className='text-zinc-200 font-bold'>Grid vs finish is not ready yet</p>
-            <p className='text-zinc-500 text-xs mt-2 leading-relaxed max-w-md mx-auto'>
+            <p className='text-zinc-400 text-xs mt-2 leading-relaxed max-w-md mx-auto'>
                 {!hasQuali && !hasRace
                     ? 'This weekend still needs qualifying and race classifications.'
                     : !hasQuali
