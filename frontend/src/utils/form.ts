@@ -1,4 +1,4 @@
-import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
+import { SupabaseRaceResultRow } from '@/types/results';
 
 export interface DriverFormEntry {
     driverNumber: number;
@@ -11,7 +11,7 @@ export interface PodiumEntry {
     gapToLeader: string;
 }
 
-const parseClassification = (raw: string | DriverResult[]): DriverResult[] => {
+export function parseJsonField<T>(raw: string | T[] | undefined): T[] {
     if (!raw) return [];
     if (typeof raw === 'string') {
         try {
@@ -21,7 +21,7 @@ const parseClassification = (raw: string | DriverResult[]): DriverResult[] => {
         }
     }
     return raw;
-};
+}
 
 export function buildPodium(raceRows: SupabaseRaceResultRow[]): PodiumEntry[] {
     const mainRace = raceRows
@@ -30,7 +30,7 @@ export function buildPodium(raceRows: SupabaseRaceResultRow[]): PodiumEntry[] {
 
     if (!mainRace) return [];
 
-    const classification = parseClassification(mainRace.classification_json);
+    const classification = parseJsonField(mainRace.classification_json);
 
     return classification
         .filter((d) => d.position && [1, 2, 3].includes(d.position))
@@ -45,7 +45,7 @@ export function buildPodium(raceRows: SupabaseRaceResultRow[]): PodiumEntry[] {
 export function buildRecentForm(
     allRaceRows: SupabaseRaceResultRow[],
     driverNumbers: number[],
-    limit = 5,
+    limit = 5
 ): DriverFormEntry[] {
     const racesSorted = allRaceRows
         .filter((r) => r.session_name === 'Race')
@@ -56,7 +56,7 @@ export function buildRecentForm(
     return driverNumbers.map((driverNumber) => ({
         driverNumber,
         results: racesSorted.map((race) => {
-            const classification = parseClassification(race.classification_json);
+            const classification = parseJsonField(race.classification_json);
             const entry = classification.find((d) => d.driverNumber === driverNumber);
             if (!entry) return null;
             if (entry.dnf) return 'DNF';

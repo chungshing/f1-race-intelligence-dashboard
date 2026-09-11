@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 // ==========================================
 // Data Mapping Helpers
 // ==========================================
-function mapDriverStandings(apiData: RawDriverStanding[]): DriverStanding[] {
+export function mapDriverStandings(apiData: RawDriverStanding[]): DriverStanding[] {
     return apiData.map((item) => {
         const position = Number(item.position);
         const positionsGained = Number(item.positions_gained ?? 0);
@@ -28,7 +28,7 @@ function mapDriverStandings(apiData: RawDriverStanding[]): DriverStanding[] {
     });
 }
 
-function mapTeamStandings(apiData: RawTeamStanding[]): Team[] {
+export function mapTeamStandings(apiData: RawTeamStanding[]): Team[] {
     return apiData.map((item) => {
         const position = Number(item.position);
         const positionsGained = Number(item.positions_gained ?? 0);

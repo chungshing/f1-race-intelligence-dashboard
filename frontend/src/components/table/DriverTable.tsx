@@ -3,6 +3,7 @@ import { formatHexColor } from '@/utils/sessions';
 import { getPositionColor, TABLE_CONTAINER_CLASS, TABLE_THEAD_CLASS } from '@/utils/styles';
 import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
 import NextImage from 'next/image';
+import Link from 'next/link';
 
 interface DriverTableProps {
     standings: DriverStanding[];
@@ -100,7 +101,12 @@ export function DriverTable({ standings, limit, formMap }: DriverTableProps) {
                                                 />
                                             </div>
                                         )}
-                                        <span className='tracking-tight'>{row.driverName}</span>
+                                        <Link
+                                            href={`/drivers/${row.driverNumber}`}
+                                            className='tracking-tight hover:text-red-400 transition-colors'
+                                        >
+                                            {row.driverName}
+                                        </Link>
                                     </div>
                                 </td>
                                 <td className='p-4 text-zinc-400 font-medium'>{row.teamName}</td>
