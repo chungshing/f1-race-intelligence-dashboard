@@ -1,7 +1,7 @@
+import { groupByMeeting, pointsFor } from '@/lib/racePoints';
 import { DriverResult, Stint, SupabaseRaceResultRow } from '@/types/results';
 import { DriverStanding } from '@/types/standing';
 import { parseJsonField } from '@/utils/form';
-import { pointsFor, groupByMeeting } from '@/lib/racePoints';
 
 export interface RoundResult {
     round: number;
@@ -163,6 +163,9 @@ export function buildDriverProfile(
     raceRows: SupabaseRaceResultRow[]
 ): DriverProfile {
     const byMeeting = groupByMeeting(raceRows);
+    const scoringRows = raceRows.filter(
+        (r) => r.session_name === 'Race' || r.session_name === 'Sprint'
+    );
 
     return {
         driverNumber,
@@ -174,6 +177,6 @@ export function buildDriverProfile(
         currentPoints: standing.points,
         seasonResults: buildSeasonResults(driverNumber, byMeeting),
         teammateH2H: buildTeammateH2H(driverNumber, standing.teamName, allDrivers, byMeeting),
-        tyreTendencies: buildTyreTendencies(driverNumber, raceRows),
+        tyreTendencies: buildTyreTendencies(driverNumber, scoringRows),
     };
 }
