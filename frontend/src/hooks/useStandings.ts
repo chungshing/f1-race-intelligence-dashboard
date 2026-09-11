@@ -28,7 +28,7 @@ export function mapDriverStandings(apiData: RawDriverStanding[]): DriverStanding
     });
 }
 
-function mapTeamStandings(apiData: RawTeamStanding[]): Team[] {
+export function mapTeamStandings(apiData: RawTeamStanding[]): Team[] {
     return apiData.map((item) => {
         const position = Number(item.position);
         const positionsGained = Number(item.positions_gained ?? 0);
