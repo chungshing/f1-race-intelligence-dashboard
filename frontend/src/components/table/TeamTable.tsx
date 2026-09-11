@@ -2,6 +2,7 @@ import { Team } from '@/types/standing';
 import { formatHexColor } from '@/utils/sessions';
 import { getPositionColor, TABLE_CONTAINER_CLASS, TABLE_THEAD_CLASS } from '@/utils/styles';
 import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
+import Link from 'next/link';
 
 interface TeamTableProps {
     standings: Team[];
@@ -52,7 +53,12 @@ export function TeamTable({ standings, limit }: TeamTableProps) {
                                     />
                                 </td>
                                 <td className='p-4 font-bold text-zinc-100 tracking-tight text-sm'>
-                                    {row.teamName}
+                                    <Link
+                                        href={`/constructors/${encodeURIComponent(row.teamName)}`}
+                                        className='hover:text-red-400 transition-colors'
+                                    >
+                                        {row.teamName}
+                                    </Link>
                                 </td>
                                 <td className='p-4 text-center'>
                                     <div className='flex items-center justify-center'>
