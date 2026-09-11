@@ -1,6 +1,6 @@
-import { getStandings, getTeamStandings } from '@/lib/app';
+import { useQuery } from "@tanstack/react-query";
+import { getStandings, getTeamStandings } from "@/lib/app";
 import { DriverStanding, RawDriverStanding, RawTeamStanding, Team } from '@/types/standing';
-import { useEffect, useState } from 'react';
 
 // ==========================================
 // Data Mapping Helpers
@@ -52,57 +52,27 @@ export function mapTeamStandings(apiData: RawTeamStanding[]): Team[] {
 // Custom React Hooks
 // ==========================================
 export function useStandings() {
-    const [data, setData] = useState<DriverStanding[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const { data, isLoading, error } = useQuery({
+        queryKey: ['driverStandings'],
+        queryFn: async () => mapDriverStandings(await getStandings()),
+    });
 
-    useEffect(() => {
-        let isMounted = true;
-
-        getStandings()
-            .then((result) => {
-                // result is automatically inferred as RawDriverStanding[]
-                if (isMounted) setData(mapDriverStandings(result));
-            })
-            .catch(() => {
-                if (isMounted) setError('Failed to load standings');
-            })
-            .finally(() => {
-                if (isMounted) setLoading(false);
-            });
-
-        return () => {
-            isMounted = false;
-        };
-    }, []);
-
-    return { data, loading, error };
+    return {
+        data: data ?? [],
+        loading: isLoading,
+        error: error ? 'Failed to load standings' : null,
+    };
 }
 
 export function useTeamStandings() {
-    const [data, setData] = useState<Team[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const { data, isLoading, error } = useQuery({
+        queryKey: ['teamStandings'],
+        queryFn: async () => mapTeamStandings(await getTeamStandings()),
+    });
 
-    useEffect(() => {
-        let isMounted = true;
-
-        getTeamStandings()
-            .then((result) => {
-                // result is automatically inferred as RawTeamStanding[]
-                if (isMounted) setData(mapTeamStandings(result));
-            })
-            .catch(() => {
-                if (isMounted) setError('Failed to load team standings');
-            })
-            .finally(() => {
-                if (isMounted) setLoading(false);
-            });
-
-        return () => {
-            isMounted = false;
-        };
-    }, []);
-
-    return { data, loading, error };
+    return {
+        data: data ?? [],
+        loading: isLoading,
+        error: error ? 'Failed to load team standings' : null,
+    };
 }

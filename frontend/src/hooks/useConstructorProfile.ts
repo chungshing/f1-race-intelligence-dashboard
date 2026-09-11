@@ -1,42 +1,38 @@
 import { mapDriverStandings, mapTeamStandings } from '@/hooks/useStandings';
 import { getRaceResultsWithStints, getStandings, getTeamStandings } from '@/lib/app';
 import { buildConstructorProfile, ConstructorProfile } from '@/lib/constructorProfile';
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 export function useConstructorProfile(teamName: string) {
-    const [data, setData] = useState<ConstructorProfile | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const driversQuery = useQuery({
+        queryKey: ['driverStandings'],
+        queryFn: async () => mapDriverStandings(await getStandings()),
+    });
 
-    useEffect(() => {
-        let isMounted = true;
+    const teamsQuery = useQuery({
+        queryKey: ['teamStandings'],
+        queryFn: async () => mapTeamStandings(await getTeamStandings()),
+    });
 
-        Promise.all([getStandings(), getTeamStandings(), getRaceResultsWithStints()])
-            .then(([rawDrivers, rawTeams, raceRows]) => {
-                if (!isMounted) return;
+    const raceRowsQuery = useQuery({
+        queryKey: ['raceResultsWithStints'],
+        queryFn: getRaceResultsWithStints,
+    });
 
-                const allDrivers = mapDriverStandings(rawDrivers);
-                const allTeams = mapTeamStandings(rawTeams);
-                const team = allTeams.find((t) => t.teamName === teamName);
+    const loading = driversQuery.isLoading || teamsQuery.isLoading || raceRowsQuery.isLoading;
+    const queryError = driversQuery.error || teamsQuery.error || raceRowsQuery.error;
 
-                if (!team) {
-                    setError('Team not found');
-                    return;
-                }
+    let data: ConstructorProfile | null = null;
+    let error: string | null = queryError ? 'Failed to load constructor profile' : null;
 
-                setData(buildConstructorProfile(team, allDrivers, raceRows));
-            })
-            .catch(() => {
-                if (isMounted) setError('Failed to load constructor profile');
-            })
-            .finally(() => {
-                if (isMounted) setLoading(false);
-            });
-
-        return () => {
-            isMounted = false;
-        };
-    }, [teamName]);
+    if (!loading && !error && driversQuery.data && teamsQuery.data && raceRowsQuery.data) {
+        const team = teamsQuery.data.find((t) => t.teamName === teamName);
+        if (!team) {
+            error = 'Team not found';
+        } else {
+            data = buildConstructorProfile(team, driversQuery.data, raceRowsQuery.data);
+        }
+    }
 
     return { data, loading, error };
 }
