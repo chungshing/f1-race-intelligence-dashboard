@@ -22,12 +22,27 @@ export interface ConstructorRoundResult {
     driverBreakdown: DriverContribution[];
 }
 
+export interface ConstructorStats {
+    wins: number;
+    podiums: number;
+    dnfCount: number;
+    bestFinish: number | null;
+}
+
+export interface DriverPointsContribution {
+    driverNumber: number;
+    driverName: string;
+    totalPoints: number;
+}
+
 export interface ConstructorProfile {
     teamName: string;
     teamColor: string;
     currentPosition: number;
     currentPoints: number;
     drivers: DriverStanding[];
+    stats: ConstructorStats;
+    driverContributions: DriverPointsContribution[];
     seasonResults: ConstructorRoundResult[];
 }
 
@@ -94,6 +109,47 @@ function buildSeasonResults(
     return results;
 }
 
+function buildConstructorStats(seasonResults: ConstructorRoundResult[]): ConstructorStats {
+    let wins = 0;
+    let podiums = 0;
+    let dnfCount = 0;
+    let bestFinish: number | null = null;
+
+    for (const round of seasonResults) {
+        for (const d of round.driverBreakdown) {
+            if (d.dnf || d.dns || d.dsq) {
+                dnfCount++;
+                continue;
+            }
+            if (d.position === 1) wins++;
+            if (d.position !== null && d.position <= 3) podiums++;
+            if (d.position !== null && (bestFinish === null || d.position < bestFinish)) {
+                bestFinish = d.position;
+            }
+        }
+    }
+
+    return { wins, podiums, dnfCount, bestFinish };
+}
+
+function buildDriverContributions(
+    teamDrivers: DriverStanding[],
+    seasonResults: ConstructorRoundResult[]
+): DriverPointsContribution[] {
+    return teamDrivers.map((driver) => {
+        const totalPoints = seasonResults.reduce((sum, round) => {
+            const entry = round.driverBreakdown.find((d) => d.driverNumber === driver.driverNumber);
+            return sum + (entry?.points ?? 0);
+        }, 0);
+
+        return {
+            driverNumber: driver.driverNumber,
+            driverName: driver.driverName,
+            totalPoints,
+        };
+    });
+}
+
 export function buildConstructorProfile(
     team: Team,
     allDrivers: DriverStanding[],
@@ -101,6 +157,7 @@ export function buildConstructorProfile(
 ): ConstructorProfile {
     const teamDrivers = allDrivers.filter((d) => d.teamName === team.teamName);
     const byMeeting = groupByMeeting(raceRows);
+    const seasonResults = buildSeasonResults(teamDrivers, byMeeting);
 
     return {
         teamName: team.teamName,
@@ -108,6 +165,8 @@ export function buildConstructorProfile(
         currentPosition: team.position,
         currentPoints: team.points,
         drivers: teamDrivers,
-        seasonResults: buildSeasonResults(teamDrivers, byMeeting),
+        seasonResults,
+        stats: buildConstructorStats(seasonResults),
+        driverContributions: buildDriverContributions(teamDrivers, seasonResults),
     };
 }
