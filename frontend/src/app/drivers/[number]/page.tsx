@@ -84,6 +84,56 @@ export default function DriverProfilePage({ params }: { params: Promise<{ number
                     </div>
                 </div>
 
+                <div className='grid grid-cols-2 sm:grid-cols-5 gap-4'>
+                    <div className='bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-3.5'>
+                        <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400'>
+                            Wins
+                        </p>
+                        <h2 className='text-3xl font-mono font-bold text-zinc-100 mt-1'>
+                            {profile.stats.wins}
+                        </h2>
+                    </div>
+                    <div className='bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-3.5'>
+                        <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400'>
+                            Podiums
+                        </p>
+                        <h2 className='text-3xl font-mono font-bold text-zinc-100 mt-1'>
+                            {profile.stats.podiums}
+                        </h2>
+                    </div>
+                    <div className='bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-3.5'>
+                        <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400'>
+                            DNFs
+                        </p>
+                        <h2 className='text-3xl font-mono font-bold text-zinc-100 mt-1'>
+                            {profile.stats.dnfCount}
+                        </h2>
+                    </div>
+                    <div className='bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-3.5'>
+                        <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400'>
+                            Best Finish
+                        </p>
+                        <h2 className='text-3xl font-mono font-bold text-zinc-100 mt-1'>
+                            {profile.stats.bestFinish !== null
+                                ? `P${profile.stats.bestFinish}`
+                                : '—'}
+                        </h2>
+                    </div>
+                    {profile.teammateH2H.map((h2h) => (
+                        <div
+                            key={h2h.teammateDriverNumber}
+                            className='bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-3.5'
+                        >
+                            <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400 truncate'>
+                                vs {h2h.teammateName}
+                            </p>
+                            <h2 className='text-3xl font-mono font-bold text-zinc-100 mt-1'>
+                                {h2h.driverWins}–{h2h.teammateWins}
+                            </h2>
+                        </div>
+                    ))}
+                </div>
+
                 <div>
                     <h3 className='text-sm font-bold text-zinc-300 mb-3'>Season Results</h3>
                     <div className={TABLE_CONTAINER_CLASS}>
@@ -137,32 +187,6 @@ export default function DriverProfilePage({ params }: { params: Promise<{ number
                         </table>
                     </div>
                 </div>
-
-                {profile.teammateH2H.length > 0 && (
-                    <div>
-                        <h3 className='text-sm font-bold text-zinc-300 mb-3'>Teammate H2H</h3>
-                        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-                            {profile.teammateH2H.map((h2h) => (
-                                <div
-                                    key={h2h.teammateDriverNumber}
-                                    className='bg-zinc-950 border border-zinc-800 rounded-xl p-4 flex items-center justify-between'
-                                >
-                                    <div>
-                                        <p className='text-xs text-zinc-400'>
-                                            vs {h2h.teammateName}
-                                        </p>
-                                        <p className='text-[10px] text-zinc-500 mt-0.5'>
-                                            {h2h.roundsCompared} rounds compared
-                                        </p>
-                                    </div>
-                                    <p className='text-2xl font-mono font-bold text-zinc-100'>
-                                        {h2h.driverWins}–{h2h.teammateWins}
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
 
                 {profile.tyreTendencies.length > 0 && (
                     <div>

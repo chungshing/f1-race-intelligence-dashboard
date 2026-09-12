@@ -87,6 +87,56 @@ export default function ConstructorProfilePage({
                     </div>
                 </div>
 
+                <div className='flex flex-wrap gap-4'>
+                    <div className='flex-1 min-w-35 bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-3.5'>
+                        <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400'>
+                            Wins
+                        </p>
+                        <h2 className='text-3xl font-mono font-bold text-zinc-100 mt-1'>
+                            {profile.stats.wins}
+                        </h2>
+                    </div>
+                    <div className='flex-1 min-w-35 bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-3.5'>
+                        <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400'>
+                            Podiums
+                        </p>
+                        <h2 className='text-3xl font-mono font-bold text-zinc-100 mt-1'>
+                            {profile.stats.podiums}
+                        </h2>
+                    </div>
+                    <div className='flex-1 min-w-35 bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-3.5'>
+                        <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400'>
+                            DNFs
+                        </p>
+                        <h2 className='text-3xl font-mono font-bold text-zinc-100 mt-1'>
+                            {profile.stats.dnfCount}
+                        </h2>
+                    </div>
+                    <div className='flex-1 min-w-35 bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-3.5'>
+                        <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400'>
+                            Best Finish
+                        </p>
+                        <h2 className='text-3xl font-mono font-bold text-zinc-100 mt-1'>
+                            {profile.stats.bestFinish !== null
+                                ? `P${profile.stats.bestFinish}`
+                                : '—'}
+                        </h2>
+                    </div>
+                    {profile.driverContributions.map((d) => (
+                        <div
+                            key={d.driverNumber}
+                            className='flex-1 min-w-35 bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-3.5'
+                        >
+                            <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400 truncate'>
+                                {d.driverName}
+                            </p>
+                            <h2 className='text-3xl font-mono font-bold text-zinc-100 mt-1'>
+                                {d.totalPoints}
+                            </h2>
+                        </div>
+                    ))}
+                </div>
+
                 <div>
                     <h3 className='text-sm font-bold text-zinc-300 mb-3'>Season Results</h3>
                     <div className={TABLE_CONTAINER_CLASS}>

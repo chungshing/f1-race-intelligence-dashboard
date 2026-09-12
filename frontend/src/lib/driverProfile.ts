@@ -29,6 +29,13 @@ export interface TyreCompoundUsage {
     averageStintLength: number;
 }
 
+export interface DriverStats {
+    wins: number;
+    podiums: number;
+    dnfCount: number;
+    bestFinish: number | null;
+}
+
 export interface DriverProfile {
     driverNumber: number;
     driverName: string;
@@ -40,6 +47,7 @@ export interface DriverProfile {
     seasonResults: RoundResult[];
     teammateH2H: TeammateH2H[];
     tyreTendencies: TyreCompoundUsage[];
+    stats: DriverStats;
 }
 
 function buildSeasonResults(
@@ -156,6 +164,27 @@ function buildTyreTendencies(
     }));
 }
 
+function buildDriverStats(seasonResults: RoundResult[]): DriverStats {
+    let wins = 0;
+    let podiums = 0;
+    let dnfCount = 0;
+    let bestFinish: number | null = null;
+
+    for (const r of seasonResults) {
+        if (r.dnf || r.dns || r.dsq) {
+            dnfCount++;
+            continue;
+        }
+        if (r.position === 1) wins++;
+        if (r.position !== null && r.position <= 3) podiums++;
+        if (r.position !== null && (bestFinish === null || r.position < bestFinish)) {
+            bestFinish = r.position;
+        }
+    }
+
+    return { wins, podiums, dnfCount, bestFinish };
+}
+
 export function buildDriverProfile(
     driverNumber: number,
     standing: DriverStanding,
@@ -166,6 +195,7 @@ export function buildDriverProfile(
     const scoringRows = raceRows.filter(
         (r) => r.session_name === 'Race' || r.session_name === 'Sprint'
     );
+    const seasonResults = buildSeasonResults(driverNumber, byMeeting);
 
     return {
         driverNumber,
@@ -175,8 +205,9 @@ export function buildDriverProfile(
         headshotUrl: standing.headshotUrl,
         currentPosition: standing.position,
         currentPoints: standing.points,
-        seasonResults: buildSeasonResults(driverNumber, byMeeting),
+        seasonResults,
         teammateH2H: buildTeammateH2H(driverNumber, standing.teamName, allDrivers, byMeeting),
         tyreTendencies: buildTyreTendencies(driverNumber, scoringRows),
+        stats: buildDriverStats(seasonResults),
     };
 }
