@@ -110,11 +110,18 @@ export default function RaceWeekendCard({ variant = 'card', data }: Props) {
                     <span className='text-[10px] font-bold text-red-500 uppercase tracking-widest'>
                         Next Grand Prix
                     </span>
-                    {data.circuitType && (
-                        <span className='text-[9px] font-bold px-2 py-0.5 rounded-full border border-zinc-800 text-zinc-400 bg-zinc-900/40 tracking-wider uppercase'>
-                            {data.circuitType} Layout
-                        </span>
-                    )}
+                    <div className='flex items-center gap-2'>
+                        {isSprintWeekend && (
+                            <span className='text-[9px] font-bold px-2 py-0.5 rounded-full border border-amber-800/50 text-amber-400 bg-amber-950/40 tracking-wider uppercase'>
+                                Sprint
+                            </span>
+                        )}
+                        {data.circuitType && (
+                            <span className='text-[9px] font-bold px-2 py-0.5 rounded-full border border-zinc-800 text-zinc-400 bg-zinc-900/40 tracking-wider uppercase'>
+                                {data.circuitType} Layout
+                            </span>
+                        )}
+                    </div>
                 </div>
 
                 {/* Header Layer: Country and Flag */}
