@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
 import { RaceWeekend } from '@/types/race';
 import { getNextRaceWeekend } from '@/utils/race';
 import Image from 'next/image';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type Props = {
     weekends: RaceWeekend[];
@@ -29,15 +29,19 @@ export default function SeasonTimeline({ weekends }: Props) {
                 if (sessions.length === 0) return null;
 
                 const sortedSessions = [...sessions].sort(
-                    (a, b) => new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime(),
+                    (a, b) => new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime()
                 );
 
                 const lastSession = sortedSessions[sortedSessions.length - 1];
+                const isSprintWeekend = sortedSessions.some((s) =>
+                    s.sessionName.toLowerCase().includes('sprint')
+                );
 
                 return {
                     ...weekend,
                     sortedSessions,
                     firstSession: sortedSessions[0],
+                    isSprintWeekend,
                     startTime: new Date(sortedSessions[0].dateStart).getTime(),
                     // Added a fallback switch to avoid runtime errors if dates are corrupted
                     endTime:
@@ -79,7 +83,7 @@ export default function SeasonTimeline({ weekends }: Props) {
             clearTimeout(initialSync);
             clearInterval(clockInterval);
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Smooth scroll position directly to current item
@@ -163,9 +167,16 @@ export default function SeasonTimeline({ weekends }: Props) {
                                             </div>
                                         )}
                                         <div className='min-w-0'>
-                                            <h3 className='font-bold text-sm tracking-tight text-zinc-100 truncate'>
-                                                {weekend.country}
-                                            </h3>
+                                            <div className='flex items-center gap-1.5'>
+                                                <h3 className='font-bold text-sm tracking-tight text-zinc-100 truncate'>
+                                                    {weekend.country}
+                                                </h3>
+                                                {weekend.isSprintWeekend && (
+                                                    <span className='text-[8px] font-bold px-1.5 py-0.5 rounded-full border border-amber-800/50 text-amber-400 bg-amber-950/40 tracking-wider uppercase shrink-0'>
+                                                        Sprint
+                                                    </span>
+                                                )}
+                                            </div>
                                             <p className='text-xs text-zinc-400 truncate mt-0.5'>
                                                 {weekend.circuit}
                                             </p>
@@ -178,7 +189,7 @@ export default function SeasonTimeline({ weekends }: Props) {
                                             suppressHydrationWarning
                                         >
                                             {new Date(
-                                                weekend.firstSession.dateStart,
+                                                weekend.firstSession.dateStart
                                             ).toLocaleDateString('en-GB', {
                                                 day: '2-digit',
                                                 month: 'short',
@@ -235,7 +246,7 @@ export default function SeasonTimeline({ weekends }: Props) {
                                         <div className='space-y-2.5'>
                                             {weekend.sortedSessions.map((s) => {
                                                 const sessionStart = new Date(
-                                                    s.dateStart,
+                                                    s.dateStart
                                                 ).getTime();
                                                 const sessionEnd = new Date(s.dateEnd).getTime();
                                                 const isSessionPast =
@@ -262,7 +273,7 @@ export default function SeasonTimeline({ weekends }: Props) {
                                                             {isSessionLive
                                                                 ? 'LIVE'
                                                                 : new Date(
-                                                                      s.dateStart,
+                                                                      s.dateStart
                                                                   ).toLocaleString('en-GB', {
                                                                       day: '2-digit',
                                                                       month: 'short',
