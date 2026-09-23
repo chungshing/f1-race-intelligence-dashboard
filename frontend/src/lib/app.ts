@@ -43,10 +43,7 @@ export async function getTeamStandings(): Promise<RawTeamStanding[]> {
  * Fields: meeting_key, country, circuit, year, sessions_json
  */
 export async function getRaces(): Promise<SupabaseRaceRow[]> {
-    const { data, error } = await supabase
-        .from('race_weekends')
-        .select('*')
-        .order('meeting_key', { ascending: true });
+    const { data, error } = await supabase.from('race_weekends').select('*');
 
     if (error) {
         console.error('Error fetching race weekends:', error);
