@@ -106,7 +106,7 @@ export default function SeasonTimeline({ weekends }: Props) {
         <div className='border border-zinc-800 bg-zinc-950 rounded-2xl p-6 shadow-2xl relative overflow-hidden'>
             <div className='flex items-center justify-between mb-6'>
                 <h2 className='text-xs font-black text-zinc-400 tracking-widest uppercase'>
-                    2026 Season Timeline
+                    Season Timeline
                 </h2>
                 <span className='text-[10px] font-mono bg-zinc-900 text-zinc-400 px-2 py-0.5 rounded border border-zinc-800'>
                     {processedWeekends.length} Rounds
