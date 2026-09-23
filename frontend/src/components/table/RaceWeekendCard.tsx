@@ -35,6 +35,9 @@ export default function RaceWeekendCard({ variant = 'card', data }: Props) {
     const nextSession = getNextSession(sortedSessions);
     const timeLeft = nextSession ? getTimeRemaining(new Date(nextSession.dateStart)) : null;
     const hasWeekendStarted = sortedSessions.some((s) => new Date(s.dateStart).getTime() < now);
+    const isSprintWeekend = sortedSessions.some((s) =>
+        s.sessionName.toLowerCase().includes('sprint')
+    );
 
     /* Sticky Compact Mode */
     if (variant === 'sticky') {
@@ -56,6 +59,11 @@ export default function RaceWeekendCard({ variant = 'card', data }: Props) {
                         <span className='text-[10px] font-bold text-red-500 uppercase tracking-widest'>
                             Next Grand Prix
                         </span>
+                        {isSprintWeekend && (
+                            <span className='text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-amber-800/50 text-amber-400 bg-amber-950/40 tracking-wider uppercase'>
+                                Sprint
+                            </span>
+                        )}
                         <p className='text-zinc-100 font-bold text-sm tracking-tight'>
                             {data.country}
                         </p>
