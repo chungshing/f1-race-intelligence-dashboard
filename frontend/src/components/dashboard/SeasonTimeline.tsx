@@ -4,6 +4,7 @@ import { RaceWeekend } from '@/types/race';
 import { getNextRaceWeekend } from '@/utils/race';
 import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 
 type Props = {
     weekends: RaceWeekend[];
@@ -288,7 +289,7 @@ export default function SeasonTimeline({ weekends }: Props) {
                                         </div>
 
                                         {!isFuture && (
-                                            <a
+                                            <Link
                                                 href={`/races/${weekend.meetingKey}`}
                                                 onClick={(e) => e.stopPropagation()}
                                                 className='block mt-2 w-full text-center text-xs font-bold py-2 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-200 rounded-lg transition-colors'
@@ -296,7 +297,7 @@ export default function SeasonTimeline({ weekends }: Props) {
                                                 {isLive
                                                     ? 'Enter Live Dashboard'
                                                     : 'View Weekend Results'}
-                                            </a>
+                                            </Link>
                                         )}
                                     </div>
                                 )}
