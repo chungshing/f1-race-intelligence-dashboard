@@ -1,4 +1,5 @@
-import { groupByMeeting, pointsFor } from '@/lib/racePoints';
+import { getChronologicalMeetingOrder, groupByMeeting, pointsFor } from '@/lib/racePoints';
+import { RaceWeekend } from '@/types/race';
 import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
 import { DriverStanding, Team } from '@/types/standing';
 import { parseJsonField } from '@/utils/form';
@@ -48,13 +49,17 @@ export interface ConstructorProfile {
 
 function buildSeasonResults(
     teamDrivers: DriverStanding[],
-    byMeeting: Map<number, SupabaseRaceResultRow[]>
+    byMeeting: Map<number, SupabaseRaceResultRow[]>,
+    meetingOrder: number[]
 ): ConstructorRoundResult[] {
     const results: ConstructorRoundResult[] = [];
     let round = 0;
     let cumulative = 0;
 
-    for (const [meetingKey, sessions] of byMeeting) {
+    for (const meetingKey of meetingOrder) {
+        const sessions = byMeeting.get(meetingKey);
+        if (!sessions) continue;
+
         const raceSession = sessions.find((r) => r.session_name === 'Race');
         if (!raceSession) continue;
 
@@ -153,11 +158,13 @@ function buildDriverContributions(
 export function buildConstructorProfile(
     team: Team,
     allDrivers: DriverStanding[],
-    raceRows: SupabaseRaceResultRow[]
+    raceRows: SupabaseRaceResultRow[],
+    weekends: RaceWeekend[]
 ): ConstructorProfile {
     const teamDrivers = allDrivers.filter((d) => d.teamName === team.teamName);
     const byMeeting = groupByMeeting(raceRows);
-    const seasonResults = buildSeasonResults(teamDrivers, byMeeting);
+    const meetingOrder = getChronologicalMeetingOrder(weekends);
+    const seasonResults = buildSeasonResults(teamDrivers, byMeeting, meetingOrder);
 
     return {
         teamName: team.teamName,
