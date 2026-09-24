@@ -1,7 +1,8 @@
-import { groupByMeeting, pointsFor } from '@/lib/racePoints';
+import { pointsFor, groupByMeeting, getChronologicalMeetingOrder } from '@/lib/racePoints';
 import { DriverResult, Stint, SupabaseRaceResultRow } from '@/types/results';
 import { DriverStanding } from '@/types/standing';
 import { parseJsonField } from '@/utils/form';
+import { RaceWeekend } from '@/types/race';
 
 export interface RoundResult {
     round: number;
@@ -52,13 +53,17 @@ export interface DriverProfile {
 
 function buildSeasonResults(
     driverNumber: number,
-    byMeeting: Map<number, SupabaseRaceResultRow[]>
+    byMeeting: Map<number, SupabaseRaceResultRow[]>,
+    meetingOrder: number[]
 ): RoundResult[] {
     const results: RoundResult[] = [];
     let round = 0;
     let cumulative = 0;
 
-    for (const [meetingKey, sessions] of byMeeting) {
+    for (const meetingKey of meetingOrder) {
+        const sessions = byMeeting.get(meetingKey);
+        if (!sessions) continue;
+
         const raceSession = sessions.find((r) => r.session_name === 'Race');
         if (!raceSession) continue;
 
@@ -189,13 +194,15 @@ export function buildDriverProfile(
     driverNumber: number,
     standing: DriverStanding,
     allDrivers: DriverStanding[],
-    raceRows: SupabaseRaceResultRow[]
+    raceRows: SupabaseRaceResultRow[],
+    weekends: RaceWeekend[]
 ): DriverProfile {
     const byMeeting = groupByMeeting(raceRows);
+    const meetingOrder = getChronologicalMeetingOrder(weekends);
     const scoringRows = raceRows.filter(
         (r) => r.session_name === 'Race' || r.session_name === 'Sprint'
     );
-    const seasonResults = buildSeasonResults(driverNumber, byMeeting);
+    const seasonResults = buildSeasonResults(driverNumber, byMeeting, meetingOrder);
 
     return {
         driverNumber,
