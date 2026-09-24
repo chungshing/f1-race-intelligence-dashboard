@@ -1,3 +1,4 @@
+import { RaceWeekend } from '@/types/race';
 import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
 
 const RACE_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
@@ -14,9 +15,7 @@ export function pointsFor(result: DriverResult, isSprint: boolean): number {
 export function groupByMeeting(
     rows: SupabaseRaceResultRow[]
 ): Map<number, SupabaseRaceResultRow[]> {
-    const scoring = rows
-        .filter((r) => r.session_name === 'Race' || r.session_name === 'Sprint')
-        .sort((a, b) => a.meeting_key - b.meeting_key);
+    const scoring = rows.filter((r) => r.session_name === 'Race' || r.session_name === 'Sprint');
 
     const byMeeting = new Map<number, SupabaseRaceResultRow[]>();
     for (const row of scoring) {
@@ -25,4 +24,14 @@ export function groupByMeeting(
         byMeeting.set(row.meeting_key, list);
     }
     return byMeeting;
+}
+
+export function getChronologicalMeetingOrder(weekends: RaceWeekend[]): number[] {
+    return [...weekends]
+        .map((w) => ({
+            meetingKey: w.meetingKey,
+            startTime: Math.min(...w.sessions.map((s) => new Date(s.dateStart).getTime())),
+        }))
+        .sort((a, b) => a.startTime - b.startTime)
+        .map((w) => w.meetingKey);
 }
