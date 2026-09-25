@@ -1,8 +1,8 @@
-import { groupByMeeting, getChronologicalMeetingOrder, pointsFor } from '@/lib/racePoints';
-import { parseJsonField } from '@/utils/form';
+import { getChronologicalMeetingOrder, groupByMeeting, pointsFor } from '@/lib/racePoints';
+import { RaceWeekend } from '@/types/race';
 import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
 import { DriverStanding } from '@/types/standing';
-import { RaceWeekend } from '@/types/race';
+import { parseJsonField } from '@/utils/form';
 import { formatHexColor } from '@/utils/sessions';
 
 export interface PointsProgressionSeries {
