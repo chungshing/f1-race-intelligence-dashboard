@@ -189,14 +189,6 @@ export default function Home() {
                     ))}
                 </div>
 
-                <div className='bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-4'>
-                    <h3 className='text-sm font-bold text-zinc-300 mb-2'>Championship Battle</h3>
-                    <PointsProgressionChart
-                        series={progression.series}
-                        points={progression.points}
-                    />
-                </div>
-
                 {/* Main Grid */}
                 <div className='grid grid-cols-1 lg:grid-cols-3 gap-5 items-start'>
                     {/* Left: Standings */}
@@ -288,6 +280,16 @@ export default function Home() {
                         </div>
                     </div>
                 </div>
+
+                {/* Points Progression Chart */}
+                <div className='bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-4'>
+                    <h3 className='text-sm font-bold text-zinc-300 mb-2'>Championship Battle</h3>
+                    <PointsProgressionChart
+                        series={progression.series}
+                        points={progression.points}
+                    />
+                </div>
+
             </div>
         </AppLayout>
     );
