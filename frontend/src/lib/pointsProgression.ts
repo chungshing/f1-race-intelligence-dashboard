@@ -17,19 +17,41 @@ export interface PointsProgressionPoint {
     [driverKey: string]: number | string;
 }
 
+function lightenHex(hex: string, amount: number): string {
+    const clean = hex.replace('#', '');
+    const num = parseInt(clean, 16);
+
+    const r = Math.min(255, (num >> 16) + Math.round(255 * amount));
+    const g = Math.min(255, ((num >> 8) & 0x00ff) + Math.round(255 * amount));
+    const b = Math.min(255, (num & 0x0000ff) + Math.round(255 * amount));
+
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+
 export function buildPointsProgression(
-    topDrivers: DriverStanding[],
+    topDriversInput: DriverStanding[],
     raceRows: SupabaseRaceResultRow[],
     weekends: RaceWeekend[]
 ): { series: PointsProgressionSeries[]; points: PointsProgressionPoint[] } {
+    const topDrivers = [...topDriversInput].sort((a, b) => b.points - a.points);
+
     const byMeeting = groupByMeeting(raceRows);
     const meetingOrder = getChronologicalMeetingOrder(weekends);
 
-    const series: PointsProgressionSeries[] = topDrivers.map((d) => ({
-        driverNumber: d.driverNumber,
-        driverName: d.driverName,
-        teamColor: formatHexColor(d.teamColor),
-    }));
+    const teamColorCount = new Map<string, number>();
+    const series: PointsProgressionSeries[] = topDrivers.map((d) => {
+        const baseColor = formatHexColor(d.teamColor);
+        const occurrence = teamColorCount.get(d.teamName) ?? 0;
+        teamColorCount.set(d.teamName, occurrence + 1);
+
+        const color = occurrence === 0 ? baseColor : lightenHex(baseColor, 0.4 * occurrence);
+
+        return {
+            driverNumber: d.driverNumber,
+            driverName: d.driverName,
+            teamColor: color,
+        };
+    });
 
     const cumulative = new Map<number, number>(topDrivers.map((d) => [d.driverNumber, 0]));
     const points: PointsProgressionPoint[] = [];
