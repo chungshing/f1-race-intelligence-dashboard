@@ -2,15 +2,15 @@
 
 import { PointsProgressionPoint, PointsProgressionSeries } from '@/lib/pointsProgression';
 import {
-    CartesianGrid,
-    Line,
     LineChart,
-    ResponsiveContainer,
-    Tooltip,
+    Line,
     XAxis,
     YAxis,
+    Tooltip,
+    Legend,
+    ResponsiveContainer,
+    CartesianGrid,
 } from 'recharts';
-
 interface PointsProgressionChartProps {
     series: PointsProgressionSeries[];
     points: PointsProgressionPoint[];
@@ -54,6 +54,10 @@ export function PointsProgressionChart({ series, points }: PointsProgressionChar
                     labelFormatter={(round, payload) =>
                         `Round ${round} — ${payload?.[0]?.payload?.country ?? ''}`
                     }
+                />
+                <Legend
+                    wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
+                    formatter={(value) => <span style={{ color: '#a1a1aa' }}>{value}</span>}
                 />
                 {series.map((s) => (
                     <Line
