@@ -1,5 +1,6 @@
 'use client';
 
+import { PointsProgressionChart } from '@/components/dashboard/PointsProgressionChart';
 import { RaceAnalysisBanner } from '@/components/dashboard/RaceAnalysisBanner';
 import AppLayout from '@/components/layout/AppLayout';
 import { DriverTable } from '@/components/table/DriverTable';
@@ -10,6 +11,7 @@ import { useDriverLookup } from '@/hooks/useDriverLookup';
 import { useRaceWeekends } from '@/hooks/useRaceWeekends';
 import { useStandings, useTeamStandings } from '@/hooks/useStandings';
 import { getRaceResultsSummary } from '@/lib/app';
+import { buildPointsProgression } from '@/lib/pointsProgression';
 import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
 import { buildRecentForm } from '@/utils/form';
 import { getNextRaceWeekend } from '@/utils/race';
@@ -49,6 +51,13 @@ export default function Home() {
             .filter((race) => race.raceDate && race.raceDate.getTime() <= mountTimestamp)
             .toSorted((a, b) => b.raceDate!.getTime() - a.raceDate!.getTime());
     }, [races, mountTimestamp]);
+
+    const progression = useMemo(() => {
+        if (standings.length === 0 || allRaceRows.length === 0 || races.length === 0) {
+            return { series: [], points: [] };
+        }
+        return buildPointsProgression(standings.slice(0, 5), allRaceRows, races);
+    }, [standings, allRaceRows, races]);
 
     // Wake Render from cold sleep
     useEffect(() => {
@@ -106,7 +115,6 @@ export default function Home() {
     }, [allRaceRows, standings]);
 
     const leader = standings[0];
-    const runnerUp = standings[1];
     const topTeam = teams[0];
 
     const statsCards = useMemo(() => {
@@ -125,18 +133,8 @@ export default function Home() {
                 sub: topTeam ? `Factory Lead · ${topTeam.points ?? 0} PTS` : '—',
                 color: '#e4e4e7',
             },
-            {
-                label: 'Title Fight Gap',
-                val: driverLoading
-                    ? null
-                    : leader && runnerUp
-                      ? `+${leader.points - runnerUp.points}`
-                      : '—',
-                sub: 'Top 2 Drivers · Points Delta',
-                color: '#a1a1aa',
-            },
         ];
-    }, [leader, runnerUp, topTeam, driverLoading, teamLoading]);
+    }, [leader, topTeam, driverLoading, teamLoading]);
 
     return (
         <AppLayout>
@@ -161,7 +159,7 @@ export default function Home() {
                 )}
 
                 {/* Stats Cards */}
-                <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                     {statsCards.map((card, i) => (
                         <div
                             key={i}
@@ -189,6 +187,14 @@ export default function Home() {
                             </div>
                         </div>
                     ))}
+                </div>
+
+                <div className='bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-4'>
+                    <h3 className='text-sm font-bold text-zinc-300 mb-2'>Championship Battle</h3>
+                    <PointsProgressionChart
+                        series={progression.series}
+                        points={progression.points}
+                    />
                 </div>
 
                 {/* Main Grid */}
