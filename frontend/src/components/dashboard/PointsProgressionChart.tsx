@@ -11,9 +11,82 @@ import {
     ResponsiveContainer,
     CartesianGrid,
 } from 'recharts';
+
 interface PointsProgressionChartProps {
     series: PointsProgressionSeries[];
     points: PointsProgressionPoint[];
+}
+
+interface CustomTooltipProps {
+    active?: boolean;
+    label?: string | number;
+    payload?: {
+        dataKey?: string | number;
+        name?: string;
+        value?: number;
+        color?: string;
+        payload?: { country?: string };
+    }[];
+}
+
+function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
+    if (!active || !payload || payload.length === 0) return null;
+
+    const sorted = [...payload].sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0));
+    const country = payload[0]?.payload?.country;
+
+    return (
+        <div
+            style={{
+                backgroundColor: '#09090b',
+                border: '1px solid #27272a',
+                borderRadius: '8px',
+                padding: '10px 12px',
+                fontSize: '12px',
+            }}
+        >
+            <p style={{ color: '#f4f4f5', fontWeight: 600, marginBottom: '4px' }}>
+                Round {label} — {country}
+            </p>
+            {sorted.map((entry) => (
+                <p key={entry.dataKey as string} style={{ color: entry.color, margin: '2px 0' }}>
+                    {entry.name} : {entry.value}
+                </p>
+            ))}
+        </div>
+    );
+}
+
+function CustomLegend({ series }: { series: PointsProgressionSeries[] }) {
+    return (
+        <div
+            style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '12px',
+                paddingTop: '8px',
+                justifyContent: 'center',
+            }}
+        >
+            {series.map((s) => (
+                <div
+                    key={s.driverNumber}
+                    style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                    <span
+                        style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            backgroundColor: s.teamColor,
+                            display: 'inline-block',
+                        }}
+                    />
+                    <span style={{ fontSize: '11px', color: '#a1a1aa' }}>{s.driverName}</span>
+                </div>
+            ))}
+        </div>
+    );
 }
 
 export function PointsProgressionChart({ series, points }: PointsProgressionChartProps) {
@@ -44,21 +117,8 @@ export function PointsProgressionChart({ series, points }: PointsProgressionChar
                     tickLine={false}
                     width={32}
                 />
-                <Tooltip
-                    contentStyle={{
-                        backgroundColor: '#09090b',
-                        border: '1px solid #27272a',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                    }}
-                    labelFormatter={(round, payload) =>
-                        `Round ${round} — ${payload?.[0]?.payload?.country ?? ''}`
-                    }
-                />
-                <Legend
-                    wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
-                    formatter={(value) => <span style={{ color: '#a1a1aa' }}>{value}</span>}
-                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend content={<CustomLegend series={series} />} />
                 {series.map((s) => (
                     <Line
                         key={s.driverNumber}
