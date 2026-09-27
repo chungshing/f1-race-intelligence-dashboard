@@ -72,26 +72,16 @@ export async function getRaceResults(meetingKey?: number): Promise<SupabaseRaceR
     return data || [];
 }
 
-const lapCache = new Map<number, Promise<SupabaseLapRow[]>>();
 
-export function getLapsBySession(sessionKey: number): Promise<SupabaseLapRow[]> {
-    if (!lapCache.has(sessionKey)) {
-        const promise = supabase
-            .from('laps')
-            .select('*')
-            .eq('session_key', sessionKey)
-            .order('lap_number', { ascending: true })
-            .then(({ data, error }) => {
-                if (error) {
-                    lapCache.delete(sessionKey);
-                    throw new Error(error.message);
-                }
-                return (data ?? []) as SupabaseLapRow[];
-            }) as Promise<SupabaseLapRow[]>;
+export async function getLapsBySession(sessionKey: number): Promise<SupabaseLapRow[]> {
+    const { data, error } = await supabase
+        .from('laps')
+        .select('*')
+        .eq('session_key', sessionKey)
+        .order('lap_number', { ascending: true });
 
-        lapCache.set(sessionKey, promise);
-    }
-    return lapCache.get(sessionKey)!;
+    if (error) throw new Error(error.message);
+    return (data ?? []) as SupabaseLapRow[];
 }
 
 export async function getRaceResultsWithStints(): Promise<SupabaseRaceResultRow[]> {
