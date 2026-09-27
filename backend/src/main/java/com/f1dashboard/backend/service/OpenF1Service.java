@@ -87,8 +87,11 @@ public class OpenF1Service {
         List<RaceWeekend> liveWeekends = fetchRaceWeekends(year);
 
         if (!liveWeekends.isEmpty()) {
-            raceWeekendRepository.deleteAllInBatch();
             raceWeekendRepository.saveAll(liveWeekends);
+            List<Integer> currentMeetingKeys = liveWeekends.stream()
+                    .map(RaceWeekend::getMeetingKey)
+                    .toList();
+            raceWeekendRepository.deleteAllByMeetingKeyNotIn(currentMeetingKeys);
             return liveWeekends;
         }
 
