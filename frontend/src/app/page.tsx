@@ -13,7 +13,7 @@ import { useStandings, useTeamStandings } from '@/hooks/useStandings';
 import { getRaceResultsSummary } from '@/lib/app';
 import { buildPointsProgression } from '@/lib/pointsProgression';
 import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
-import { buildRecentForm } from '@/utils/form';
+import { buildRecentForm, parseJsonField } from '@/utils/form';
 import { getNextRaceWeekend } from '@/utils/race';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -88,10 +88,9 @@ export default function Home() {
                 );
                 if (!raceSession) continue;
 
-                let rawData = raceSession.classification_json;
-                if (typeof rawData === 'string') rawData = JSON.parse(rawData);
+                const rawData = parseJsonField<DriverResult>(raceSession.classification_json);
 
-                if (Array.isArray(rawData) && rawData.length > 0) {
+                if (rawData.length > 0) {
                     setResultsState({ data: rawData as DriverResult[], loading: false });
                     setLatestAnalysis({
                         meetingKey: race.meetingKey,
