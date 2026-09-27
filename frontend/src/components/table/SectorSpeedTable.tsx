@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { getLapsBySession } from '@/lib/app';
-import { buildSectorSpeedLeaders, SectorSpeedLeader } from '@/utils/performace';
+import { useMemo } from 'react';
+import { useSessionLaps } from '@/hooks/useSessionLaps';
+import { buildSectorSpeedLeaders } from '@/utils/performace';
 
 interface SectorSpeedTableProps {
     sessionKey: number;
@@ -10,34 +10,16 @@ interface SectorSpeedTableProps {
 }
 
 export function SectorSpeedTable({ sessionKey, lookup }: SectorSpeedTableProps) {
-    const [speeds, setSpeeds] = useState<SectorSpeedLeader[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        if (!sessionKey) return;
-        let isMounted = true;
-
-        getLapsBySession(sessionKey)
-            .then((raw) => {
-                if (!isMounted) return;
-                setSpeeds(
-                    buildSectorSpeedLeaders(raw).sort(
-                        (a, b) =>
-                            Math.max(b.sector1Max, b.sector2Max, b.sector3Max) -
-                            Math.max(a.sector1Max, a.sector2Max, a.sector3Max),
-                    ),
-                );
-                setLoading(false);
-            })
-            .catch(console.error)
-            .finally(() => {
-                if (isMounted) setLoading(false);
-            });
-
-        return () => {
-            isMounted = false;
-        };
-    }, [sessionKey]);
+    const { data: rawLaps, loading } = useSessionLaps(sessionKey);
+    const speeds = useMemo(
+        () =>
+            buildSectorSpeedLeaders(rawLaps).sort(
+                (a, b) =>
+                    Math.max(b.sector1Max, b.sector2Max, b.sector3Max) -
+                    Math.max(a.sector1Max, a.sector2Max, a.sector3Max)
+            ),
+        [rawLaps]
+    );
 
     if (loading)
         return (
@@ -57,7 +39,6 @@ export function SectorSpeedTable({ sessionKey, lookup }: SectorSpeedTableProps) 
                 </p>
             </div>
 
-            {/* Height boosted to 334px to completely match the PaceConsistencyCard scale height */}
             <div className='overflow-x-auto overflow-y-auto max-h-83.5 border border-zinc-900 rounded-lg scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent flex-1 mt-1'>
                 <table className='w-full text-left border-collapse text-xs table-fixed'>
                     <thead className='sticky top-0 z-10 bg-zinc-950'>
