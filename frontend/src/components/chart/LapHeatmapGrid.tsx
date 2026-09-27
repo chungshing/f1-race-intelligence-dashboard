@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { TABLE_CONTAINER_CLASS } from '@/utils/styles';
-import { buildSessionHeatmap, HeatmapDriverRow } from '@/utils/telemetry';
-import { getLapsBySession } from '@/lib/app';
+import { buildSessionHeatmap } from '@/utils/telemetry';
+import { useSessionLaps } from '@/hooks/useSessionLaps';
 import { DriverResult } from '@/types/results';
 
 const TELEMETRY_COLORS: Record<number, { bg: string; label: string }> = {
@@ -25,34 +25,12 @@ interface Props {
 }
 
 export function LapHeatmapGrid({ sessionKey, driversList, lookup }: Props) {
-    const [rows, setRows] = useState<HeatmapDriverRow[]>([]);
-    const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-        if (!sessionKey) return;
-        let isMounted = true;
-
-        queueMicrotask(() => {
-            if (isMounted) setLoading(true);
-        });
-
-        getLapsBySession(sessionKey)
-            .then((raw) => {
-                if (isMounted) setRows(buildSessionHeatmap(raw));
-            })
-            .catch(console.error)
-            .finally(() => {
-                if (isMounted) setLoading(false);
-            });
-
-        return () => {
-            isMounted = false;
-        };
-    }, [sessionKey]);
+    const { data: rawLaps, loading } = useSessionLaps(sessionKey);
+    const rows = useMemo(() => buildSessionHeatmap(rawLaps), [rawLaps]);
 
     const finishOrder = driversList.map((d) => d.driverNumber);
     const sortedRows = [...rows].sort(
-        (a, b) => finishOrder.indexOf(a.driverNumber) - finishOrder.indexOf(b.driverNumber),
+        (a, b) => finishOrder.indexOf(a.driverNumber) - finishOrder.indexOf(b.driverNumber)
     );
 
     const totalLaps = Math.max(0, ...rows.flatMap((r) => r.laps.map((l) => l.lapNumber)));
@@ -118,7 +96,7 @@ export function LapHeatmapGrid({ sessionKey, driversList, lookup }: Props) {
                                                     title={`${driver?.name ?? driverNumber} · Lap ${lap} · ${config.label}`}
                                                 />
                                             );
-                                        },
+                                        }
                                     )}
                                 </div>
                             );
