@@ -1,21 +1,20 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useSessionLaps } from '@/hooks/useSessionLaps';
+import { buildSessionChartData } from '@/utils/performace';
+import { TABLE_CONTAINER_CLASS } from '@/utils/styles';
+import { Activity } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import {
-    LineChart,
+    CartesianGrid,
+    Label,
     Line,
+    LineChart,
+    ResponsiveContainer,
+    Tooltip,
     XAxis,
     YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-    Label,
 } from 'recharts';
-import { getLapsBySession } from '@/lib/app';
-import { buildSessionChartData } from '@/utils/performace';
-import { ChartLapData } from '@/types/laps';
-import { Activity } from 'lucide-react';
-import { TABLE_CONTAINER_CLASS } from '@/utils/styles';
 
 interface ClassificationRow {
     driverNumber?: string | number;
@@ -29,17 +28,10 @@ interface LapPaceChartProps {
 }
 
 export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartProps) {
-    const [chartData, setChartData] = useState<ChartLapData[]>([]);
+    const { data: rawLaps, loading } = useSessionLaps(sessionKey);
+    const chartData = useMemo(() => buildSessionChartData(rawLaps), [rawLaps]);
     const [selectedDrivers, setSelectedDrivers] = useState<number[]>([]);
-    const [prevSessionKey, setPrevSessionKey] = useState<number>(sessionKey);
-    const [loading, setLoading] = useState(true);
     const [isMounted, setIsMounted] = useState(false);
-
-    if (sessionKey !== prevSessionKey) {
-        setPrevSessionKey(sessionKey);
-        setLoading(true);
-        setChartData([]);
-    }
 
     useEffect(() => {
         let active = true;
@@ -48,24 +40,13 @@ export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartPr
             if (active) setIsMounted(true);
         }, 0);
 
-        getLapsBySession(sessionKey)
-            .then((raw) => {
-                if (!active) return;
-                setChartData(buildSessionChartData(raw));
-                setLoading(false);
-            })
-            .catch((err) => {
-                console.error(err);
-                if (active) setLoading(false);
-            });
-
         return () => {
             active = false;
             clearTimeout(timeoutId);
         };
-    }, [sessionKey]);
+    }, []);
 
-    // Effect 2: set initial driver selection when drivers load
+    // Effect: set initial driver selection when drivers load
     useEffect(() => {
         if (driversList && driversList.length > 1) {
             queueMicrotask(() => {
@@ -79,7 +60,7 @@ export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartPr
 
     const toggleDriver = (driverNum: number) => {
         setSelectedDrivers((prev) =>
-            prev.includes(driverNum) ? prev.filter((id) => id !== driverNum) : [...prev, driverNum],
+            prev.includes(driverNum) ? prev.filter((id) => id !== driverNum) : [...prev, driverNum]
         );
     };
 
@@ -89,7 +70,7 @@ export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartPr
         if (chartData.length === 0) return ['auto', 'auto'];
 
         const allTimes = selectedDrivers.flatMap((num) =>
-            chartData.map((d) => d[String(num)] as number).filter(Boolean),
+            chartData.map((d) => d[String(num)] as number).filter(Boolean)
         );
         if (allTimes.length === 0) return ['auto', 'auto'];
 
@@ -130,7 +111,7 @@ export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartPr
                                     setSelectedDrivers(
                                         driversList
                                             .map((d) => Number(d.driverNumber || d.driver_number))
-                                            .filter(Boolean),
+                                            .filter(Boolean)
                                     )
                                 }
                                 className='text-[10px] font-bold text-zinc-400 hover:text-zinc-300 uppercase tracking-wider transition-colors'

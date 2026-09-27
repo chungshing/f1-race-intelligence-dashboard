@@ -8,12 +8,12 @@ import { RaceResultsTable } from '@/components/table/RaceResultsTable';
 import RaceWeekendCard from '@/components/table/RaceWeekendCard';
 import { TeamTable } from '@/components/table/TeamTable';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
+import { useRaceResults } from '@/hooks/useRaceResults';
 import { useRaceWeekends } from '@/hooks/useRaceWeekends';
 import { useStandings, useTeamStandings } from '@/hooks/useStandings';
-import { getRaceResultsSummary } from '@/lib/app';
 import { buildPointsProgression } from '@/lib/pointsProgression';
-import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
-import { buildRecentForm } from '@/utils/form';
+import { DriverResult } from '@/types/results';
+import { buildRecentForm, parseJsonField } from '@/utils/form';
 import { getNextRaceWeekend } from '@/utils/race';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -27,7 +27,7 @@ export default function Home() {
     const [activeTab, setActiveTab] = useState<TabType>('drivers');
     const driverLookup = useDriverLookup();
 
-    const [allRaceRows, setAllRaceRows] = useState<SupabaseRaceResultRow[]>([]);
+    const { data: allRaceRows } = useRaceResults();
     const [mountTimestamp] = useState(() => Date.now());
     const [resultsState, setResultsState] = useState<{
         data: DriverResult[];
@@ -64,18 +64,6 @@ export default function Home() {
         fetch('https://f1-race-intelligence-dashboard.onrender.com/api/health').catch(() => null);
     }, []);
 
-    // Fetch all race rows once
-    useEffect(() => {
-        let isMounted = true;
-        getRaceResultsSummary()
-            .then((data) => {
-                if (isMounted) setAllRaceRows(data);
-            })
-            .catch(console.error);
-        return () => {
-            isMounted = false;
-        };
-    }, []);
 
     // Derive latest race classification + set latestAnalysis banner from allRaceRows
     useEffect(() => {
@@ -88,10 +76,9 @@ export default function Home() {
                 );
                 if (!raceSession) continue;
 
-                let rawData = raceSession.classification_json;
-                if (typeof rawData === 'string') rawData = JSON.parse(rawData);
+                const rawData = parseJsonField<DriverResult>(raceSession.classification_json);
 
-                if (Array.isArray(rawData) && rawData.length > 0) {
+                if (rawData.length > 0) {
                     setResultsState({ data: rawData as DriverResult[], loading: false });
                     setLatestAnalysis({
                         meetingKey: race.meetingKey,

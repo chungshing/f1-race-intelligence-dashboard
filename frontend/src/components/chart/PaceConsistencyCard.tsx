@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { getLapsBySession } from '@/lib/app';
-import { buildPaceConsistency, PaceConsistencyRow } from '@/utils/performace';
+import { useMemo } from 'react';
+import { useSessionLaps } from '@/hooks/useSessionLaps';
+import { buildPaceConsistency } from '@/utils/performace';
 
 interface PaceConsistencyCardProps {
     sessionKey: number;
@@ -10,30 +10,11 @@ interface PaceConsistencyCardProps {
 }
 
 export function PaceConsistencyCard({ sessionKey, lookup }: PaceConsistencyCardProps) {
-    const [consistency, setConsistency] = useState<PaceConsistencyRow[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        if (!sessionKey) return;
-        let isMounted = true;
-
-        getLapsBySession(sessionKey)
-            .then((raw) => {
-                if (!isMounted) return;
-                setConsistency(
-                    buildPaceConsistency(raw).sort((a, b) => a.lapVariance - b.lapVariance),
-                );
-                setLoading(false);
-            })
-            .catch(console.error)
-            .finally(() => {
-                if (isMounted) setLoading(false);
-            });
-
-        return () => {
-            isMounted = false;
-        };
-    }, [sessionKey]);
+    const { data: rawLaps, loading } = useSessionLaps(sessionKey);
+    const consistency = useMemo(
+        () => buildPaceConsistency(rawLaps).sort((a, b) => a.lapVariance - b.lapVariance),
+        [rawLaps]
+    );
 
     const formatLapTime = (secs: number) => {
         const mins = Math.floor(secs / 60);
@@ -59,7 +40,6 @@ export function PaceConsistencyCard({ sessionKey, lookup }: PaceConsistencyCardP
                 </p>
             </div>
 
-            {/* Structured fixed height max constraints matching the 6 rows viewport layout */}
             <div className='space-y-2 max-h-83.5 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent'>
                 {consistency.map((driverRow, index) => {
                     const driver = lookup[driverRow.driverNumber] || {

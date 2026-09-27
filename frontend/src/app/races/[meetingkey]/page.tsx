@@ -13,7 +13,9 @@ import { RaceStrategyTable } from '@/components/table/RaceStrategyTable';
 import { SectorDurationTable } from '@/components/table/SectorDurationTable';
 import { SectorSpeedTable } from '@/components/table/SectorSpeedTable';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
-import { getLapsBySession, getRaceResults } from '@/lib/app';
+import { useSessionLaps } from '@/hooks/useSessionLaps';
+import { getRaceResults } from '@/lib/app';
+import { parseJsonField } from '@/utils/form';
 import {
     DriverResult,
     RaceControlEvent,
@@ -67,18 +69,6 @@ const TABS = [
     },
 ];
 
-const parseJsonField = <T,>(field: string | T[] | undefined): T[] => {
-    if (!field) return [];
-    if (typeof field === 'string') {
-        try {
-            return JSON.parse(field);
-        } catch {
-            return [];
-        }
-    }
-    return Array.isArray(field) ? field : [];
-};
-
 export default function RacePage({ params }: { params: Promise<{ meetingkey: string }> }) {
     const { meetingkey } = use(params);
     const driverLookup = useDriverLookup();
@@ -86,8 +76,10 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
     const [results, setResults] = useState<RaceResult[]>([]);
     const [activeSessionKey, setActiveSessionKey] = useState<number | null>(null);
     const [activeTab, setActiveTab] = useState<ActiveTab>('classification');
-    const [hasLapData, setHasLapData] = useState(false);
     const [loading, setLoading] = useState(true);
+
+    const { data: activeSessionLaps } = useSessionLaps(activeSessionKey ?? 0);
+    const hasLapData = activeSessionLaps.length > 0;
 
     useEffect(() => {
         let isMounted = true;
@@ -122,18 +114,13 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
         };
     }, [meetingkey]);
 
-    // Reset tab and check lap data when session changes
+    // Reset tab when session changes
     useEffect(() => {
         if (!activeSessionKey) return;
 
         queueMicrotask(() => {
             setActiveTab((tab) => (tab === 'gridvsrace' ? tab : 'classification'));
-            setHasLapData(false);
         });
-
-        getLapsBySession(activeSessionKey)
-            .then((laps) => setHasLapData(laps.length > 0))
-            .catch(() => setHasLapData(false));
     }, [activeSessionKey]);
 
     const activeRace = useMemo(() => {

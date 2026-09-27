@@ -2,28 +2,15 @@
 
 import AppLayout from '@/components/layout/AppLayout';
 import { DriverTable } from '@/components/table/DriverTable';
+import { useRaceResults } from '@/hooks/useRaceResults';
 import { useStandings } from '@/hooks/useStandings';
-import { getRaceResults } from '@/lib/app';
 import { buildRecentForm } from '@/utils/form';
-import { SupabaseRaceResultRow } from '@/types/results';
-import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { useMemo } from 'react';
 
 export default function DriversPage() {
     const { data: standings = [], loading } = useStandings();
-    const [allRaceRows, setAllRaceRows] = useState<SupabaseRaceResultRow[]>([]);
-
-    useEffect(() => {
-        let isMounted = true;
-        getRaceResults()
-            .then((data) => {
-                if (isMounted) setAllRaceRows(data);
-            })
-            .catch(console.error);
-        return () => {
-            isMounted = false;
-        };
-    }, []);
+    const { data: allRaceRows } = useRaceResults();
 
     const formMap = useMemo(() => {
         const rows = buildRecentForm(
