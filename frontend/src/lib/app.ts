@@ -72,15 +72,6 @@ export async function getRaceResults(meetingKey?: number): Promise<SupabaseRaceR
     return data || [];
 }
 
-export async function getRaceResultsSummary(): Promise<SupabaseRaceResultRow[]> {
-    const { data, error } = await supabase
-        .from('race_results')
-        .select('session_key, meeting_key, country, session_name, classification_json');
-
-    if (error) throw new Error(error.message);
-    return data || [];
-}
-
 const lapCache = new Map<number, Promise<SupabaseLapRow[]>>();
 
 export function getLapsBySession(sessionKey: number): Promise<SupabaseLapRow[]> {
