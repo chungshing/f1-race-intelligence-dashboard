@@ -1,9 +1,16 @@
 package com.f1dashboard.backend.service;
 
+import java.time.OffsetDateTime;
 import java.time.Year;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +22,7 @@ import com.f1dashboard.backend.model.RaceWeekend;
 import com.f1dashboard.backend.model.TeamStanding;
 import com.f1dashboard.backend.repository.DriverStandingRepository;
 import com.f1dashboard.backend.repository.LapRepository;
+import com.f1dashboard.backend.repository.RaceResultRepository;
 import com.f1dashboard.backend.repository.TeamStandingRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -26,15 +34,21 @@ public class F1SyncScheduler {
     private final OpenF1Service openF1Service;
     private final DriverStandingRepository driverRepo;
     private final TeamStandingRepository teamRepo;
+    private final RaceResultRepository raceResultRepo;
     private final LapRepository lapRepo;
+
+    @Value("${lap.retention.sessions:5}")
+    private int lapRetentionSessionCount;
 
     public F1SyncScheduler(OpenF1Service openF1Service,
             DriverStandingRepository driverRepo,
             TeamStandingRepository teamRepo,
+            RaceResultRepository raceResultRepo,
             LapRepository lapRepo) {
         this.openF1Service = openF1Service;
         this.driverRepo = driverRepo;
         this.teamRepo = teamRepo;
+        this.raceResultRepo = raceResultRepo;
         this.lapRepo = lapRepo;
     }
 
@@ -43,7 +57,8 @@ public class F1SyncScheduler {
         log.info("Starting background F1 data sync...");
         syncDriverStandings();
         syncTeamStandings();
-        syncCalendarAndResults();
+        List<RaceResult> currentWeekendResults = syncCalendarAndResults();
+        syncLaps(currentWeekendResults);
         log.info("F1 background database update complete.");
     }
 
@@ -81,7 +96,7 @@ public class F1SyncScheduler {
         }
     }
 
-    public void syncCalendarAndResults() {
+    public List<RaceResult> syncCalendarAndResults() {
         try {
             int currentYear = Year.now().getValue();
 
@@ -91,29 +106,64 @@ public class F1SyncScheduler {
             List<RaceResult> weekendResults = openF1Service.getCachedWeekendResults(null);
             log.info("Successfully synchronized {} session classifications.", weekendResults.size());
 
-            if (weekendResults != null && !weekendResults.isEmpty()) {
-                List<Integer> currentSessionKeys = weekendResults.stream()
-                        .map(RaceResult::getSessionKey)
-                        .filter(Objects::nonNull)
-                        .toList();
-
-                if (!currentSessionKeys.isEmpty()) {
-                    log.info("Evicting old weekend telemetry data to preserve free Supabase limits...");
-                    lapRepo.deleteBySessionKeyNotIn(currentSessionKeys);
-                }
-
-                for (RaceResult result : weekendResults) {
-                    String sessionName = result.getSessionName();
-                    if (sessionName != null && !sessionName.toLowerCase().contains("practice")
-                            && result.getSessionKey() != null) {
-                        List<Lap> lapsSynced = openF1Service.getCachedSessionLaps(result.getSessionKey());
-                        log.info("Synced {} laps for {} (Key: {})", lapsSynced.size(), sessionName,
-                                result.getSessionKey());
-                    }
-                }
-            }
+            return weekendResults != null ? weekendResults : List.of();
         } catch (Exception e) {
             log.error("Calendar/results sync failed.", e);
+            return List.of();
         }
+    }
+
+    public void syncLaps(List<RaceResult> currentWeekendResults) {
+        try {
+            if (currentWeekendResults == null || currentWeekendResults.isEmpty()) {
+                log.warn("No current weekend results available. Skipping lap sync.");
+                return;
+            }
+
+            List<Integer> currentSessionKeys = currentWeekendResults.stream()
+                    .map(RaceResult::getSessionKey)
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            for (RaceResult result : currentWeekendResults) {
+                String sessionName = result.getSessionName();
+                if (sessionName != null && !sessionName.toLowerCase().contains("practice")
+                        && result.getSessionKey() != null) {
+                    List<Lap> lapsSynced = openF1Service.getCachedSessionLaps(result.getSessionKey());
+                    log.info("Synced {} laps for {} (Key: {})", lapsSynced.size(), sessionName,
+                            result.getSessionKey());
+                }
+            }
+
+            evictStaleLaps(currentSessionKeys);
+        } catch (Exception e) {
+            log.error("Lap sync failed, existing lap records untouched.", e);
+        }
+    }
+
+    @Transactional
+    public void evictStaleLaps(List<Integer> currentSessionKeys) {
+        Map<Integer, String> sessionNames = raceResultRepo.findAll().stream()
+                .filter(r -> r.getSessionKey() != null && r.getSessionName() != null)
+                .collect(Collectors.toMap(RaceResult::getSessionKey, RaceResult::getSessionName, (a, b) -> a));
+
+        List<Integer> retainedHistoricalSessions = lapRepo.findSessionKeysWithEarliestDate().stream()
+                .map(row -> Map.entry((Integer) row[0], (OffsetDateTime) row[1]))
+                .filter(entry -> !currentSessionKeys.contains(entry.getKey()))
+                .filter(entry -> {
+                    String name = sessionNames.get(entry.getKey());
+                    return name != null && ("Race".equalsIgnoreCase(name) || "Sprint".equalsIgnoreCase(name));
+                })
+                .sorted(Map.Entry.<Integer, OffsetDateTime>comparingByValue().reversed())
+                .limit(lapRetentionSessionCount)
+                .map(Map.Entry::getKey)
+                .toList();
+
+        Set<Integer> retainedKeys = new HashSet<>(currentSessionKeys);
+        retainedKeys.addAll(retainedHistoricalSessions);
+
+        log.info("Evicting stale telemetry. Retaining current weekend plus {} historical race/sprint sessions.",
+                retainedHistoricalSessions.size());
+        lapRepo.deleteBySessionKeyNotIn(new ArrayList<>(retainedKeys));
     }
 }
