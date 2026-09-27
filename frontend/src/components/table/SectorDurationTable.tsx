@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { TABLE_CONTAINER_CLASS } from '@/utils/styles';
-import { getLapsBySession } from '@/lib/app';
-import { buildSectorBests, DriverSectorBests } from '@/utils/sectors';
+import { useSessionLaps } from '@/hooks/useSessionLaps';
+import { buildSectorBests } from '@/utils/sectors';
 import { DriverResult } from '@/types/results';
 
 interface Props {
@@ -18,35 +18,13 @@ function fmt(val: number | null): string {
 }
 
 export function SectorDurationTable({ sessionKey, driversList, lookup }: Props) {
-    const [rows, setRows] = useState<DriverSectorBests[]>([]);
-    const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-        if (!sessionKey) return;
-        let isMounted = true;
-
-        queueMicrotask(() => {
-            if (isMounted) setLoading(true);
-        });
-
-        getLapsBySession(sessionKey)
-            .then((raw) => {
-                if (isMounted) setRows(buildSectorBests(raw));
-            })
-            .catch(console.error)
-            .finally(() => {
-                if (isMounted) setLoading(false);
-            });
-
-        return () => {
-            isMounted = false;
-        };
-    }, [sessionKey]);
+    const { data: rawLaps, loading } = useSessionLaps(sessionKey);
+    const rows = useMemo(() => buildSectorBests(rawLaps), [rawLaps]);
 
     // Sort by finish order
     const finishOrder = driversList.map((d) => d.driverNumber);
     const sortedRows = [...rows].sort(
-        (a, b) => finishOrder.indexOf(a.driverNumber) - finishOrder.indexOf(b.driverNumber),
+        (a, b) => finishOrder.indexOf(a.driverNumber) - finishOrder.indexOf(b.driverNumber)
     );
 
     // Best time per sector for highlighting
