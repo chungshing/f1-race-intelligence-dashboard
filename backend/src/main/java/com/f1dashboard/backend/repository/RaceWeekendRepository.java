@@ -5,4 +5,6 @@ import java.util.List;
 
 public interface RaceWeekendRepository extends JpaRepository<RaceWeekend, Integer> {
     List<RaceWeekend> findByYear(int year); // Extends filtering capabilities
+
+    void deleteAllByMeetingKeyNotIn(List<Integer> meetingKeys);
 }
