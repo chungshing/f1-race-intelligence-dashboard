@@ -21,6 +21,7 @@ import {
     SupabaseRaceResultRow,
     WeatherSnapshot,
 } from '@/types/results';
+import { parseJsonField } from '@/utils/form';
 import { findGridRacePairs } from '@/utils/gridVsRace';
 import { use, useEffect, useMemo, useState } from 'react';
 
@@ -66,18 +67,6 @@ const TABS = [
         requiresStints: false,
     },
 ];
-
-const parseJsonField = <T,>(field: string | T[] | undefined): T[] => {
-    if (!field) return [];
-    if (typeof field === 'string') {
-        try {
-            return JSON.parse(field);
-        } catch {
-            return [];
-        }
-    }
-    return Array.isArray(field) ? field : [];
-};
 
 export default function RacePage({ params }: { params: Promise<{ meetingkey: string }> }) {
     const { meetingkey } = use(params);
