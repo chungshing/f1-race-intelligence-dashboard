@@ -269,6 +269,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                     sessionKey={activeRace.sessionKey}
                                     driversList={activeRace.classification}
                                     lookup={driverLookup}
+                                    raceControl={activeRace.raceControl}
                                 />
                             </div>
                         )}
