@@ -255,6 +255,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                 stints={activeRace.stints}
                                 lookup={driverLookup}
                                 results={activeRace.classification}
+                                raceControl={activeRace.raceControl}
                             />
                         )}
                         {activeTab === 'telemetry' && (
