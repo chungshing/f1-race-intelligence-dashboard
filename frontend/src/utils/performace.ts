@@ -1,5 +1,6 @@
 import { ChartLapData, SupabaseLapRow } from '@/types/laps';
 import { PitStop } from '@/types/results';
+import { isLapUnderSafetyCar, SafetyCarWindow } from './raceControl';
 
 export interface SectorSpeedLeader {
     driverNumber: number;
@@ -57,13 +58,17 @@ export function buildSectorSpeedLeaders(rawLaps: SupabaseLapRow[]): SectorSpeedL
     }));
 }
 
-export function buildPaceConsistency(rawLaps: SupabaseLapRow[]): PaceConsistencyRow[] {
+export function buildPaceConsistency(
+    rawLaps: SupabaseLapRow[],
+    safetyCarWindows: SafetyCarWindow[] = []
+): PaceConsistencyRow[] {
     if (!rawLaps.length) return [];
 
     const driverLapsMap: Record<number, number[]> = {};
 
     rawLaps.forEach((row) => {
-        if (!row.is_pit_out_lap && row.lap_duration) {
+        const underSC = isLapUnderSafetyCar(row.lap_number, safetyCarWindows);
+        if (!row.is_pit_out_lap && row.lap_duration && !underSC) {
             const dNum = row.driver_number;
             if (!driverLapsMap[dNum]) driverLapsMap[dNum] = [];
             driverLapsMap[dNum].push(row.lap_duration);
@@ -76,7 +81,7 @@ export function buildPaceConsistency(rawLaps: SupabaseLapRow[]): PaceConsistency
 
         const avg = times.reduce((sum, t) => sum + t, 0) / times.length;
         const stdDev = Math.sqrt(
-            times.reduce((sum, t) => sum + Math.pow(t - avg, 2), 0) / times.length,
+            times.reduce((sum, t) => sum + Math.pow(t - avg, 2), 0) / times.length
         );
 
         return { driverNumber, averageLapTime: avg, lapVariance: stdDev };

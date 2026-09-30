@@ -3,17 +3,26 @@
 import { useMemo } from 'react';
 import { useSessionLaps } from '@/hooks/useSessionLaps';
 import { buildPaceConsistency } from '@/utils/performace';
+import { getSafetyCarWindows } from '@/utils/raceControl';
+import { RaceControlEvent } from '@/types/results';
 
 interface PaceConsistencyCardProps {
     sessionKey: number;
     lookup: Record<number, { name: string; team: string; teamColor: string }>;
+    raceControl?: RaceControlEvent[] | null;
 }
 
-export function PaceConsistencyCard({ sessionKey, lookup }: PaceConsistencyCardProps) {
+export function PaceConsistencyCard({ sessionKey, lookup, raceControl }: PaceConsistencyCardProps) {
     const { data: rawLaps, loading } = useSessionLaps(sessionKey);
+
+    const safetyCarWindows = useMemo(() => getSafetyCarWindows(raceControl ?? []), [raceControl]);
+
     const consistency = useMemo(
-        () => buildPaceConsistency(rawLaps).sort((a, b) => a.lapVariance - b.lapVariance),
-        [rawLaps]
+        () =>
+            buildPaceConsistency(rawLaps, safetyCarWindows).sort(
+                (a, b) => a.lapVariance - b.lapVariance
+            ),
+        [rawLaps, safetyCarWindows]
     );
 
     const formatLapTime = (secs: number) => {

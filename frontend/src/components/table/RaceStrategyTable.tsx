@@ -1,17 +1,22 @@
 'use client';
 
-import { PitStop, Stint, DriverResult } from '@/types/results';
-import { Fuel, Timer, ArrowRight, History } from 'lucide-react';
+import { PitStop, Stint, DriverResult, RaceControlEvent } from '@/types/results';
+import { Fuel, Timer, ArrowRight, History, ShieldAlert } from 'lucide-react';
 import { TABLE_CONTAINER_CLASS } from '@/utils/styles';
+import { getSafetyCarWindows, isLapUnderSafetyCar } from '@/utils/raceControl';
+import { useMemo } from 'react';
 
 interface Props {
     pitStops: PitStop[];
     stints: Stint[];
     results: DriverResult[];
     lookup: Record<number, { name: string; team: string; teamColor: string }>;
+    raceControl?: RaceControlEvent[] | null;
 }
 
-export const RaceStrategyTable = ({ pitStops, stints, results, lookup }: Props) => {
+export const RaceStrategyTable = ({ pitStops, stints, results, lookup, raceControl }: Props) => {
+    const safetyCarWindows = useMemo(() => getSafetyCarWindows(raceControl ?? []), [raceControl]);
+
     const driverNumbers = Array.from(new Set(stints.map((s) => s.driver_number)));
 
     const driversStrategy = driverNumbers
@@ -65,11 +70,19 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup }: Props) 
 
     return (
         <div className={TABLE_CONTAINER_CLASS}>
-            <div className='p-4 pl-5 border-b border-zinc-900 bg-zinc-900/20 flex items-center gap-2'>
-                <History className='w-4 h-4 text-zinc-400' />
-                <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
-                    Tire & Pit Strategies
-                </h3>
+            <div className='p-4 pl-5 border-b border-zinc-900 bg-zinc-900/20 flex items-center justify-between'>
+                <div className='flex items-center gap-2'>
+                    <History className='w-4 h-4 text-zinc-400' />
+                    <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
+                        Tire & Pit Strategies
+                    </h3>
+                </div>
+                {safetyCarWindows.length > 0 && (
+                    <div className='flex items-center gap-1.5 text-[10px] font-bold text-yellow-400 uppercase tracking-wider'>
+                        <ShieldAlert className='w-3.5 h-3.5' />
+                        SC: {safetyCarWindows.map((w) => `L${w.startLap}–${w.endLap}`).join(', ')}
+                    </div>
+                )}
             </div>
 
             <div className='divide-y divide-zinc-900'>
@@ -112,6 +125,12 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup }: Props) 
                                     const matchingPit = pits[idx];
                                     const hasNextStint = idx < driverStints.length - 1;
                                     const totalLaps = stint.lap_end - stint.lap_start + 1;
+                                    const pitUnderSC =
+                                        matchingPit &&
+                                        isLapUnderSafetyCar(
+                                            matchingPit.lap_number,
+                                            safetyCarWindows
+                                        );
 
                                     return (
                                         <div
@@ -123,7 +142,7 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup }: Props) 
                                                 <div className='flex items-center min-w-0 overflow-hidden'>
                                                     <span
                                                         className={`text-[9px] font-black px-1.5 py-0.5 rounded border tracking-wider mr-2 uppercase shrink-0 ${getCompoundStyles(
-                                                            stint.compound,
+                                                            stint.compound
                                                         )}`}
                                                     >
                                                         {stint.compound?.charAt(0) || 'S'}
@@ -142,9 +161,25 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup }: Props) 
                                                 <div className='flex items-center gap-2 h-11.5 shrink-0'>
                                                     <ArrowRight className='w-4 h-4 text-zinc-400 stroke-[2.5]' />
 
-                                                    <div className='flex flex-col bg-zinc-950/70 border border-zinc-700/60 rounded-lg w-25 h-full justify-between py-1.5 px-2 shadow-sm'>
-                                                        <span className='text-[8px] font-bold text-red-400/90 uppercase tracking-wider flex items-center gap-1 shrink-0'>
-                                                            <Fuel className='w-2.5 h-2.5 text-red-500' />
+                                                    <div
+                                                        className={`flex flex-col rounded-lg w-25 h-full justify-between py-1.5 px-2 shadow-sm border ${
+                                                            pitUnderSC
+                                                                ? 'bg-yellow-500/5 border-yellow-500/30'
+                                                                : 'bg-zinc-950/70 border-zinc-700/60'
+                                                        }`}
+                                                    >
+                                                        <span
+                                                            className={`text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 shrink-0 ${
+                                                                pitUnderSC
+                                                                    ? 'text-yellow-400'
+                                                                    : 'text-red-400/90'
+                                                            }`}
+                                                        >
+                                                            {pitUnderSC ? (
+                                                                <ShieldAlert className='w-2.5 h-2.5 text-yellow-400' />
+                                                            ) : (
+                                                                <Fuel className='w-2.5 h-2.5 text-red-500' />
+                                                            )}
                                                             Lap {matchingPit.lap_number} Pit
                                                         </span>
 
@@ -185,7 +220,7 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup }: Props) 
                                 })}
                             </div>
                         </div>
-                    ),
+                    )
                 )}
             </div>
         </div>

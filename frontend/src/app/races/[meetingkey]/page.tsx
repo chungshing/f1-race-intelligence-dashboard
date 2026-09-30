@@ -255,6 +255,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                 stints={activeRace.stints}
                                 lookup={driverLookup}
                                 results={activeRace.classification}
+                                raceControl={activeRace.raceControl}
                             />
                         )}
                         {activeTab === 'telemetry' && (
@@ -268,6 +269,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                     sessionKey={activeRace.sessionKey}
                                     driversList={activeRace.classification}
                                     lookup={driverLookup}
+                                    raceControl={activeRace.raceControl}
                                 />
                             </div>
                         )}
@@ -292,6 +294,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                     <PaceConsistencyCard
                                         sessionKey={activeRace.sessionKey}
                                         lookup={driverLookup}
+                                        raceControl={activeRace.raceControl}
                                     />
                                 </div>
                             </div>

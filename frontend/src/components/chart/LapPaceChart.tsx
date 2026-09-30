@@ -1,21 +1,24 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useSessionLaps } from '@/hooks/useSessionLaps';
+import { RaceControlEvent } from '@/types/results';
+import { buildSessionChartData } from '@/utils/performace';
+import { getSafetyCarWindows } from '@/utils/raceControl';
+import { disambiguateTeamColors } from '@/utils/sessions';
+import { TABLE_CONTAINER_CLASS } from '@/utils/styles';
+import { Activity } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import {
-    LineChart,
+    CartesianGrid,
+    Label,
     Line,
+    LineChart,
+    ReferenceArea,
+    ResponsiveContainer,
+    Tooltip,
     XAxis,
     YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-    Label,
 } from 'recharts';
-import { useSessionLaps } from '@/hooks/useSessionLaps';
-import { buildSessionChartData } from '@/utils/performace';
-import { disambiguateTeamColors } from '@/utils/sessions';
-import { Activity } from 'lucide-react';
-import { TABLE_CONTAINER_CLASS } from '@/utils/styles';
 
 interface ClassificationRow {
     driverNumber?: string | number;
@@ -26,13 +29,16 @@ interface LapPaceChartProps {
     sessionKey: number;
     driversList: ClassificationRow[];
     lookup: Record<number, { name: string; team: string; teamColor: string }>;
+    raceControl?: RaceControlEvent[] | null;
 }
 
-export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartProps) {
+export function LapPaceChart({ sessionKey, driversList, lookup, raceControl }: LapPaceChartProps) {
     const { data: rawLaps, loading } = useSessionLaps(sessionKey);
     const chartData = useMemo(() => buildSessionChartData(rawLaps), [rawLaps]);
     const [selectedDrivers, setSelectedDrivers] = useState<number[]>([]);
     const [isMounted, setIsMounted] = useState(false);
+
+    const safetyCarWindows = useMemo(() => getSafetyCarWindows(raceControl ?? []), [raceControl]);
 
     useEffect(() => {
         let active = true;
@@ -113,6 +119,11 @@ export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartPr
                 <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
                     Lap Telemetry & Pace Analysis
                 </h3>
+                {safetyCarWindows.length > 0 && (
+                    <span className='ml-auto text-[9px] font-bold text-yellow-400/80 uppercase tracking-wider'>
+                        Shaded = Safety Car
+                    </span>
+                )}
             </div>
 
             <div className='p-5 flex flex-col gap-6 min-w-0'>
@@ -195,6 +206,19 @@ export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartPr
                                     stroke='#161619'
                                     vertical={false}
                                 />
+
+                                {safetyCarWindows.map((window, i) => (
+                                    <ReferenceArea
+                                        key={i}
+                                        x1={window.startLap}
+                                        x2={window.endLap}
+                                        fill='#eab308'
+                                        fillOpacity={0.08}
+                                        stroke='#eab308'
+                                        strokeOpacity={0.2}
+                                        ifOverflow='extendDomain'
+                                    />
+                                ))}
 
                                 {/* X-AXIS */}
                                 <XAxis
