@@ -76,7 +76,7 @@ export function RaceControlPanel({ raceControl }: Props) {
             </div>
 
             <div className='divide-y divide-zinc-900'>
-                {visible.map(({ event, importance }, i) => {
+                {visible.map(({ event }, i) => {
                     const dotColor = event.flag
                         ? (FLAG_DOT_COLORS[event.flag] ?? 'bg-zinc-500')
                         : null;
@@ -87,11 +87,7 @@ export function RaceControlPanel({ raceControl }: Props) {
                     return (
                         <div
                             key={i}
-                            className={`flex items-start gap-3 px-5 py-3.5 hover:bg-zinc-900/30 transition-colors ${
-                                importance === 'high'
-                                    ? 'bg-red-500/3 border-l-2 border-red-500/50'
-                                    : ''
-                            }`}
+                            className='flex items-start gap-3 px-5 py-3.5 hover:bg-zinc-900/30 transition-colors'
                         >
                             <span className='text-[10px] font-mono font-bold text-zinc-500 w-9 pt-0.5 shrink-0'>
                                 {event.lapNumber != null ? `L${event.lapNumber}` : '—'}
@@ -114,5 +110,5 @@ export function RaceControlPanel({ raceControl }: Props) {
                 })}
             </div>
         </div>
-    );
+    )
 }
