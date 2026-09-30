@@ -293,6 +293,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                     <PaceConsistencyCard
                                         sessionKey={activeRace.sessionKey}
                                         lookup={driverLookup}
+                                        raceControl={activeRace.raceControl}
                                     />
                                 </div>
                             </div>
