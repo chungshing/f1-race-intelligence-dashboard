@@ -1,20 +1,21 @@
 'use client';
 
-import { useSessionLaps } from '@/hooks/useSessionLaps';
-import { buildSessionChartData } from '@/utils/performace';
-import { TABLE_CONTAINER_CLASS } from '@/utils/styles';
-import { Activity } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
-    CartesianGrid,
-    Label,
-    Line,
     LineChart,
-    ResponsiveContainer,
-    Tooltip,
+    Line,
     XAxis,
     YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    Label,
 } from 'recharts';
+import { useSessionLaps } from '@/hooks/useSessionLaps';
+import { buildSessionChartData } from '@/utils/performace';
+import { disambiguateTeamColors } from '@/utils/sessions';
+import { Activity } from 'lucide-react';
+import { TABLE_CONTAINER_CLASS } from '@/utils/styles';
 
 interface ClassificationRow {
     driverNumber?: string | number;
@@ -57,6 +58,22 @@ export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartPr
             });
         }
     }, [driversList]);
+
+    // Build a disambiguated color map so teammates never render identically
+    const teamColorMap = useMemo(() => {
+        const entries = driversList
+            .map((driver) => {
+                const num = Number(driver.driverNumber || driver.driver_number);
+                const meta = lookup[num];
+                return meta ? { num, teamName: meta.team, teamColor: meta.teamColor } : null;
+            })
+            .filter((e): e is { num: number; teamName: string; teamColor: string } => e !== null);
+
+        const colorMap = disambiguateTeamColors(entries);
+        const result = new Map<number, string>();
+        colorMap.forEach((color, entry) => result.set(entry.num, color));
+        return result;
+    }, [driversList, lookup]);
 
     const toggleDriver = (driverNum: number) => {
         setSelectedDrivers((prev) =>
@@ -135,6 +152,7 @@ export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartPr
                                 name: `Driver ${num}`,
                                 teamColor: '#71717a',
                             };
+                            const dotColor = teamColorMap.get(num) ?? meta.teamColor;
                             const isSelected = selectedDrivers.includes(num);
 
                             return (
@@ -150,7 +168,7 @@ export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartPr
                                     <span
                                         className='w-1.5 h-1.5 rounded-full shrink-0 transition-transform'
                                         style={{
-                                            backgroundColor: meta.teamColor,
+                                            backgroundColor: dotColor,
                                             transform: isSelected ? 'scale(1.2)' : 'scale(1)',
                                         }}
                                     />
@@ -247,13 +265,14 @@ export function LapPaceChart({ sessionKey, driversList, lookup }: LapPaceChartPr
                                         name: num.toString(),
                                         teamColor: '#ffffff',
                                     };
+                                    const strokeColor = teamColorMap.get(num) ?? meta.teamColor;
                                     return (
                                         <Line
                                             key={num}
                                             type='monotone'
                                             dataKey={num.toString()}
                                             name={meta.name}
-                                            stroke={meta.teamColor}
+                                            stroke={strokeColor}
                                             strokeWidth={2.5}
                                             dot={false}
                                             activeDot={{ r: 4, strokeWidth: 0 }}
