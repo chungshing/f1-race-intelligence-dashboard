@@ -2,7 +2,7 @@
 
 import AppLayout from '@/components/layout/AppLayout';
 import { useDriverComparison } from '@/hooks/useDriverComparison';
-import { formatHexColor } from '@/utils/sessions';
+import { disambiguateTeamColors } from '@/utils/sessions';
 import { getPositionColor, TABLE_CONTAINER_CLASS, TABLE_THEAD_CLASS } from '@/utils/styles';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -15,11 +15,13 @@ function DriverPickerRow({
     onSelect,
 }: {
     label: string;
-    drivers: { driverNumber: number; driverName: string; teamColor: string }[];
+    drivers: { driverNumber: number; driverName: string; teamName: string; teamColor: string }[];
     selected: number | null;
     otherSelected: number | null;
     onSelect: (num: number) => void;
 }) {
+    const colorMap = disambiguateTeamColors(drivers);
+
     return (
         <div>
             <h4 className='text-[10px] font-bold text-zinc-400 tracking-widest uppercase mb-2'>
@@ -44,7 +46,7 @@ function DriverPickerRow({
                         >
                             <span
                                 className='w-1.5 h-1.5 rounded-full shrink-0'
-                                style={{ backgroundColor: formatHexColor(d.teamColor) }}
+                                style={{ backgroundColor: colorMap.get(d) }}
                             />
                             {d.driverName}
                         </button>
