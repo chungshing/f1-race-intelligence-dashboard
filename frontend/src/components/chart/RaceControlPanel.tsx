@@ -10,14 +10,24 @@ interface Props {
     raceControl?: RaceControlEvent[] | null;
 }
 
-const FLAG_COLORS: Record<string, string> = {
-    YELLOW: 'text-yellow-400',
-    'DOUBLE YELLOW': 'text-yellow-300',
-    RED: 'text-red-500',
-    GREEN: 'text-green-400',
-    CHEQUERED: 'text-zinc-100',
-    'BLACK AND WHITE': 'text-zinc-400',
-    BLUE: 'text-blue-400',
+const FLAG_DOT_COLORS: Record<string, string> = {
+    YELLOW: 'bg-yellow-400',
+    'DOUBLE YELLOW': 'bg-yellow-300',
+    RED: 'bg-red-500',
+    GREEN: 'bg-green-400',
+    CHEQUERED: 'bg-zinc-100',
+    'BLACK AND WHITE': 'bg-zinc-400',
+    BLUE: 'bg-blue-400',
+    CLEAR: 'bg-zinc-600',
+};
+
+const CATEGORY_LABEL: Record<string, string> = {
+    SafetyCar: 'Safety Car',
+    Flag: 'Flag',
+    Drs: 'DRS',
+    SessionStatus: 'Session',
+    CarEvent: 'Car Event',
+    Other: 'Note',
 };
 
 const CATEGORY_BADGE: Record<string, string> = {
@@ -26,6 +36,7 @@ const CATEGORY_BADGE: Record<string, string> = {
     Drs: 'bg-green-500/10 text-green-400 border-green-500/20',
     SessionStatus: 'bg-zinc-800 text-zinc-300 border-zinc-700',
     CarEvent: 'bg-red-500/10 text-red-400 border-red-500/20',
+    Other: 'bg-zinc-800 text-zinc-300 border-zinc-700',
 };
 
 export function RaceControlPanel({ raceControl }: Props) {
@@ -66,30 +77,36 @@ export function RaceControlPanel({ raceControl }: Props) {
 
             <div className='divide-y divide-zinc-900'>
                 {visible.map(({ event, importance }, i) => {
-                    const flagColor = event.flag
-                        ? (FLAG_COLORS[event.flag] ?? 'text-zinc-400')
+                    const dotColor = event.flag
+                        ? (FLAG_DOT_COLORS[event.flag] ?? 'bg-zinc-500')
                         : null;
-                    const badgeClass = event.category
-                        ? (CATEGORY_BADGE[event.category] ??
-                          'bg-zinc-800 text-zinc-300 border-zinc-700')
-                        : 'bg-zinc-800 text-zinc-300 border-zinc-700';
+                    const categoryKey = event.category ?? 'Other';
+                    const badgeClass = CATEGORY_BADGE[categoryKey] ?? CATEGORY_BADGE.Other;
+                    const categoryLabel = CATEGORY_LABEL[categoryKey] ?? categoryKey;
 
                     return (
                         <div
                             key={i}
-                            className={`flex items-start gap-4 px-5 py-3 hover:bg-zinc-900/30 transition-colors ${
-                                importance === 'high' ? 'border-l-2 border-red-500/60' : ''
+                            className={`flex items-start gap-3 px-5 py-3.5 hover:bg-zinc-900/30 transition-colors ${
+                                importance === 'high'
+                                    ? 'bg-red-500/3 border-l-2 border-red-500/50'
+                                    : ''
                             }`}
                         >
-                            <span className='text-[10px] font-mono text-zinc-400 w-8 pt-0.5 shrink-0'>
+                            <span className='text-[10px] font-mono font-bold text-zinc-500 w-9 pt-0.5 shrink-0'>
                                 {event.lapNumber != null ? `L${event.lapNumber}` : '—'}
                             </span>
+
                             <span
-                                className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border shrink-0 ${badgeClass}`}
+                                className={`text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border shrink-0 flex items-center gap-1.5 mt-px ${badgeClass}`}
                             >
-                                {event.category ?? 'Event'}
+                                {dotColor && (
+                                    <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+                                )}
+                                {categoryLabel}
                             </span>
-                            <p className={`text-xs flex-1 ${flagColor ?? 'text-zinc-300'}`}>
+
+                            <p className='text-xs text-zinc-300 leading-relaxed flex-1 pt-0.5'>
                                 {event.message}
                             </p>
                         </div>
