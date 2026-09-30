@@ -58,3 +58,20 @@ export function lightenHex(hex: string, amount: number): string {
 
     return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
 }
+
+export function disambiguateTeamColors<T extends { teamName: string; teamColor: string }>(
+    drivers: T[]
+): Map<T, string> {
+    const teamColorCount = new Map<string, number>();
+    const result = new Map<T, string>();
+
+    for (const driver of drivers) {
+        const baseColor = formatHexColor(driver.teamColor);
+        const occurrence = teamColorCount.get(driver.teamName) ?? 0;
+        teamColorCount.set(driver.teamName, occurrence + 1);
+
+        result.set(driver, occurrence === 0 ? baseColor : lightenHex(baseColor, 0.4 * occurrence));
+    }
+
+    return result;
+}
