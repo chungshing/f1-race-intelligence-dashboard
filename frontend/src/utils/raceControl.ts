@@ -19,3 +19,37 @@ export function classifyImportance(event: RaceControlEvent): EventImportance {
 
     return 'low';
 }
+
+export interface SafetyCarWindow {
+    startLap: number;
+    endLap: number;
+}
+
+export function getSafetyCarWindows(events: RaceControlEvent[]): SafetyCarWindow[] {
+    const windows: SafetyCarWindow[] = [];
+    let openStart: number | null = null;
+
+    const scEvents = events
+        .filter((e) => e.category === 'SafetyCar')
+        .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
+
+    for (const event of scEvents) {
+        const message = event.message?.toUpperCase() ?? '';
+        if (message.includes('DEPLOYED') && event.lapNumber != null) {
+            openStart = event.lapNumber;
+        } else if (
+            message.includes('IN THIS LAP') &&
+            openStart !== null &&
+            event.lapNumber != null
+        ) {
+            windows.push({ startLap: openStart, endLap: event.lapNumber });
+            openStart = null;
+        }
+    }
+
+    return windows;
+}
+
+export function isLapUnderSafetyCar(lap: number, windows: SafetyCarWindow[]): boolean {
+    return windows.some((w) => lap >= w.startLap && lap <= w.endLap);
+}
