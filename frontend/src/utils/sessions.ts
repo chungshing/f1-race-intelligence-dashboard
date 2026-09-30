@@ -1,4 +1,4 @@
-import { RaceSession } from "@/types/race";
+import { RaceSession } from '@/types/race';
 
 /**
  * Sorts sessions chronologically and identifies the active/upcoming and next sessions
@@ -13,8 +13,7 @@ export function getSortedSessionStatus(sessions: RaceSession[]): {
 
     // Sort by start date ascending
     const sortedSessions = [...sessions].sort(
-        (a, b) =>
-            new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime(),
+        (a, b) => new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime()
     );
 
     const now = Date.now();
@@ -44,10 +43,18 @@ export function getSortedSessionStatus(sessions: RaceSession[]): {
     };
 }
 
-/**
- * Ensures hex colors are correctly prefixed for CSS styles
- */
 export function formatHexColor(color: string): string {
-    if (!color) return "#cccccc";
-    return color.startsWith("#") ? color : `#${color}`;
+    if (!color) return '#cccccc';
+    return color.startsWith('#') ? color : `#${color}`;
+}
+
+export function lightenHex(hex: string, amount: number): string {
+    const clean = hex.replace('#', '');
+    const num = parseInt(clean, 16);
+
+    const r = Math.min(255, (num >> 16) + Math.round(255 * amount));
+    const g = Math.min(255, ((num >> 8) & 0x00ff) + Math.round(255 * amount));
+    const b = Math.min(255, (num & 0x0000ff) + Math.round(255 * amount));
+
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
 }

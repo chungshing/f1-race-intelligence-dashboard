@@ -3,7 +3,7 @@ import { RaceWeekend } from '@/types/race';
 import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
 import { DriverStanding } from '@/types/standing';
 import { parseJsonField } from '@/utils/form';
-import { formatHexColor } from '@/utils/sessions';
+import { formatHexColor, lightenHex } from '@/utils/sessions';
 
 export interface PointsProgressionSeries {
     driverNumber: number;
@@ -15,17 +15,6 @@ export interface PointsProgressionPoint {
     round: number;
     country: string;
     [driverKey: string]: number | string;
-}
-
-function lightenHex(hex: string, amount: number): string {
-    const clean = hex.replace('#', '');
-    const num = parseInt(clean, 16);
-
-    const r = Math.min(255, (num >> 16) + Math.round(255 * amount));
-    const g = Math.min(255, ((num >> 8) & 0x00ff) + Math.round(255 * amount));
-    const b = Math.min(255, (num & 0x0000ff) + Math.round(255 * amount));
-
-    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
 }
 
 export function buildPointsProgression(
