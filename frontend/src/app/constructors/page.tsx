@@ -9,9 +9,9 @@ export default function ConstructorsPage() {
 
     return (
         <AppLayout>
-            <div className='relative pl-5 before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-blue-500 before:rounded-full mb-6'>
-                <span className='text-[10px] font-bold text-blue-500 tracking-widest uppercase'>
-                    2026 Season
+            <div className='relative pl-5 before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-red-500 before:rounded-full mb-6'>
+                <span className='text-[10px] font-bold text-red-500 tracking-widest uppercase'>
+                    Season Standings
                 </span>
                 <h1 className='text-3xl font-black text-white tracking-tight mt-0.5'>
                     Constructor Standings
