@@ -7,7 +7,8 @@
         "build": "next build",
         "start": "next start",
         "lint": "eslint",
-        "lint:fast": "oxlint"
+        "lint:fast": "oxlint",
+        "lint:fast:fix": "oxlint --fix"
     },
     "dependencies": {
         "@supabase/supabase-js": "^2.108.1",
