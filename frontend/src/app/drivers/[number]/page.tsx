@@ -46,7 +46,6 @@ export default function DriverProfilePage({ params }: { params: Promise<{ number
                                 src={profile.headshotUrl}
                                 alt={profile.driverName}
                                 fill
-                                unoptimized
                                 className='object-cover'
                             />
                         </div>
