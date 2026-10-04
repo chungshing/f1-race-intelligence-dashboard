@@ -1,0 +1,9 @@
+{
+    "$schema": "./node_modules/oxlint/configuration_schema.json",
+    "plugins": ["react", "typescript", "unicorn"],
+    "ignorePatterns": [".next/**", "out/**", "build/**", "next-env.d.ts"],
+    "rules": {
+        "no-unused-vars": "warn",
+        "eqeqeq": ["error", "smart"]
+    }
+}
