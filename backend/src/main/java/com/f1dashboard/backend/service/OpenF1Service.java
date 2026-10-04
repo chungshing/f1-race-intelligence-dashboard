@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -82,6 +83,15 @@ public class OpenF1Service {
         }
     }
 
+    private <T> List<T> withCacheFallback(String label, Supplier<List<T>> liveFetch, Supplier<List<T>> cachedFallback) {
+        try {
+            return liveFetch.get();
+        } catch (RestClientException e) {
+            log.warn("{} unavailable due to OpenF1 race weekend restrictions. Loading cached data from DB.", label);
+            return cachedFallback.get();
+        }
+    }
+
     public List<RaceWeekend> getCachedWeekends(int year) {
         log.info("Validating race calendar for year {} with live data source...", year);
         List<RaceWeekend> liveWeekends = fetchRaceWeekends(year);
@@ -100,52 +110,49 @@ public class OpenF1Service {
     }
 
     public List<DriverStanding> fetchDriverStandings() {
-        try {
-            String championshipUrl = openF1BaseUrl + "/championship_drivers?session_key=latest";
-            String driversUrl = openF1BaseUrl + "/drivers?session_key=latest";
+        return withCacheFallback(
+                "Driver standings",
+                () -> {
+                    String championshipUrl = openF1BaseUrl + "/championship_drivers?session_key=latest";
+                    String driversUrl = openF1BaseUrl + "/drivers?session_key=latest";
 
-            delayBetweenRequests();
-            OpenF1ChampionshipDto[] standings = restTemplate.getForObject(championshipUrl,
-                    OpenF1ChampionshipDto[].class);
+                    delayBetweenRequests();
+                    OpenF1ChampionshipDto[] standings = restTemplate.getForObject(championshipUrl,
+                            OpenF1ChampionshipDto[].class);
 
-            delayBetweenRequests();
-            OpenF1DriverDto[] drivers = restTemplate.getForObject(driversUrl, OpenF1DriverDto[].class);
+                    delayBetweenRequests();
+                    OpenF1DriverDto[] drivers = restTemplate.getForObject(driversUrl, OpenF1DriverDto[].class);
 
-            if (standings == null || standings.length == 0)
-                return List.of();
-            if (drivers == null || drivers.length == 0)
-                return mapWithoutEnrichment(standings);
+                    if (standings == null || standings.length == 0)
+                        return List.of();
+                    if (drivers == null || drivers.length == 0)
+                        return mapWithoutEnrichment(standings);
 
-            Map<Integer, OpenF1DriverDto> driverMap = Arrays.stream(drivers)
-                    .collect(Collectors.toMap(OpenF1DriverDto::getDriverNumber, d -> d, (a, b) -> a));
+                    Map<Integer, OpenF1DriverDto> driverMap = Arrays.stream(drivers)
+                            .collect(Collectors.toMap(OpenF1DriverDto::getDriverNumber, d -> d, (a, b) -> a));
 
-            return Arrays.stream(standings)
-                    .map(s -> {
-                        OpenF1DriverDto d = driverMap.get(s.getDriverNumber());
-                        return new DriverStanding(
-                                s.getPositionCurrent(),
-                                s.getPositionStart() != null ? s.getPositionStart() : s.getPositionCurrent(),
-                                s.getPositionsGained(),
-                                d != null ? d.getFullName() : "Driver " + s.getDriverNumber(),
-                                d != null ? d.getTeamName() : "Unknown",
-                                s.getPointsCurrent(),
-                                s.getPointsStart() != null ? s.getPointsStart() : s.getPointsCurrent(),
-                                s.getPointsEarned(),
-                                s.getDriverNumber(),
-                                d != null ? d.getTeamColour() : "#999999",
-                                d != null ? d.getHeadshotUrl() : null);
-                    })
-                    .sorted(Comparator.comparingInt(DriverStanding::getPosition))
-                    .toList();
-        } catch (RestClientException e) {
-            log.warn(
-                    "Driver standings unavailable due to OpenF1 race weekend restrictions. Loading cached data from DB.");
-
-            // Fetch existing records from your database instead of returning empty
-            return driverRepo.findAll().stream()
-                    .sorted(Comparator.comparingInt(DriverStanding::getPosition))
-                    .toList();
-        }
+                    return Arrays.stream(standings)
+                            .map(s -> {
+                                OpenF1DriverDto d = driverMap.get(s.getDriverNumber());
+                                return new DriverStanding(
+                                        s.getPositionCurrent(),
+                                        s.getPositionStart() != null ? s.getPositionStart() : s.getPositionCurrent(),
+                                        s.getPositionsGained(),
+                                        d != null ? d.getFullName() : "Driver " + s.getDriverNumber(),
+                                        d != null ? d.getTeamName() : "Unknown",
+                                        s.getPointsCurrent(),
+                                        s.getPointsStart() != null ? s.getPointsStart() : s.getPointsCurrent(),
+                                        s.getPointsEarned(),
+                                        s.getDriverNumber(),
+                                        d != null ? d.getTeamColour() : "#999999",
+                                        d != null ? d.getHeadshotUrl() : null);
+                            })
+                            .sorted(Comparator.comparingInt(DriverStanding::getPosition))
+                            .toList();
+                },
+                () -> driverRepo.findAll().stream()
+                        .sorted(Comparator.comparingInt(DriverStanding::getPosition))
+                        .toList());
     }
 
     public List<TeamStanding> fetchTeamStandings() {
