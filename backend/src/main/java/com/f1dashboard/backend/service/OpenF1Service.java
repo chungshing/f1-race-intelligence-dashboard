@@ -156,46 +156,45 @@ public class OpenF1Service {
     }
 
     public List<TeamStanding> fetchTeamStandings() {
-        try {
-            String url = openF1BaseUrl + "/championship_teams?session_key=latest";
-            delayBetweenRequests();
-            OpenF1TeamChampionshipDto[] teams = restTemplate.getForObject(url, OpenF1TeamChampionshipDto[].class);
+        return withCacheFallback(
+                "Team standings",
+                () -> {
+                    String url = openF1BaseUrl + "/championship_teams?session_key=latest";
+                    delayBetweenRequests();
+                    OpenF1TeamChampionshipDto[] teams = restTemplate.getForObject(url,
+                            OpenF1TeamChampionshipDto[].class);
 
-            if (teams == null || teams.length == 0)
-                return List.of();
+                    if (teams == null || teams.length == 0)
+                        return List.of();
 
-            String driversUrl = openF1BaseUrl + "/drivers?session_key=latest";
-            delayBetweenRequests();
-            OpenF1DriverDto[] drivers = restTemplate.getForObject(driversUrl, OpenF1DriverDto[].class);
+                    String driversUrl = openF1BaseUrl + "/drivers?session_key=latest";
+                    delayBetweenRequests();
+                    OpenF1DriverDto[] drivers = restTemplate.getForObject(driversUrl, OpenF1DriverDto[].class);
 
-            Map<String, String> teamColorMap = drivers == null ? Map.of()
-                    : Arrays.stream(drivers)
-                            .filter(d -> d.getTeamName() != null && d.getTeamColour() != null)
-                            .collect(Collectors.toMap(
-                                    OpenF1DriverDto::getTeamName,
-                                    d -> d.getTeamColour().replaceFirst("^#", ""),
-                                    (a, b) -> a));
+                    Map<String, String> teamColorMap = drivers == null ? Map.of()
+                            : Arrays.stream(drivers)
+                                    .filter(d -> d.getTeamName() != null && d.getTeamColour() != null)
+                                    .collect(Collectors.toMap(
+                                            OpenF1DriverDto::getTeamName,
+                                            d -> d.getTeamColour().replaceFirst("^#", ""),
+                                            (a, b) -> a));
 
-            return Arrays.stream(teams)
-                    .map(t -> new TeamStanding(
-                            t.getPositionCurrent(),
-                            t.getPositionStart() != null ? t.getPositionStart() : t.getPositionCurrent(),
-                            t.getPositionsGained(),
-                            t.getTeamName(),
-                            t.getPointsCurrent(),
-                            t.getPointsStart() != null ? t.getPointsStart() : t.getPointsCurrent(),
-                            t.getPointsEarned(),
-                            teamColorMap.getOrDefault(t.getTeamName(), "999999")))
-                    .sorted(Comparator.comparingInt(TeamStanding::getPosition))
-                    .toList();
-        } catch (RestClientException e) {
-            log.warn(
-                    "Team standings unavailable due to OpenF1 race weekend restrictions. Loading cached data from DB.");
-
-            return teamRepo.findAll().stream()
-                    .sorted(Comparator.comparingInt(TeamStanding::getPosition))
-                    .toList();
-        }
+                    return Arrays.stream(teams)
+                            .map(t -> new TeamStanding(
+                                    t.getPositionCurrent(),
+                                    t.getPositionStart() != null ? t.getPositionStart() : t.getPositionCurrent(),
+                                    t.getPositionsGained(),
+                                    t.getTeamName(),
+                                    t.getPointsCurrent(),
+                                    t.getPointsStart() != null ? t.getPointsStart() : t.getPointsCurrent(),
+                                    t.getPointsEarned(),
+                                    teamColorMap.getOrDefault(t.getTeamName(), "999999")))
+                            .sorted(Comparator.comparingInt(TeamStanding::getPosition))
+                            .toList();
+                },
+                () -> teamRepo.findAll().stream()
+                        .sorted(Comparator.comparingInt(TeamStanding::getPosition))
+                        .toList());
     }
 
     public List<RaceWeekend> fetchRaceWeekends(int year) {
