@@ -123,10 +123,13 @@ public class OpenF1Service {
                     delayBetweenRequests();
                     OpenF1DriverDto[] drivers = restTemplate.getForObject(driversUrl, OpenF1DriverDto[].class);
 
-                    if (standings == null || standings.length == 0)
-                        return List.of();
-                    if (drivers == null || drivers.length == 0)
-                        return mapWithoutEnrichment(standings);
+            if (standings == null || standings.length == 0)
+                return List.of();
+            
+            log.info("Driver standings fetched for session_key={}", standings[0].getSessionKey());
+            
+            if (drivers == null || drivers.length == 0)
+                return mapWithoutEnrichment(standings);
 
                     Map<Integer, OpenF1DriverDto> driverMap = Arrays.stream(drivers)
                             .collect(Collectors.toMap(OpenF1DriverDto::getDriverNumber, d -> d, (a, b) -> a));

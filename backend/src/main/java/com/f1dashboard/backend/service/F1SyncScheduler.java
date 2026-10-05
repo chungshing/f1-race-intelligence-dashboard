@@ -30,8 +30,8 @@ public class F1SyncScheduler {
     @Async
     public void syncDataPipeline() {
         log.info("Starting background F1 data sync...");
-        //syncDriverStandings();
-        //syncTeamStandings();
+        syncDriverStandings();
+        syncTeamStandings();
         List<RaceResult> currentWeekendResults = syncCalendarAndResults();
         syncLaps(currentWeekendResults);
         log.info("F1 background database update complete.");
