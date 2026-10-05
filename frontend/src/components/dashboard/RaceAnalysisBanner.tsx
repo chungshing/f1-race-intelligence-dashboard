@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { ChevronRight, X, Activity } from 'lucide-react';
 
 interface Props {
@@ -26,22 +27,25 @@ export function RaceAnalysisBanner({ meetingKey, countryName, sessionName }: Pro
                     </p>
                     <p className='text-[11px] text-zinc-400 mt-0.5 truncate'>
                         Full telemetry and performance data for the{' '}
-                        <span className='text-zinc-200 font-semibold'>{countryName} {sessionName}</span>{' '}
+                        <span className='text-zinc-200 font-semibold'>
+                            {countryName} {sessionName}
+                        </span>{' '}
                         is now available.
                     </p>
                 </div>
             </div>
 
             <div className='flex items-center gap-2 shrink-0'>
-                <a
+                <Link
                     href={`/races/${meetingKey}`}
                     className='flex items-center gap-1 text-[11px] font-bold text-red-400 hover:text-red-300 transition-colors whitespace-nowrap'
                 >
                     View Analysis <ChevronRight className='w-3.5 h-3.5' />
-                </a>
+                </Link>
                 <button
                     onClick={() => setDismissed(true)}
-                    className='text-zinc-400 hover:text-zinc-400 transition-colors'
+                    aria-label='Dismiss notification'
+                    className='text-zinc-400 hover:text-zinc-200 transition-colors'
                 >
                     <X className='w-3.5 h-3.5' />
                 </button>

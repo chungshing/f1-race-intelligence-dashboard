@@ -3,6 +3,7 @@ package com.f1dashboard.backend.model;
 import com.f1dashboard.backend.converter.RaceSessionJsonConverter;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.List;
 public class RaceWeekend {
 
     @Id
+    @EqualsAndHashCode.Include
     @Column(name = "meeting_key")
     private Integer meetingKey;
 

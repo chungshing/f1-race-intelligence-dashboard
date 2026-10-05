@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
 import { useSessionLaps } from '@/hooks/useSessionLaps';
 import { buildSectorSpeedLeaders } from '@/utils/performace';
+import { useMemo } from 'react';
 
 interface SectorSpeedTableProps {
     sessionKey: number;
@@ -76,7 +76,7 @@ export function SectorSpeedTable({ sessionKey, lookup }: SectorSpeedTableProps) 
                                     <td className='p-2.5 text-center font-mono'>
                                         {row.sector2Max || '-'}
                                     </td>
-                                    <td className='p-2.5 text-center font-mono text-blue-400 font-bold'>
+                                    <td className='p-2.5 text-center font-mono text-red-400 font-bold'>
                                         {row.sector3Max || '-'}
                                     </td>
                                 </tr>

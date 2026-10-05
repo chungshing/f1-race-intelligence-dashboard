@@ -15,6 +15,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
@@ -24,6 +25,7 @@ import lombok.NoArgsConstructor;
 public class RaceResult {
 
     @Id
+    @EqualsAndHashCode.Include
     @Column(name = "session_key")
     private Integer sessionKey;
 
