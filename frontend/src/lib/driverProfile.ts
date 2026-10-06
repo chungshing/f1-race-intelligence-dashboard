@@ -1,7 +1,12 @@
-import { pointsFor, groupByMeeting, getChronologicalMeetingOrder } from '@/lib/racePoints';
+import { parseJsonField } from '@/utils/form';
+import {
+    pointsFor,
+    groupByMeeting,
+    getChronologicalMeetingOrder,
+    isSprintSession,
+} from '@/lib/racePoints';
 import { DriverResult, Stint, SupabaseRaceResultRow } from '@/types/results';
 import { DriverStanding } from '@/types/standing';
-import { parseJsonField } from '@/utils/form';
 import { RaceWeekend } from '@/types/race';
 
 export interface RoundResult {
@@ -12,6 +17,9 @@ export interface RoundResult {
     dnf: boolean;
     dns: boolean;
     dsq: boolean;
+    sprintPosition: number | null;
+    sprintPoints: number;
+    racePoints: number;
     roundPoints: number;
     cumulativePoints: number;
 }
@@ -71,13 +79,24 @@ function buildSeasonResults(
         const raceEntry = raceClassification.find((c) => c.driverNumber === driverNumber);
         if (!raceEntry) continue;
 
-        let roundPoints = 0;
-        for (const session of sessions) {
-            const isSprint = session.session_name === 'Sprint';
-            const classification = parseJsonField<DriverResult>(session.classification_json);
-            const entry = classification.find((c) => c.driverNumber === driverNumber);
-            if (entry) roundPoints += pointsFor(entry, isSprint);
+        const racePoints = pointsFor(raceEntry, false);
+
+        const sprintSession = sessions.find((r) => isSprintSession(r.session_name));
+        let sprintPosition: number | null = null;
+        let sprintPoints = 0;
+
+        if (sprintSession) {
+            const sprintClassification = parseJsonField<DriverResult>(
+                sprintSession.classification_json
+            );
+            const sprintEntry = sprintClassification.find((c) => c.driverNumber === driverNumber);
+            if (sprintEntry) {
+                sprintPosition = sprintEntry.position;
+                sprintPoints = pointsFor(sprintEntry, true);
+            }
         }
+
+        const roundPoints = racePoints + sprintPoints;
 
         round++;
         cumulative += roundPoints;
@@ -90,6 +109,9 @@ function buildSeasonResults(
             dnf: raceEntry.dnf,
             dns: raceEntry.dns,
             dsq: raceEntry.dsq,
+            sprintPosition,
+            sprintPoints,
+            racePoints,
             roundPoints,
             cumulativePoints: cumulative,
         });
@@ -200,7 +222,7 @@ export function buildDriverProfile(
     const byMeeting = groupByMeeting(raceRows);
     const meetingOrder = getChronologicalMeetingOrder(weekends);
     const scoringRows = raceRows.filter(
-        (r) => r.session_name === 'Race' || r.session_name === 'Sprint'
+        (r) => r.session_name === 'Race' || isSprintSession(r.session_name)
     );
     const seasonResults = buildSeasonResults(driverNumber, byMeeting, meetingOrder);
 

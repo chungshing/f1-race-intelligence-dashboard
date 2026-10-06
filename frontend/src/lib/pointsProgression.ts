@@ -1,8 +1,13 @@
-import { getChronologicalMeetingOrder, groupByMeeting, pointsFor } from '@/lib/racePoints';
-import { RaceWeekend } from '@/types/race';
+import {
+    groupByMeeting,
+    getChronologicalMeetingOrder,
+    pointsFor,
+    isSprintSession,
+} from '@/lib/racePoints';
+import { parseJsonField } from '@/utils/form';
 import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
 import { DriverStanding } from '@/types/standing';
-import { parseJsonField } from '@/utils/form';
+import { RaceWeekend } from '@/types/race';
 import { formatHexColor, lightenHex } from '@/utils/sessions';
 
 export interface PointsProgressionSeries {
@@ -59,7 +64,7 @@ export function buildPointsProgression(
         for (const driver of topDrivers) {
             let roundPoints = 0;
             for (const session of sessions) {
-                const isSprint = session.session_name === 'Sprint';
+                const isSprint = isSprintSession(session.session_name);
                 const classification = parseJsonField<DriverResult>(session.classification_json);
                 const entry = classification.find((c) => c.driverNumber === driver.driverNumber);
                 if (entry) roundPoints += pointsFor(entry, isSprint);

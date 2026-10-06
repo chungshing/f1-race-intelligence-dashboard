@@ -1,8 +1,13 @@
-import { getChronologicalMeetingOrder, groupByMeeting, pointsFor } from '@/lib/racePoints';
-import { RaceWeekend } from '@/types/race';
+import { parseJsonField } from '@/utils/form';
+import {
+    pointsFor,
+    groupByMeeting,
+    getChronologicalMeetingOrder,
+    isSprintSession,
+} from '@/lib/racePoints';
 import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
 import { DriverStanding, Team } from '@/types/standing';
-import { parseJsonField } from '@/utils/form';
+import { RaceWeekend } from '@/types/race';
 
 export interface DriverContribution {
     driverNumber: number;
@@ -42,9 +47,9 @@ export interface ConstructorProfile {
     currentPosition: number;
     currentPoints: number;
     drivers: DriverStanding[];
+    seasonResults: ConstructorRoundResult[];
     stats: ConstructorStats;
     driverContributions: DriverPointsContribution[];
-    seasonResults: ConstructorRoundResult[];
 }
 
 function buildSeasonResults(
@@ -78,7 +83,7 @@ function buildSeasonResults(
             anyDriverPresent = true;
             let driverPoints = 0;
             for (const session of sessions) {
-                const isSprint = session.session_name === 'Sprint';
+                const isSprint = isSprintSession(session.session_name);
                 const classification = parseJsonField<DriverResult>(session.classification_json);
                 const entry = classification.find((c) => c.driverNumber === driver.driverNumber);
                 if (entry) driverPoints += pointsFor(entry, isSprint);

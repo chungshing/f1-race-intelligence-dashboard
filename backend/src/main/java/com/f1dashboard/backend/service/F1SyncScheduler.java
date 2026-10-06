@@ -109,4 +109,26 @@ public class F1SyncScheduler {
             log.error("Lap sync failed, existing lap records untouched.", e);
         }
     }
+
+    public String backfillMeeting(int meetingKey) {
+        List<RaceResult> results = openF1Service.getCachedWeekendResults(meetingKey);
+
+        if (results.isEmpty()) {
+            return "No results found for meeting " + meetingKey;
+        }
+
+        int lapsSyncedCount = 0;
+        for (RaceResult result : results) {
+            String sessionName = result.getSessionName();
+            if (sessionName != null && !sessionName.toLowerCase().contains("practice")
+                    && result.getSessionKey() != null) {
+                List<Lap> laps = openF1Service.getCachedSessionLaps(result.getSessionKey());
+                lapsSyncedCount += laps.size();
+                log.info("Backfilled {} laps for {} (Key: {})", laps.size(), sessionName, result.getSessionKey());
+            }
+        }
+
+        return String.format("Backfilled meeting %d: %d sessions, %d laps.", meetingKey, results.size(),
+                lapsSyncedCount);
+    }
 }

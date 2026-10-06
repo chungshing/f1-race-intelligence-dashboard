@@ -1,5 +1,5 @@
-import { RaceWeekend } from '@/types/race';
 import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
+import { RaceWeekend } from '@/types/race';
 
 const RACE_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 const SPRINT_POINTS = [8, 7, 6, 5, 4, 3, 2, 1];
@@ -12,10 +12,17 @@ export function pointsFor(result: DriverResult, isSprint: boolean): number {
     return table[result.position - 1] ?? 0;
 }
 
+export function isSprintSession(sessionName: string): boolean {
+    const n = sessionName?.toLowerCase() ?? '';
+    return n === 'sprint' || n === 'sprint race';
+}
+
 export function groupByMeeting(
     rows: SupabaseRaceResultRow[]
 ): Map<number, SupabaseRaceResultRow[]> {
-    const scoring = rows.filter((r) => r.session_name === 'Race' || r.session_name === 'Sprint');
+    const scoring = rows.filter(
+        (r) => r.session_name === 'Race' || isSprintSession(r.session_name)
+    );
 
     const byMeeting = new Map<number, SupabaseRaceResultRow[]>();
     for (const row of scoring) {
