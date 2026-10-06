@@ -34,6 +34,30 @@ export default function AdminSyncPage() {
         }
     };
 
+    const [meetingKey, setMeetingKey] = useState('');
+    const [backfillResult, setBackfillResult] = useState<string | null>(null);
+    const [backfilling, setBackfilling] = useState(false);
+
+    const handleBackfill = async () => {
+        if (!meetingKey || backfilling) return;
+        setBackfilling(true);
+        setBackfillResult(null);
+
+        try {
+            const response = await fetch('/api/backfill', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ meetingKey: Number(meetingKey) }),
+            });
+            const text = await response.text();
+            setBackfillResult(text);
+        } catch {
+            setBackfillResult('Failed to reach backend.');
+        } finally {
+            setBackfilling(false);
+        }
+    };
+
     return (
         <AppLayout>
             <div className='space-y-5 text-zinc-100'>
@@ -95,6 +119,35 @@ export default function AdminSyncPage() {
                         </>
                     )}
                 </button>
+
+                <div className='pt-6 border-t border-zinc-800/40 space-y-3'>
+                    <h2 className='text-sm font-bold text-zinc-200'>Backfill Specific Meeting</h2>
+                    <p className='text-xs text-zinc-400'>
+                        Re-syncs results and laps for a past meeting_key without touching current
+                        data.
+                    </p>
+                    <div className='flex gap-2'>
+                        <input
+                            type='number'
+                            value={meetingKey}
+                            onChange={(e) => setMeetingKey(e.target.value)}
+                            placeholder='Meeting key (e.g. 1292)'
+                            className='bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-200 flex-1'
+                        />
+                        <button
+                            onClick={handleBackfill}
+                            disabled={backfilling}
+                            className='text-xs font-bold px-3 py-2 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-200 rounded-lg transition-colors disabled:opacity-50'
+                        >
+                            {backfilling ? 'Backfilling...' : 'Backfill'}
+                        </button>
+                    </div>
+                    {backfillResult && (
+                        <p className='text-xs text-zinc-400 bg-zinc-950 border border-zinc-800 rounded-lg p-3'>
+                            {backfillResult}
+                        </p>
+                    )}
+                </div>
             </div>
         </AppLayout>
     );
