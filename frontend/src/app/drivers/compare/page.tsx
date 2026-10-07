@@ -160,24 +160,24 @@ export default function DriverComparePage() {
                                         <tr className={TABLE_THEAD_CLASS}>
                                             <th className='p-3 w-16 text-center'>Rd</th>
                                             <th className='p-3'>Race</th>
+                                            {comparison.hasAnySprintRound && (
+                                                <th className='p-3 text-center w-24 text-zinc-400'>
+                                                    {comparison.driverA.driverName.split(' ').pop()}{' '}
+                                                    (Sprint)
+                                                </th>
+                                            )}
                                             <th className='p-3 text-center w-24'>
                                                 {comparison.driverA.driverName.split(' ').pop()}
                                             </th>
                                             {comparison.hasAnySprintRound && (
-                                                <th className='p-3 text-center w-24 text-zinc-500'>
-                                                    {comparison.driverA.driverName.split(' ').pop()}{' '}
+                                                <th className='p-3 text-center w-24 text-zinc-400'>
+                                                    {comparison.driverB.driverName.split(' ').pop()}{' '}
                                                     (Sprint)
                                                 </th>
                                             )}
                                             <th className='p-3 text-center w-24'>
                                                 {comparison.driverB.driverName.split(' ').pop()}
                                             </th>
-                                            {comparison.hasAnySprintRound && (
-                                                <th className='p-3 text-center w-24 text-zinc-500'>
-                                                    {comparison.driverB.driverName.split(' ').pop()}{' '}
-                                                    (Sprint)
-                                                </th>
-                                            )}
                                         </tr>
                                     </thead>
                                     <tbody className='divide-y divide-zinc-800/50'>
@@ -197,18 +197,25 @@ export default function DriverComparePage() {
                                                         {r.country}
                                                     </Link>
                                                 </td>
+                                                {comparison.hasAnySprintRound && (
+                                                    <td className='p-3 text-center font-mono text-zinc-400'>
+                                                        {r.driverASprintPosition !== null
+                                                            ? `P${r.driverASprintPosition}`
+                                                            : '—'}
+                                                    </td>
+                                                )}
                                                 <td
                                                     className={`p-3 text-center font-bold ${getPositionColor(r.driverAPosition ?? 99)}`}
                                                 >
                                                     {r.driverAOut ? 'DNF' : `P${r.driverAPosition}`}
-                                                    <span className='block text-[10px] font-normal text-zinc-500 mt-0.5'>
+                                                    <span className='block text-[10px] font-normal text-zinc-400 mt-0.5'>
                                                         {r.driverAPoints} pts
                                                     </span>
                                                 </td>
                                                 {comparison.hasAnySprintRound && (
-                                                    <td className='p-3 text-center font-mono text-zinc-500'>
-                                                        {r.driverASprintPosition !== null
-                                                            ? `P${r.driverASprintPosition}`
+                                                    <td className='p-3 text-center font-mono text-zinc-400'>
+                                                        {r.driverBSprintPosition !== null
+                                                            ? `P${r.driverBSprintPosition}`
                                                             : '—'}
                                                     </td>
                                                 )}
@@ -216,17 +223,10 @@ export default function DriverComparePage() {
                                                     className={`p-3 text-center font-bold ${getPositionColor(r.driverBPosition ?? 99)}`}
                                                 >
                                                     {r.driverBOut ? 'DNF' : `P${r.driverBPosition}`}
-                                                    <span className='block text-[10px] font-normal text-zinc-500 mt-0.5'>
+                                                    <span className='block text-[10px] font-normal text-zinc-400 mt-0.5'>
                                                         {r.driverBPoints} pts
                                                     </span>
                                                 </td>
-                                                {comparison.hasAnySprintRound && (
-                                                    <td className='p-3 text-center font-mono text-zinc-500'>
-                                                        {r.driverBSprintPosition !== null
-                                                            ? `P${r.driverBSprintPosition}`
-                                                            : '—'}
-                                                    </td>
-                                                )}
                                             </tr>
                                         ))}
                                     </tbody>
