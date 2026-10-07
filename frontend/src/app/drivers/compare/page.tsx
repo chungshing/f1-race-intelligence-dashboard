@@ -167,6 +167,22 @@ export default function DriverComparePage() {
                                             <th className='p-3 text-center w-24'>
                                                 {comparison.driverB.driverName.split(' ').pop()}
                                             </th>
+                                            {comparison.hasAnySprintRound && (
+                                                <>
+                                                    <th className='p-3 text-center w-24 text-zinc-500'>
+                                                        {comparison.driverA.driverName
+                                                            .split(' ')
+                                                            .pop()}{' '}
+                                                        (Sprint)
+                                                    </th>
+                                                    <th className='p-3 text-center w-24 text-zinc-500'>
+                                                        {comparison.driverB.driverName
+                                                            .split(' ')
+                                                            .pop()}{' '}
+                                                        (Sprint)
+                                                    </th>
+                                                </>
+                                            )}
                                         </tr>
                                     </thead>
                                     <tbody className='divide-y divide-zinc-800/50'>
@@ -196,6 +212,20 @@ export default function DriverComparePage() {
                                                 >
                                                     {r.driverBOut ? 'DNF' : `P${r.driverBPosition}`}
                                                 </td>
+                                                {comparison.hasAnySprintRound && (
+                                                    <>
+                                                        <td className='p-3 text-center font-mono text-zinc-500'>
+                                                            {r.driverASprintPosition !== null
+                                                                ? `P${r.driverASprintPosition}`
+                                                                : '—'}
+                                                        </td>
+                                                        <td className='p-3 text-center font-mono text-zinc-500'>
+                                                            {r.driverBSprintPosition !== null
+                                                                ? `P${r.driverBSprintPosition}`
+                                                                : '—'}
+                                                        </td>
+                                                    </>
+                                                )}
                                             </tr>
                                         ))}
                                     </tbody>
