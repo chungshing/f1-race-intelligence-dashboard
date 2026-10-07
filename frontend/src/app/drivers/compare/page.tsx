@@ -252,12 +252,16 @@ export default function DriverComparePage() {
                                         <td
                                             className={`p-3 text-center font-bold ${getPositionColor(r.driverAPosition ?? 99)}`}
                                         >
-                                            {r.driverAOut ? 'DNF' : `P${r.driverAPosition}`}
+                                            {r.driverAOut || r.driverAPosition === null
+                                                ? '—'
+                                                : `P${r.driverAPosition}`}
                                         </td>
                                         <td
                                             className={`p-3 text-center font-bold ${getPositionColor(r.driverBPosition ?? 99)}`}
                                         >
-                                            {r.driverBOut ? 'DNF' : `P${r.driverBPosition}`}
+                                            {r.driverBOut || r.driverBPosition === null
+                                                ? '—'
+                                                : `P${r.driverBPosition}`}
                                         </td>
                                         <td className='p-3 text-right font-mono'>
                                             {r.pointsLeader === null ? (
