@@ -2,7 +2,7 @@
 
 import AppLayout from '@/components/layout/AppLayout';
 import { useDriverComparison } from '@/hooks/useDriverComparison';
-import { disambiguateTeamColors } from '@/utils/sessions';
+import { formatHexColor } from '@/utils/sessions';
 import { getPositionColor, TABLE_CONTAINER_CLASS, TABLE_THEAD_CLASS } from '@/utils/styles';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -20,7 +20,6 @@ function DriverPickerRow({
     otherSelected: number | null;
     onSelect: (num: number) => void;
 }) {
-    const colorMap = disambiguateTeamColors(drivers);
 
     return (
         <div>
@@ -46,7 +45,7 @@ function DriverPickerRow({
                         >
                             <span
                                 className='w-1.5 h-1.5 rounded-full shrink-0'
-                                style={{ backgroundColor: colorMap.get(d) }}
+                                style={{ backgroundColor: formatHexColor(d.teamColor) }}
                             />
                             {d.driverName}
                         </button>
@@ -202,6 +201,9 @@ export default function DriverComparePage() {
                                                     className={`p-3 text-center font-bold ${getPositionColor(r.driverAPosition ?? 99)}`}
                                                 >
                                                     {r.driverAOut ? 'DNF' : `P${r.driverAPosition}`}
+                                                    <span className='block text-[10px] font-normal text-zinc-500 mt-0.5'>
+                                                        {r.driverAPoints} pts
+                                                    </span>
                                                 </td>
                                                 {comparison.hasAnySprintRound && (
                                                     <td className='p-3 text-center font-mono text-zinc-500'>
@@ -214,6 +216,9 @@ export default function DriverComparePage() {
                                                     className={`p-3 text-center font-bold ${getPositionColor(r.driverBPosition ?? 99)}`}
                                                 >
                                                     {r.driverBOut ? 'DNF' : `P${r.driverBPosition}`}
+                                                    <span className='block text-[10px] font-normal text-zinc-500 mt-0.5'>
+                                                        {r.driverBPoints} pts
+                                                    </span>
                                                 </td>
                                                 {comparison.hasAnySprintRound && (
                                                     <td className='p-3 text-center font-mono text-zinc-500'>
