@@ -28,6 +28,10 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup, raceContr
     const safetyCarWindows = useMemo(() => getSafetyCarWindows(raceControl ?? []), [raceControl]);
     const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
+    const driverNumbers = Array.from(new Set(stints.map((s) => s.driver_number)));
+
+    const allExpanded = driverNumbers.length > 0 && driverNumbers.every((n) => expanded.has(n));
+
     const toggleExpanded = (driverNum: number) => {
         setExpanded((prev) => {
             const next = new Set(prev);
@@ -37,7 +41,9 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup, raceContr
         });
     };
 
-    const driverNumbers = Array.from(new Set(stints.map((s) => s.driver_number)));
+    const toggleAll = () => {
+        setExpanded(allExpanded ? new Set() : new Set(driverNumbers));
+    };
 
     const driversStrategy = driverNumbers
         .map((driverNum) => {
@@ -87,15 +93,32 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup, raceContr
                         Tire & Pit Strategies
                     </h3>
                 </div>
-                {safetyCarWindows.length > 0 && (
-                    <div className='flex items-center gap-1.5 text-[10px] font-bold text-yellow-400 uppercase tracking-wider'>
-                        <ShieldAlert className='w-3.5 h-3.5' />
-                        SC: {safetyCarWindows.map((w) => `L${w.startLap}–${w.endLap}`).join(', ')}
-                    </div>
-                )}
+                <div className='flex items-center gap-3'>
+                    {safetyCarWindows.length > 0 && (
+                        <div className='flex items-center gap-1.5 text-[10px] font-bold text-yellow-400 uppercase tracking-wider'>
+                            <ShieldAlert className='w-3.5 h-3.5' />
+                            SC:{' '}
+                            {safetyCarWindows.map((w) => `L${w.startLap}–${w.endLap}`).join(', ')}
+                        </div>
+                    )}
+                    {driverNumbers.length > 0 && (
+                        <button
+                            onClick={toggleAll}
+                            className='text-[10px] font-bold text-zinc-400 hover:text-zinc-200 uppercase tracking-wider transition-colors'
+                        >
+                            {allExpanded ? 'Collapse All' : 'Expand All'}
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className='divide-y divide-zinc-900'>
+                {driverNumbers.length === 0 && (
+                    <p className='text-xs text-zinc-500 p-5 text-center'>
+                        No stint data recorded for this session.
+                    </p>
+                )}
+
                 {driversStrategy.map(
                     ({ driverNum, info, statusLabel, stints: driverStints, pits }) => {
                         const isExpanded = expanded.has(driverNum);
@@ -105,14 +128,16 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup, raceContr
                                 {/* Collapsed summary row */}
                                 <button
                                     onClick={() => toggleExpanded(driverNum)}
-                                    className='w-full grid items-center gap-3.5 p-3 pl-4 hover:bg-zinc-900/30 transition-colors text-left'
+                                    className={`w-full grid items-center gap-3.5 p-3 pl-4 hover:bg-zinc-900/30 transition-colors text-left ${
+                                        isExpanded ? 'bg-zinc-900/20' : ''
+                                    }`}
                                     style={{
                                         borderLeft: `3px solid ${info.teamColor}`,
                                         gridTemplateColumns: '28px 144px 1fr 64px 16px',
                                     }}
                                 >
                                     <span
-                                        className={`font-mono font-bold text-xs w-7 ${
+                                        className={`font-mono font-bold text-xs ${
                                             ['DNF', 'DNS', 'DSQ'].includes(statusLabel)
                                                 ? 'text-red-400/90'
                                                 : 'text-zinc-300'
@@ -130,7 +155,7 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup, raceContr
                                         </p>
                                     </div>
 
-                                    <div className='flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden flex-wrap'>
+                                    <div className='flex items-center gap-1.5 min-w-0 overflow-hidden flex-wrap'>
                                         {driverStints.map((stint, idx) => {
                                             const matchingPit = pits[idx];
                                             const pitUnderSC =
@@ -146,7 +171,7 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup, raceContr
                                                     className='flex items-center gap-1.5'
                                                 >
                                                     <span
-                                                        className={`text-[10px] font-black px-1.5 py-0.5 rounded border uppercase ${getCompoundStyles(
+                                                        className={`text-[10px] font-black px-1.5 py-0.5 rounded border uppercase shrink-0 ${getCompoundStyles(
                                                             stint.compound
                                                         )}`}
                                                     >
@@ -154,9 +179,9 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup, raceContr
                                                     </span>
                                                     {matchingPit && (
                                                         <>
-                                                            <ArrowRight className='w-3 h-3 text-zinc-700' />
+                                                            <ArrowRight className='w-3 h-3 text-zinc-700 shrink-0' />
                                                             <span
-                                                                className={`text-[10px] font-bold ${
+                                                                className={`text-[10px] font-bold shrink-0 ${
                                                                     pitUnderSC
                                                                         ? 'text-yellow-400'
                                                                         : 'text-zinc-500'
@@ -165,7 +190,7 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup, raceContr
                                                                 L{matchingPit.lap_number}
                                                                 {pitUnderSC ? ' (SC)' : ''}
                                                             </span>
-                                                            <ArrowRight className='w-3 h-3 text-zinc-700' />
+                                                            <ArrowRight className='w-3 h-3 text-zinc-700 shrink-0' />
                                                         </>
                                                     )}
                                                 </span>
@@ -173,7 +198,7 @@ export const RaceStrategyTable = ({ pitStops, stints, results, lookup, raceContr
                                         })}
                                     </div>
 
-                                    <span className='text-[11px] text-zinc-400 w-16 text-right'>
+                                    <span className='text-[11px] text-zinc-400 text-right'>
                                         {pits.length} stop{pits.length !== 1 ? 's' : ''}
                                     </span>
 
