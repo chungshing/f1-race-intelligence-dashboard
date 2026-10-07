@@ -19,6 +19,8 @@ export interface ComparisonRound {
     driverBOut: boolean;
     driverASprintPosition: number | null;
     driverBSprintPosition: number | null;
+    driverASprintOut: boolean;
+    driverBSprintOut: boolean;
     driverAPoints: number;
     driverBPoints: number;
     driverACumulative: number;
@@ -33,6 +35,9 @@ export interface DriverComparisonResult {
     rounds: ComparisonRound[];
     driverAWins: number;
     driverBWins: number;
+    driverASprintWins: number;
+    driverBSprintWins: number;
+    sprintRoundsCompared: number;
     driverATotalPoints: number;
     driverBTotalPoints: number;
     roundsCompared: number;
@@ -51,6 +56,9 @@ export function buildDriverComparison(
     const rounds: ComparisonRound[] = [];
     let driverAWins = 0;
     let driverBWins = 0;
+    let driverASprintWins = 0;
+    let driverBSprintWins = 0;
+    let sprintRoundsCompared = 0;
     let driverATotalPoints = 0;
     let driverBTotalPoints = 0;
     let round = 0;
@@ -74,6 +82,8 @@ export function buildDriverComparison(
         let bRoundPoints = 0;
         let aSprintPosition: number | null = null;
         let bSprintPosition: number | null = null;
+        let aSprintOut = false;
+        let bSprintOut = false;
 
         for (const session of sessions) {
             const isSprint = isSprintSession(session.session_name);
@@ -87,27 +97,56 @@ export function buildDriverComparison(
 
             if (aSessionEntry) {
                 aRoundPoints += pointsFor(aSessionEntry, isSprint);
-                if (isSprint) aSprintPosition = aSessionEntry.position;
+                if (isSprint) {
+                    aSprintPosition = aSessionEntry.position;
+                    aSprintOut = aSessionEntry.dnf || aSessionEntry.dns || aSessionEntry.dsq;
+                }
             }
             if (bSessionEntry) {
                 bRoundPoints += pointsFor(bSessionEntry, isSprint);
-                if (isSprint) bSprintPosition = bSessionEntry.position;
+                if (isSprint) {
+                    bSprintPosition = bSessionEntry.position;
+                    bSprintOut = bSessionEntry.dnf || bSessionEntry.dns || bSessionEntry.dsq;
+                }
             }
         }
 
         driverATotalPoints += aRoundPoints;
         driverBTotalPoints += bRoundPoints;
 
+        // Race H2H — only counts a win when both drivers were actually
+        // classified with a real finishing position. A DNF'd driver never
+        // "beats" anyone, regardless of what position value OpenF1 stored.
         const aOut = aEntry.dnf || aEntry.dns || aEntry.dsq;
         const bOut = bEntry.dnf || bEntry.dns || bEntry.dsq;
+        const aHasPosition = !aOut && aEntry.position !== null;
+        const bHasPosition = !bOut && bEntry.position !== null;
 
-        if (!aOut && !bOut) {
+        if (aHasPosition && bHasPosition) {
             if (aEntry.position! < bEntry.position!) driverAWins++;
             else if (bEntry.position! < aEntry.position!) driverBWins++;
-        } else if (aOut && !bOut) {
-            driverBWins++;
-        } else if (bOut && !aOut) {
+        } else if (aHasPosition && !bHasPosition) {
             driverAWins++;
+        } else if (bHasPosition && !aHasPosition) {
+            driverBWins++;
+        }
+        // If neither has a valid position (both out), no win is awarded to either side.
+
+        // Sprint H2H — tracked as its own sub-bracket, same logic.
+        if (aSprintPosition !== null || bSprintPosition !== null) {
+            sprintRoundsCompared++;
+
+            const aSprintHasPosition = !aSprintOut && aSprintPosition !== null;
+            const bSprintHasPosition = !bSprintOut && bSprintPosition !== null;
+
+            if (aSprintHasPosition && bSprintHasPosition) {
+                if (aSprintPosition! < bSprintPosition!) driverASprintWins++;
+                else if (bSprintPosition! < aSprintPosition!) driverBSprintWins++;
+            } else if (aSprintHasPosition && !bSprintHasPosition) {
+                driverASprintWins++;
+            } else if (bSprintHasPosition && !aSprintHasPosition) {
+                driverBSprintWins++;
+            }
         }
 
         const pointsDiff = aRoundPoints - bRoundPoints;
@@ -124,6 +163,8 @@ export function buildDriverComparison(
             driverBOut: bOut,
             driverASprintPosition: aSprintPosition,
             driverBSprintPosition: bSprintPosition,
+            driverASprintOut: aSprintOut,
+            driverBSprintOut: bSprintOut,
             driverAPoints: aRoundPoints,
             driverBPoints: bRoundPoints,
             driverACumulative: driverATotalPoints,
@@ -139,6 +180,9 @@ export function buildDriverComparison(
         rounds,
         driverAWins,
         driverBWins,
+        driverASprintWins,
+        driverBSprintWins,
+        sprintRoundsCompared,
         driverATotalPoints,
         driverBTotalPoints,
         roundsCompared: rounds.length,
