@@ -1,9 +1,11 @@
 'use client';
 
+import { ComparisonPointsChart } from '@/components/dashboard/ComparisonPointsChart';
 import AppLayout from '@/components/layout/AppLayout';
 import { useDriverComparison } from '@/hooks/useDriverComparison';
 import { formatHexColor } from '@/utils/sessions';
 import { getPositionColor, TABLE_CONTAINER_CLASS, TABLE_THEAD_CLASS } from '@/utils/styles';
+import NextImage from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -20,7 +22,6 @@ function DriverPickerRow({
     otherSelected: number | null;
     onSelect: (num: number) => void;
 }) {
-
     return (
         <div>
             <h4 className='text-[10px] font-bold text-zinc-400 tracking-widest uppercase mb-2'>
@@ -99,155 +100,181 @@ export default function DriverComparePage() {
                 )}
 
                 {comparison && (
-                    <>
-                        <div className='flex items-center justify-center gap-8 py-4'>
+                    <div className={TABLE_CONTAINER_CLASS}>
+                        <div className='flex items-center justify-center gap-7 py-5 border-b border-zinc-900'>
                             <div className='text-center'>
+                                {comparison.driverA.headshotUrl && (
+                                    <div
+                                        className='relative w-12 h-12 rounded-full overflow-hidden bg-zinc-800 mx-auto mb-2'
+                                        style={{
+                                            border: `2px solid ${formatHexColor(comparison.driverA.teamColor)}`,
+                                        }}
+                                    >
+                                        <NextImage
+                                            src={comparison.driverA.headshotUrl}
+                                            alt={comparison.driverA.driverName}
+                                            fill
+                                            sizes='48px'
+                                            className='object-cover'
+                                        />
+                                    </div>
+                                )}
                                 <Link
                                     href={`/drivers/${comparison.driverA.driverNumber}`}
-                                    className='text-lg font-black text-zinc-100 hover:text-red-400 transition-colors'
+                                    className='text-sm font-bold text-zinc-100 hover:text-red-400 transition-colors'
                                 >
                                     {comparison.driverA.driverName}
                                 </Link>
-                                <p className='text-[10px] text-zinc-500 uppercase tracking-wider mt-0.5'>
+                                <p className='text-[10px] text-zinc-500'>
                                     {comparison.driverA.teamName}
                                 </p>
                             </div>
                             <div className='text-center'>
-                                <h2 className='text-4xl font-mono font-black text-zinc-100'>
+                                <h2 className='text-3xl font-mono font-bold text-zinc-100'>
                                     {comparison.driverAWins}–{comparison.driverBWins}
                                 </h2>
-                                <p className='text-[10px] text-zinc-500 uppercase tracking-wider mt-0.5'>
+                                <p className='text-[10px] text-zinc-500 uppercase tracking-wider'>
                                     {comparison.roundsCompared} rounds
                                 </p>
                             </div>
                             <div className='text-center'>
+                                {comparison.driverB.headshotUrl && (
+                                    <div
+                                        className='relative w-12 h-12 rounded-full overflow-hidden bg-zinc-800 mx-auto mb-2'
+                                        style={{
+                                            border: `2px solid ${formatHexColor(comparison.driverB.teamColor)}`,
+                                        }}
+                                    >
+                                        <NextImage
+                                            src={comparison.driverB.headshotUrl}
+                                            alt={comparison.driverB.driverName}
+                                            fill
+                                            sizes='48px'
+                                            className='object-cover'
+                                        />
+                                    </div>
+                                )}
                                 <Link
                                     href={`/drivers/${comparison.driverB.driverNumber}`}
-                                    className='text-lg font-black text-zinc-100 hover:text-red-400 transition-colors'
+                                    className='text-sm font-bold text-zinc-100 hover:text-red-400 transition-colors'
                                 >
                                     {comparison.driverB.driverName}
                                 </Link>
-                                <p className='text-[10px] text-zinc-500 uppercase tracking-wider mt-0.5'>
+                                <p className='text-[10px] text-zinc-500'>
                                     {comparison.driverB.teamName}
                                 </p>
                             </div>
                         </div>
 
-                        <div className='grid grid-cols-2 gap-4'>
-                            <div className='bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-3.5 text-center'>
-                                <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400'>
-                                    {comparison.driverA.driverName.split(' ').pop()} Points
-                                </p>
-                                <h2 className='text-3xl font-mono font-bold text-zinc-100 mt-1'>
-                                    {comparison.driverATotalPoints}
-                                </h2>
+                        <div className='p-4 border-b border-zinc-900'>
+                            <div className='flex items-center justify-between mb-2'>
+                                <h3 className='text-[10px] font-bold text-zinc-400 tracking-widest uppercase'>
+                                    Cumulative Points
+                                </h3>
+                                <div className='flex items-center gap-4 text-[11px] text-zinc-400'>
+                                    <span className='flex items-center gap-1.5'>
+                                        <span
+                                            className='w-2 h-2 rounded-sm'
+                                            style={{
+                                                backgroundColor: formatHexColor(
+                                                    comparison.driverA.teamColor
+                                                ),
+                                            }}
+                                        />
+                                        {comparison.driverA.driverName.split(' ').pop()}{' '}
+                                        {comparison.driverATotalPoints}
+                                    </span>
+                                    <span className='flex items-center gap-1.5'>
+                                        <span
+                                            className='w-2 h-2 rounded-sm'
+                                            style={{
+                                                backgroundColor: formatHexColor(
+                                                    comparison.driverB.teamColor
+                                                ),
+                                            }}
+                                        />
+                                        {comparison.driverB.driverName.split(' ').pop()}{' '}
+                                        {comparison.driverBTotalPoints}
+                                    </span>
+                                </div>
                             </div>
-                            <div className='bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-3.5 text-center'>
-                                <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400'>
-                                    {comparison.driverB.driverName.split(' ').pop()} Points
-                                </p>
-                                <h2 className='text-3xl font-mono font-bold text-zinc-100 mt-1'>
-                                    {comparison.driverBTotalPoints}
-                                </h2>
-                            </div>
+                            <ComparisonPointsChart
+                                rounds={comparison.rounds}
+                                driverAName={comparison.driverA.driverName}
+                                driverBName={comparison.driverB.driverName}
+                                driverAColor={comparison.driverA.teamColor}
+                                driverBColor={comparison.driverB.teamColor}
+                            />
                         </div>
 
-                        <div>
-                            <h3 className='text-sm font-bold text-zinc-300 mb-3'>Round by Round</h3>
-                            <div className={TABLE_CONTAINER_CLASS}>
-                                <table className='w-full text-left border-collapse text-sm'>
-                                    <thead>
-                                        <tr className={TABLE_THEAD_CLASS}>
-                                            <th className='p-3 w-16 text-center'>Rd</th>
-                                            <th className='p-3'>Race</th>
-                                            {comparison.hasAnySprintRound && (
-                                                <th className='p-3 text-center w-24 text-zinc-400'>
-                                                    {comparison.driverA.driverName.split(' ').pop()}{' '}
-                                                    (Sprint)
-                                                </th>
-                                            )}
-                                            <th className='p-3 text-center w-24'>
-                                                {comparison.driverA.driverName.split(' ').pop()}
-                                            </th>
-                                            {comparison.hasAnySprintRound && (
-                                                <th className='p-3 text-center w-24 text-zinc-400'>
-                                                    {comparison.driverB.driverName.split(' ').pop()}{' '}
-                                                    (Sprint)
-                                                </th>
-                                            )}
-                                            <th className='p-3 text-center w-24'>
-                                                {comparison.driverB.driverName.split(' ').pop()}
-                                            </th>
-                                            <th className='p-3 text-right w-28'>
-                                                {comparison.driverA.driverName.split(' ').pop()}{' '}
-                                                Total
-                                            </th>
-                                            <th className='p-3 text-right w-28'>
-                                                {comparison.driverB.driverName.split(' ').pop()}{' '}
-                                                Total
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className='divide-y divide-zinc-800/50'>
-                                        {comparison.rounds.map((r) => (
-                                            <tr
-                                                key={r.meetingKey}
-                                                className='hover:bg-zinc-800/20 transition-colors'
+                        <table className='w-full text-left border-collapse text-sm'>
+                            <thead>
+                                <tr className={TABLE_THEAD_CLASS}>
+                                    <th className='p-3 w-16 text-center'>Rd</th>
+                                    <th className='p-3'>Race</th>
+                                    <th className='p-3 text-center w-24'>
+                                        {comparison.driverA.driverName.split(' ').pop()}
+                                    </th>
+                                    <th className='p-3 text-center w-24'>
+                                        {comparison.driverB.driverName.split(' ').pop()}
+                                    </th>
+                                    <th className='p-3 text-right w-24'>Gap</th>
+                                </tr>
+                            </thead>
+                            <tbody className='divide-y divide-zinc-800/50'>
+                                {comparison.rounds.map((r) => (
+                                    <tr
+                                        key={r.meetingKey}
+                                        className='hover:bg-zinc-800/20 transition-colors'
+                                    >
+                                        <td className='p-3 text-center font-mono text-zinc-500'>
+                                            {r.round}
+                                        </td>
+                                        <td className='p-3 text-zinc-200'>
+                                            <Link
+                                                href={`/races/${r.meetingKey}`}
+                                                className='hover:text-red-400 transition-colors'
                                             >
-                                                <td className='p-3 text-center font-mono text-zinc-500'>
-                                                    {r.round}
-                                                </td>
-                                                <td className='p-3 text-zinc-200'>
-                                                    <Link
-                                                        href={`/races/${r.meetingKey}`}
-                                                        className='hover:text-red-400 transition-colors'
-                                                    >
-                                                        {r.country}
-                                                    </Link>
-                                                </td>
-                                                {comparison.hasAnySprintRound && (
-                                                    <td className='p-3 text-center font-mono text-zinc-400'>
-                                                        {r.driverASprintPosition !== null
-                                                            ? `P${r.driverASprintPosition}`
-                                                            : '—'}
-                                                    </td>
-                                                )}
-                                                <td
-                                                    className={`p-3 text-center font-bold ${getPositionColor(r.driverAPosition ?? 99)}`}
+                                                {r.country}
+                                            </Link>
+                                        </td>
+                                        <td
+                                            className={`p-3 text-center font-bold ${getPositionColor(r.driverAPosition ?? 99)}`}
+                                        >
+                                            {r.driverAOut ? 'DNF' : `P${r.driverAPosition}`}
+                                        </td>
+                                        <td
+                                            className={`p-3 text-center font-bold ${getPositionColor(r.driverBPosition ?? 99)}`}
+                                        >
+                                            {r.driverBOut ? 'DNF' : `P${r.driverBPosition}`}
+                                        </td>
+                                        <td className='p-3 text-right font-mono'>
+                                            {r.pointsLeader === null ? (
+                                                <span className='text-zinc-600'>—</span>
+                                            ) : (
+                                                <span
+                                                    className={
+                                                        r.pointsLeader === 'A'
+                                                            ? 'text-emerald-400'
+                                                            : 'text-amber-400'
+                                                    }
                                                 >
-                                                    {r.driverAOut ? 'DNF' : `P${r.driverAPosition}`}
-                                                    <span className='block text-[10px] font-normal text-zinc-400 mt-0.5'>
-                                                        {r.driverAPoints} pts
-                                                    </span>
-                                                </td>
-                                                {comparison.hasAnySprintRound && (
-                                                    <td className='p-3 text-center font-mono text-zinc-400'>
-                                                        {r.driverBSprintPosition !== null
-                                                            ? `P${r.driverBSprintPosition}`
-                                                            : '—'}
-                                                    </td>
-                                                )}
-                                                <td
-                                                    className={`p-3 text-center font-bold ${getPositionColor(r.driverBPosition ?? 99)}`}
-                                                >
-                                                    {r.driverBOut ? 'DNF' : `P${r.driverBPosition}`}
-                                                    <span className='block text-[10px] font-normal text-zinc-400 mt-0.5'>
-                                                        {r.driverBPoints} pts
-                                                    </span>
-                                                </td>
-                                                                                                <td className='p-3 text-right font-mono font-bold text-zinc-100'>
-                                                    {r.driverACumulative}
-                                                </td>
-                                                <td className='p-3 text-right font-mono font-bold text-zinc-100'>
-                                                    {r.driverBCumulative}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </>
+                                                    +{r.pointsGap}{' '}
+                                                    {r.pointsLeader === 'A'
+                                                        ? comparison.driverA.driverName
+                                                              .split(' ')
+                                                              .pop()
+                                                        : comparison.driverB.driverName
+                                                              .split(' ')
+                                                              .pop()}
+                                                </span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
         </AppLayout>
