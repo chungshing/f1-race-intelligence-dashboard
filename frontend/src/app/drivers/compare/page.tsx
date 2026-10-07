@@ -136,6 +136,17 @@ export default function DriverComparePage() {
                                 <p className='text-[10px] text-zinc-500 uppercase tracking-wider'>
                                     {comparison.roundsCompared} rounds
                                 </p>
+                                {comparison.sprintRoundsCompared > 0 && (
+                                    <div className='mt-2 pt-2 border-t border-zinc-900'>
+                                        <p className='text-sm font-mono font-bold text-amber-400'>
+                                            {comparison.driverASprintWins}–
+                                            {comparison.driverBSprintWins}
+                                        </p>
+                                        <p className='text-[9px] text-zinc-500 uppercase tracking-wider'>
+                                            Sprint ({comparison.sprintRoundsCompared})
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                             <div className='text-center'>
                                 {comparison.driverB.headshotUrl && (
