@@ -178,6 +178,14 @@ export default function DriverComparePage() {
                                             <th className='p-3 text-center w-24'>
                                                 {comparison.driverB.driverName.split(' ').pop()}
                                             </th>
+                                            <th className='p-3 text-right w-28'>
+                                                {comparison.driverA.driverName.split(' ').pop()}{' '}
+                                                Total
+                                            </th>
+                                            <th className='p-3 text-right w-28'>
+                                                {comparison.driverB.driverName.split(' ').pop()}{' '}
+                                                Total
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className='divide-y divide-zinc-800/50'>
@@ -226,6 +234,12 @@ export default function DriverComparePage() {
                                                     <span className='block text-[10px] font-normal text-zinc-400 mt-0.5'>
                                                         {r.driverBPoints} pts
                                                     </span>
+                                                </td>
+                                                                                                <td className='p-3 text-right font-mono font-bold text-zinc-100'>
+                                                    {r.driverACumulative}
+                                                </td>
+                                                <td className='p-3 text-right font-mono font-bold text-zinc-100'>
+                                                    {r.driverBCumulative}
                                                 </td>
                                             </tr>
                                         ))}
