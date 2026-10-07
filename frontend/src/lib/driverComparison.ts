@@ -23,6 +23,8 @@ export interface ComparisonRound {
     driverBPoints: number;
     driverACumulative: number;
     driverBCumulative: number;
+    pointsGap: number;
+    pointsLeader: 'A' | 'B' | null;
 }
 
 export interface DriverComparisonResult {
@@ -108,6 +110,10 @@ export function buildDriverComparison(
             driverAWins++;
         }
 
+        const pointsDiff = aRoundPoints - bRoundPoints;
+        const pointsGap = Math.abs(pointsDiff);
+        const pointsLeader: 'A' | 'B' | null = pointsDiff > 0 ? 'A' : pointsDiff < 0 ? 'B' : null;
+
         rounds.push({
             round,
             meetingKey,
@@ -122,6 +128,8 @@ export function buildDriverComparison(
             driverBPoints: bRoundPoints,
             driverACumulative: driverATotalPoints,
             driverBCumulative: driverBTotalPoints,
+            pointsGap,
+            pointsLeader,
         });
     }
 
