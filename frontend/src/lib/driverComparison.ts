@@ -21,6 +21,8 @@ export interface ComparisonRound {
     driverBSprintPosition: number | null;
     driverAPoints: number;
     driverBPoints: number;
+    driverACumulative: number;
+    driverBCumulative: number;
 }
 
 export interface DriverComparisonResult {
@@ -118,6 +120,8 @@ export function buildDriverComparison(
             driverBSprintPosition: bSprintPosition,
             driverAPoints: aRoundPoints,
             driverBPoints: bRoundPoints,
+            driverACumulative: driverATotalPoints,
+            driverBCumulative: driverBTotalPoints,
         });
     }
 
