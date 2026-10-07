@@ -1,5 +1,10 @@
 import { parseJsonField } from '@/utils/form';
-import { groupByMeeting, getChronologicalMeetingOrder, pointsFor } from '@/lib/racePoints';
+import {
+    groupByMeeting,
+    getChronologicalMeetingOrder,
+    pointsFor,
+    isSprintSession,
+} from '@/lib/racePoints';
 import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
 import { DriverStanding } from '@/types/standing';
 import { RaceWeekend } from '@/types/race';
@@ -12,6 +17,8 @@ export interface ComparisonRound {
     driverAOut: boolean;
     driverBPosition: number | null;
     driverBOut: boolean;
+    driverASprintPosition: number | null;
+    driverBSprintPosition: number | null;
     driverAPoints: number;
     driverBPoints: number;
 }
@@ -25,6 +32,7 @@ export interface DriverComparisonResult {
     driverATotalPoints: number;
     driverBTotalPoints: number;
     roundsCompared: number;
+    hasAnySprintRound: boolean;
 }
 
 export function buildDriverComparison(
@@ -60,8 +68,11 @@ export function buildDriverComparison(
 
         let aRoundPoints = 0;
         let bRoundPoints = 0;
+        let aSprintPosition: number | null = null;
+        let bSprintPosition: number | null = null;
+
         for (const session of sessions) {
-            const isSprint = session.session_name === 'Sprint';
+            const isSprint = isSprintSession(session.session_name);
             const classification = parseJsonField<DriverResult>(session.classification_json);
             const aSessionEntry = classification.find(
                 (c) => c.driverNumber === driverA.driverNumber
@@ -69,8 +80,15 @@ export function buildDriverComparison(
             const bSessionEntry = classification.find(
                 (c) => c.driverNumber === driverB.driverNumber
             );
-            if (aSessionEntry) aRoundPoints += pointsFor(aSessionEntry, isSprint);
-            if (bSessionEntry) bRoundPoints += pointsFor(bSessionEntry, isSprint);
+
+            if (aSessionEntry) {
+                aRoundPoints += pointsFor(aSessionEntry, isSprint);
+                if (isSprint) aSprintPosition = aSessionEntry.position;
+            }
+            if (bSessionEntry) {
+                bRoundPoints += pointsFor(bSessionEntry, isSprint);
+                if (isSprint) bSprintPosition = bSessionEntry.position;
+            }
         }
 
         driverATotalPoints += aRoundPoints;
@@ -96,6 +114,8 @@ export function buildDriverComparison(
             driverAOut: aOut,
             driverBPosition: bEntry.position,
             driverBOut: bOut,
+            driverASprintPosition: aSprintPosition,
+            driverBSprintPosition: bSprintPosition,
             driverAPoints: aRoundPoints,
             driverBPoints: bRoundPoints,
         });
@@ -110,5 +130,8 @@ export function buildDriverComparison(
         driverATotalPoints,
         driverBTotalPoints,
         roundsCompared: rounds.length,
+        hasAnySprintRound: rounds.some(
+            (r) => r.driverASprintPosition !== null || r.driverBSprintPosition !== null
+        ),
     };
 }
