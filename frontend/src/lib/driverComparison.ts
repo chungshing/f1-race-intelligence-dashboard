@@ -9,18 +9,20 @@ import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
 import { DriverStanding } from '@/types/standing';
 import { RaceWeekend } from '@/types/race';
 
+export type PositionStatus = 'DNF' | 'DNS' | 'DSQ';
+
 export interface ComparisonRound {
     round: number;
     meetingKey: number;
     country: string;
     driverAPosition: number | null;
-    driverAOut: boolean;
+    driverAStatus: PositionStatus | null;
     driverBPosition: number | null;
-    driverBOut: boolean;
+    driverBStatus: PositionStatus | null;
     driverASprintPosition: number | null;
+    driverASprintStatus: PositionStatus | null;
     driverBSprintPosition: number | null;
-    driverASprintOut: boolean;
-    driverBSprintOut: boolean;
+    driverBSprintStatus: PositionStatus | null;
     driverAPoints: number;
     driverBPoints: number;
     driverACumulative: number;
@@ -42,6 +44,13 @@ export interface DriverComparisonResult {
     driverBTotalPoints: number;
     roundsCompared: number;
     hasAnySprintRound: boolean;
+}
+
+function resolveStatus(entry: DriverResult): PositionStatus | null {
+    if (entry.dsq) return 'DSQ';
+    if (entry.dnf) return 'DNF';
+    if (entry.dns) return 'DNS';
+    return null;
 }
 
 export function buildDriverComparison(
@@ -82,8 +91,8 @@ export function buildDriverComparison(
         let bRoundPoints = 0;
         let aSprintPosition: number | null = null;
         let bSprintPosition: number | null = null;
-        let aSprintOut = false;
-        let bSprintOut = false;
+        let aSprintStatus: PositionStatus | null = null;
+        let bSprintStatus: PositionStatus | null = null;
 
         for (const session of sessions) {
             const isSprint = isSprintSession(session.session_name);
@@ -99,14 +108,14 @@ export function buildDriverComparison(
                 aRoundPoints += pointsFor(aSessionEntry, isSprint);
                 if (isSprint) {
                     aSprintPosition = aSessionEntry.position;
-                    aSprintOut = aSessionEntry.dnf || aSessionEntry.dns || aSessionEntry.dsq;
+                    aSprintStatus = resolveStatus(aSessionEntry);
                 }
             }
             if (bSessionEntry) {
                 bRoundPoints += pointsFor(bSessionEntry, isSprint);
                 if (isSprint) {
                     bSprintPosition = bSessionEntry.position;
-                    bSprintOut = bSessionEntry.dnf || bSessionEntry.dns || bSessionEntry.dsq;
+                    bSprintStatus = resolveStatus(bSessionEntry);
                 }
             }
         }
@@ -114,13 +123,13 @@ export function buildDriverComparison(
         driverATotalPoints += aRoundPoints;
         driverBTotalPoints += bRoundPoints;
 
-        // Race H2H — only counts a win when both drivers were actually
-        // classified with a real finishing position. A DNF'd driver never
-        // "beats" anyone, regardless of what position value OpenF1 stored.
-        const aOut = aEntry.dnf || aEntry.dns || aEntry.dsq;
-        const bOut = bEntry.dnf || bEntry.dns || bEntry.dsq;
-        const aHasPosition = !aOut && aEntry.position !== null;
-        const bHasPosition = !bOut && bEntry.position !== null;
+        const aStatus = resolveStatus(aEntry);
+        const bStatus = resolveStatus(bEntry);
+
+        // A win only counts when at least one driver has a real classified position.
+        // DNF / DNS / DSQ / unclassified (null) never beat anyone.
+        const aHasPosition = aStatus === null && aEntry.position !== null;
+        const bHasPosition = bStatus === null && bEntry.position !== null;
 
         if (aHasPosition && bHasPosition) {
             if (aEntry.position! < bEntry.position!) driverAWins++;
@@ -130,14 +139,17 @@ export function buildDriverComparison(
         } else if (bHasPosition && !aHasPosition) {
             driverBWins++;
         }
-        // If neither has a valid position (both out), no win is awarded to either side.
 
-        // Sprint H2H — tracked as its own sub-bracket, same logic.
-        if (aSprintPosition !== null || bSprintPosition !== null) {
+        if (
+            aSprintPosition !== null ||
+            bSprintPosition !== null ||
+            aSprintStatus ||
+            bSprintStatus
+        ) {
             sprintRoundsCompared++;
 
-            const aSprintHasPosition = !aSprintOut && aSprintPosition !== null;
-            const bSprintHasPosition = !bSprintOut && bSprintPosition !== null;
+            const aSprintHasPosition = aSprintStatus === null && aSprintPosition !== null;
+            const bSprintHasPosition = bSprintStatus === null && bSprintPosition !== null;
 
             if (aSprintHasPosition && bSprintHasPosition) {
                 if (aSprintPosition! < bSprintPosition!) driverASprintWins++;
@@ -158,13 +170,13 @@ export function buildDriverComparison(
             meetingKey,
             country: raceSession.country,
             driverAPosition: aEntry.position,
-            driverAOut: aOut,
+            driverAStatus: aStatus,
             driverBPosition: bEntry.position,
-            driverBOut: bOut,
+            driverBStatus: bStatus,
             driverASprintPosition: aSprintPosition,
+            driverASprintStatus: aSprintStatus,
             driverBSprintPosition: bSprintPosition,
-            driverASprintOut: aSprintOut,
-            driverBSprintOut: bSprintOut,
+            driverBSprintStatus: bSprintStatus,
             driverAPoints: aRoundPoints,
             driverBPoints: bRoundPoints,
             driverACumulative: driverATotalPoints,
@@ -187,7 +199,11 @@ export function buildDriverComparison(
         driverBTotalPoints,
         roundsCompared: rounds.length,
         hasAnySprintRound: rounds.some(
-            (r) => r.driverASprintPosition !== null || r.driverBSprintPosition !== null
+            (r) =>
+                r.driverASprintPosition !== null ||
+                r.driverBSprintPosition !== null ||
+                r.driverASprintStatus !== null ||
+                r.driverBSprintStatus !== null
         ),
     };
 }
