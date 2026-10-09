@@ -34,13 +34,14 @@ export function getSafetyCarWindows(events: RaceControlEvent[]): SafetyCarWindow
         .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
 
     for (const event of scEvents) {
+        if (event.lapNumber == null) continue;
         const message = event.message?.toUpperCase() ?? '';
-        if (message.includes('DEPLOYED') && event.lapNumber != null) {
+
+        if (message.includes('DEPLOYED')) {
             openStart = event.lapNumber;
         } else if (
-            message.includes('IN THIS LAP') &&
             openStart !== null &&
-            event.lapNumber != null
+            (message.includes('IN THIS LAP') || message.includes('ENDING'))
         ) {
             windows.push({ startLap: openStart, endLap: event.lapNumber });
             openStart = null;
