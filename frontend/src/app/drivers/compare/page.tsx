@@ -1,13 +1,28 @@
 'use client';
 
-import { ComparisonPointsChart } from '@/components/dashboard/ComparisonPointsChart';
 import AppLayout from '@/components/layout/AppLayout';
+import { ComparisonPointsChart } from '@/components/dashboard/ComparisonPointsChart';
 import { useDriverComparison } from '@/hooks/useDriverComparison';
+import { PositionStatus } from '@/lib/driverComparison';
 import { formatHexColor } from '@/utils/sessions';
 import { getPositionColor, TABLE_CONTAINER_CLASS, TABLE_THEAD_CLASS } from '@/utils/styles';
 import NextImage from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+
+function formatPosition(position: number | null, status: PositionStatus | null): string {
+    if (status) return status;
+    if (position === null) return '—';
+    return `P${position}`;
+}
+
+function positionClass(position: number | null, status: PositionStatus | null): string {
+    if (status === 'DSQ') return 'text-red-500';
+    if (status === 'DNF') return 'text-zinc-400';
+    if (status === 'DNS') return 'text-amber-500';
+    if (position === null) return 'text-zinc-500';
+    return getPositionColor(position);
+}
 
 function DriverPickerRow({
     label,
@@ -223,70 +238,113 @@ export default function DriverComparePage() {
                                 <tr className={TABLE_THEAD_CLASS}>
                                     <th className='p-3 w-16 text-center'>Rd</th>
                                     <th className='p-3'>Race</th>
-                                    <th className='p-3 text-center w-24'>
+                                    <th className='p-3 text-center w-28'>
                                         {comparison.driverA.driverName.split(' ').pop()}
                                     </th>
-                                    <th className='p-3 text-center w-24'>
+                                    <th className='p-3 text-center w-28'>
                                         {comparison.driverB.driverName.split(' ').pop()}
                                     </th>
-                                    <th className='p-3 text-right w-24'>Gap</th>
+                                    <th className='p-3 text-right w-28'>Gap</th>
                                 </tr>
                             </thead>
                             <tbody className='divide-y divide-zinc-800/50'>
-                                {comparison.rounds.map((r) => (
-                                    <tr
-                                        key={r.meetingKey}
-                                        className='hover:bg-zinc-800/20 transition-colors'
-                                    >
-                                        <td className='p-3 text-center font-mono text-zinc-500'>
-                                            {r.round}
-                                        </td>
-                                        <td className='p-3 text-zinc-200'>
-                                            <Link
-                                                href={`/races/${r.meetingKey}`}
-                                                className='hover:text-red-400 transition-colors'
-                                            >
-                                                {r.country}
-                                            </Link>
-                                        </td>
-                                        <td
-                                            className={`p-3 text-center font-bold ${getPositionColor(r.driverAPosition ?? 99)}`}
+                                {comparison.rounds.map((r) => {
+                                    const aHasSprint =
+                                        r.driverASprintPosition !== null ||
+                                        r.driverASprintStatus !== null;
+                                    const bHasSprint =
+                                        r.driverBSprintPosition !== null ||
+                                        r.driverBSprintStatus !== null;
+
+                                    return (
+                                        <tr
+                                            key={r.meetingKey}
+                                            className='hover:bg-zinc-800/20 transition-colors'
                                         >
-                                            {r.driverAOut || r.driverAPosition === null
-                                                ? '—'
-                                                : `P${r.driverAPosition}`}
-                                        </td>
-                                        <td
-                                            className={`p-3 text-center font-bold ${getPositionColor(r.driverBPosition ?? 99)}`}
-                                        >
-                                            {r.driverBOut || r.driverBPosition === null
-                                                ? '—'
-                                                : `P${r.driverBPosition}`}
-                                        </td>
-                                        <td className='p-3 text-right font-mono'>
-                                            {r.pointsLeader === null ? (
-                                                <span className='text-zinc-600'>—</span>
-                                            ) : (
-                                                <span
-                                                    className={
-                                                        r.pointsLeader === 'A'
-                                                            ? 'text-emerald-400'
-                                                            : 'text-amber-400'
-                                                    }
+                                            <td className='p-3 text-center font-mono text-zinc-500'>
+                                                {r.round}
+                                            </td>
+                                            <td className='p-3 text-zinc-200'>
+                                                <Link
+                                                    href={`/races/${r.meetingKey}`}
+                                                    className='hover:text-red-400 transition-colors'
                                                 >
-                                                    +{r.pointsGap}{' '}
-                                                    {r.pointsLeader === 'A'
-                                                        ? comparison.driverA.driverName
-                                                              .split(' ')
-                                                              .pop()
-                                                        : comparison.driverB.driverName
-                                                              .split(' ')
-                                                              .pop()}
+                                                    {r.country}
+                                                </Link>
+                                            </td>
+                                            <td className='p-3 text-center'>
+                                                <span
+                                                    className={`font-bold ${positionClass(r.driverAPosition, r.driverAStatus)}`}
+                                                >
+                                                    {formatPosition(
+                                                        r.driverAPosition,
+                                                        r.driverAStatus
+                                                    )}
                                                 </span>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
+                                                {aHasSprint && (
+                                                    <span
+                                                        className={`block text-[10px] font-normal mt-0.5 ${positionClass(
+                                                            r.driverASprintPosition,
+                                                            r.driverASprintStatus
+                                                        )}`}
+                                                    >
+                                                        Sprint{' '}
+                                                        {formatPosition(
+                                                            r.driverASprintPosition,
+                                                            r.driverASprintStatus
+                                                        )}
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className='p-3 text-center'>
+                                                <span
+                                                    className={`font-bold ${positionClass(r.driverBPosition, r.driverBStatus)}`}
+                                                >
+                                                    {formatPosition(
+                                                        r.driverBPosition,
+                                                        r.driverBStatus
+                                                    )}
+                                                </span>
+                                                {bHasSprint && (
+                                                    <span
+                                                        className={`block text-[10px] font-normal mt-0.5 ${positionClass(
+                                                            r.driverBSprintPosition,
+                                                            r.driverBSprintStatus
+                                                        )}`}
+                                                    >
+                                                        Sprint{' '}
+                                                        {formatPosition(
+                                                            r.driverBSprintPosition,
+                                                            r.driverBSprintStatus
+                                                        )}
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className='p-3 text-right font-mono'>
+                                                {r.pointsLeader === null ? (
+                                                    <span className='text-zinc-500'>—</span>
+                                                ) : (
+                                                    <span
+                                                        className={
+                                                            r.pointsLeader === 'A'
+                                                                ? 'text-emerald-400'
+                                                                : 'text-amber-400'
+                                                        }
+                                                    >
+                                                        +{r.pointsGap}{' '}
+                                                        {r.pointsLeader === 'A'
+                                                            ? comparison.driverA.driverName
+                                                                  .split(' ')
+                                                                  .pop()
+                                                            : comparison.driverB.driverName
+                                                                  .split(' ')
+                                                                  .pop()}
+                                                    </span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
