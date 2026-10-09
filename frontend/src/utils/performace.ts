@@ -58,6 +58,15 @@ export function buildSectorSpeedLeaders(rawLaps: SupabaseLapRow[]): SectorSpeedL
     }));
 }
 
+const OUTLIER_RATIO = 1.07;
+const MIN_VALID_LAPS = 10;
+
+function medianOf(values: number[]): number {
+    const sorted = [...values].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
 export function buildPaceConsistency(
     rawLaps: SupabaseLapRow[],
     safetyCarWindows: SafetyCarWindow[] = []
@@ -67,24 +76,25 @@ export function buildPaceConsistency(
     const driverLapsMap: Record<number, number[]> = {};
 
     rawLaps.forEach((row) => {
-        const underSC = isLapUnderSafetyCar(row.lap_number, safetyCarWindows);
-        if (!row.is_pit_out_lap && row.lap_duration && !underSC) {
-            const dNum = row.driver_number;
-            if (!driverLapsMap[dNum]) driverLapsMap[dNum] = [];
-            driverLapsMap[dNum].push(row.lap_duration);
-        }
+        if (row.is_pit_out_lap || !row.lap_duration || row.lap_number <= 1) return;
+        if (isLapUnderSafetyCar(row.lap_number, safetyCarWindows)) return;
+
+        if (!driverLapsMap[row.driver_number]) driverLapsMap[row.driver_number] = [];
+        driverLapsMap[row.driver_number].push(row.lap_duration);
     });
 
-    return Object.entries(driverLapsMap).map(([driverStr, times]) => {
-        const driverNumber = Number(driverStr);
-        if (!times.length) return { driverNumber, averageLapTime: 0, lapVariance: 0 };
+    return Object.entries(driverLapsMap).flatMap(([driverStr, allTimes]) => {
+        const cutoff = medianOf(allTimes) * OUTLIER_RATIO;
+        const times = allTimes.filter((t) => t <= cutoff);
+
+        if (times.length < MIN_VALID_LAPS) return [];
 
         const avg = times.reduce((sum, t) => sum + t, 0) / times.length;
         const stdDev = Math.sqrt(
             times.reduce((sum, t) => sum + Math.pow(t - avg, 2), 0) / times.length
         );
 
-        return { driverNumber, averageLapTime: avg, lapVariance: stdDev };
+        return [{ driverNumber: Number(driverStr), averageLapTime: avg, lapVariance: stdDev }];
     });
 }
 
