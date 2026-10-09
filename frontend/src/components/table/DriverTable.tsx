@@ -96,6 +96,7 @@ export function DriverTable({ standings, limit, formMap }: DriverTableProps) {
                                                     src={row.headshotUrl}
                                                     alt={row.driverName || 'Driver'}
                                                     fill
+                                                    sizes='32px'
                                                     className='object-cover group-hover:scale-105 transition-transform'
                                                 />
                                             </div>
