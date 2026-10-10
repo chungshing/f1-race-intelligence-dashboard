@@ -1,18 +1,19 @@
-import { parseJsonField } from '@/utils/form';
 import {
-    pointsFor,
-    groupByMeeting,
     getChronologicalMeetingOrder,
+    groupByMeeting,
     isSprintSession,
+    pointsFor,
 } from '@/lib/racePoints';
+import { RaceWeekend } from '@/types/race';
 import { DriverResult, Stint, SupabaseRaceResultRow } from '@/types/results';
 import { DriverStanding } from '@/types/standing';
-import { RaceWeekend } from '@/types/race';
+import { parseJsonField } from '@/utils/form';
 
 export interface RoundResult {
     round: number;
     meetingKey: number;
     country: string;
+    circuit: string;
     position: number | null;
     dnf: boolean;
     dns: boolean;
@@ -62,7 +63,8 @@ export interface DriverProfile {
 function buildSeasonResults(
     driverNumber: number,
     byMeeting: Map<number, SupabaseRaceResultRow[]>,
-    meetingOrder: number[]
+    meetingOrder: number[],
+    circuitByMeeting: Map<number, string>
 ): RoundResult[] {
     const results: RoundResult[] = [];
     let round = 0;
@@ -105,6 +107,7 @@ function buildSeasonResults(
             round,
             meetingKey,
             country: raceSession.country,
+            circuit: circuitByMeeting.get(meetingKey) ?? '',
             position: raceEntry.position,
             dnf: raceEntry.dnf,
             dns: raceEntry.dns,
@@ -221,10 +224,18 @@ export function buildDriverProfile(
 ): DriverProfile {
     const byMeeting = groupByMeeting(raceRows);
     const meetingOrder = getChronologicalMeetingOrder(weekends);
+    const circuitByMeeting = new Map<number, string>(
+        weekends.map((w): [number, string] => [w.meetingKey, w.circuit])
+    );
     const scoringRows = raceRows.filter(
         (r) => r.session_name === 'Race' || isSprintSession(r.session_name)
     );
-    const seasonResults = buildSeasonResults(driverNumber, byMeeting, meetingOrder);
+    const seasonResults = buildSeasonResults(
+        driverNumber,
+        byMeeting,
+        meetingOrder,
+        circuitByMeeting
+    );
 
     return {
         driverNumber,
