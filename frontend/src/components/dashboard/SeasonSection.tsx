@@ -1,8 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import Link from 'next/link';
+import { RoundResult } from '@/lib/driverProfile';
+import { cellTone, createRaceNamer, positionLabel, statusOf } from '@/utils/seasonCells';
+import { formatHexColor } from '@/utils/sessions';
+import { getPositionColor, TABLE_CONTAINER_CLASS, TABLE_THEAD_CLASS } from '@/utils/styles';
 import { ChevronDown } from 'lucide-react';
+import Link from 'next/link';
+import { useMemo, useState } from 'react';
 import {
     CartesianGrid,
     Line,
@@ -12,36 +16,9 @@ import {
     XAxis,
     YAxis,
 } from 'recharts';
-import { RoundResult } from '@/lib/driverProfile';
-import { formatHexColor } from '@/utils/sessions';
-import { getPositionColor, TABLE_CONTAINER_CLASS, TABLE_THEAD_CLASS } from '@/utils/styles';
 
 const Y_AXIS_WIDTH = 36;
 const CELL_MIN_WIDTH = 34;
-
-type Status = 'DSQ' | 'DNF' | 'DNS' | null;
-
-function statusOf(r: RoundResult): Status {
-    if (r.dsq) return 'DSQ';
-    if (r.dnf) return 'DNF';
-    if (r.dns) return 'DNS';
-    return null;
-}
-
-function positionLabel(position: number | null, status: Status): string {
-    if (status) return status;
-    if (position === null) return '—';
-    return `P${position}`;
-}
-
-function cellTone(r: RoundResult): string {
-    if (statusOf(r)) return 'bg-red-500/10 text-red-400';
-    if (r.position === 1) return 'bg-amber-400/15 text-amber-400';
-    if (r.position === 2) return 'bg-zinc-900 text-zinc-300';
-    if (r.position === 3) return 'bg-amber-600/15 text-amber-600';
-    if (r.position !== null && r.position <= 10) return 'bg-zinc-900 text-zinc-100';
-    return 'bg-zinc-900 text-zinc-400';
-}
 
 interface SeasonSectionProps {
     results: RoundResult[];
@@ -55,18 +32,10 @@ export function SeasonSection({ results, teamColor }: SeasonSectionProps) {
 
     const roundByNumber = useMemo(
         () => new Map(results.map((r) => [r.round, r] as const)),
-        [results],
+        [results]
     );
 
-    const duplicateCountries = useMemo(() => {
-        const counts = new Map<string, number>();
-        results.forEach((r) => counts.set(r.country, (counts.get(r.country) ?? 0) + 1));
-        return new Set(
-            Array.from(counts.entries())
-                .filter(([, n]) => n > 1)
-                .map(([country]) => country),
-        );
-    }, [results]);
+    const raceName = useMemo(() => createRaceNamer(results), [results]);
 
     if (results.length === 0) {
         return (
@@ -76,9 +45,6 @@ export function SeasonSection({ results, teamColor }: SeasonSectionProps) {
         );
     }
 
-    const raceName = (r: RoundResult) =>
-        duplicateCountries.has(r.country) && r.circuit ? `${r.country} (${r.circuit})` : r.country;
-
     const active = results[Math.min(Math.max(activeIndex, 0), results.length - 1)];
     const activeStatus = statusOf(active);
     const hasSprint = results.some((r) => r.sprintPosition !== null);
@@ -86,10 +52,12 @@ export function SeasonSection({ results, teamColor }: SeasonSectionProps) {
     return (
         <div className='rounded-xl border border-zinc-800 bg-zinc-900/40 p-4'>
             <div className='mb-2 flex items-baseline justify-between'>
-                <h3 className='text-[11px] font-bold uppercase tracking-widest text-zinc-400'>Season</h3>
+                <h3 className='text-[11px] font-bold uppercase tracking-widest text-zinc-400'>
+                    Season
+                </h3>
                 {hasSprint && (
                     <span className='flex items-center gap-1.5 text-[10px] text-zinc-400'>
-                        <span className='h-1.25w-[5px] rounded-full bg-yellow-500' />
+                        <span className='h-1.25 w-1.25 rounded-full bg-yellow-500' />
                         Sprint weekend
                     </span>
                 )}
@@ -99,7 +67,11 @@ export function SeasonSection({ results, teamColor }: SeasonSectionProps) {
                 <div style={{ minWidth: results.length * CELL_MIN_WIDTH + Y_AXIS_WIDTH + 8 }}>
                     <ResponsiveContainer width='100%' height={170}>
                         <LineChart data={results} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                            <CartesianGrid stroke='#27272a' strokeDasharray='3 3' vertical={false} />
+                            <CartesianGrid
+                                stroke='#27272a'
+                                strokeDasharray='3 3'
+                                vertical={false}
+                            />
                             <XAxis dataKey='round' scale='band' hide />
                             <YAxis
                                 width={Y_AXIS_WIDTH}
@@ -151,7 +123,7 @@ export function SeasonSection({ results, teamColor }: SeasonSectionProps) {
                                     onFocus={() => setActiveIndex(i)}
                                     onClick={() => setActiveIndex(i)}
                                     aria-label={`Round ${r.round} ${raceName(r)}: ${positionLabel(r.position, status)}`}
-                                    className={`relative flex flex-col items-center gap-0.5 rounded-md py-1.5 transition-colors ${cellTone(r)} ${
+                                    className={`relative flex flex-col items-center gap-0.5 rounded-md py-1.5 transition-colors ${cellTone(r.position, status)} ${
                                         isActive ? 'ring-1 ring-zinc-400' : ''
                                     }`}
                                 >
@@ -207,8 +179,13 @@ export function SeasonSection({ results, teamColor }: SeasonSectionProps) {
                                 {results.map((r) => {
                                     const status = statusOf(r);
                                     return (
-                                        <tr key={r.meetingKey} className='transition-colors hover:bg-zinc-800/20'>
-                                            <td className='p-3 text-center font-mono text-zinc-400'>{r.round}</td>
+                                        <tr
+                                            key={r.meetingKey}
+                                            className='transition-colors hover:bg-zinc-800/20'
+                                        >
+                                            <td className='p-3 text-center font-mono text-zinc-400'>
+                                                {r.round}
+                                            </td>
                                             <td className='p-3 text-zinc-200'>
                                                 <Link
                                                     href={`/races/${r.meetingKey}`}
@@ -219,14 +196,18 @@ export function SeasonSection({ results, teamColor }: SeasonSectionProps) {
                                             </td>
                                             <td
                                                 className={`p-3 text-center font-bold ${
-                                                    status ? 'text-red-400' : getPositionColor(r.position ?? 99)
+                                                    status
+                                                        ? 'text-red-400'
+                                                        : getPositionColor(r.position ?? 99)
                                                 }`}
                                             >
                                                 {positionLabel(r.position, status)}
                                             </td>
                                             {hasSprint && (
                                                 <td className='p-3 text-center font-mono text-zinc-400'>
-                                                    {r.sprintPosition !== null ? `P${r.sprintPosition}` : '—'}
+                                                    {r.sprintPosition !== null
+                                                        ? `P${r.sprintPosition}`
+                                                        : '—'}
                                                 </td>
                                             )}
                                             <td className='p-3 text-right font-mono text-zinc-300'>
