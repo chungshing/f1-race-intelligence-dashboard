@@ -12,17 +12,22 @@ import { RaceWeekend } from '@/types/race';
 export interface DriverContribution {
     driverNumber: number;
     driverName: string;
-    points: number;
     position: number | null;
     dnf: boolean;
     dns: boolean;
     dsq: boolean;
+    sprintPosition: number | null;
+    racePoints: number;
+    sprintPoints: number;
+    points: number;
+    cumulativePoints: number;
 }
 
 export interface ConstructorRoundResult {
     round: number;
     meetingKey: number;
     country: string;
+    circuit: string;
     teamPoints: number;
     cumulativePoints: number;
     driverBreakdown: DriverContribution[];
@@ -55,9 +60,11 @@ export interface ConstructorProfile {
 function buildSeasonResults(
     teamDrivers: DriverStanding[],
     byMeeting: Map<number, SupabaseRaceResultRow[]>,
-    meetingOrder: number[]
+    meetingOrder: number[],
+    circuitByMeeting: Map<number, string>
 ): ConstructorRoundResult[] {
     const results: ConstructorRoundResult[] = [];
+    const cumulativeByDriver = new Map<number, number>();
     let round = 0;
     let cumulative = 0;
 
@@ -70,9 +77,13 @@ function buildSeasonResults(
 
         const raceClassification = parseJsonField<DriverResult>(raceSession.classification_json);
 
+        const sprintSession = sessions.find((r) => isSprintSession(r.session_name));
+        const sprintClassification = sprintSession
+            ? parseJsonField<DriverResult>(sprintSession.classification_json)
+            : [];
+
         const breakdown: DriverContribution[] = [];
         let teamPoints = 0;
-        let anyDriverPresent = false;
 
         for (const driver of teamDrivers) {
             const raceEntry = raceClassification.find(
@@ -80,28 +91,36 @@ function buildSeasonResults(
             );
             if (!raceEntry) continue;
 
-            anyDriverPresent = true;
-            let driverPoints = 0;
-            for (const session of sessions) {
-                const isSprint = isSprintSession(session.session_name);
-                const classification = parseJsonField<DriverResult>(session.classification_json);
-                const entry = classification.find((c) => c.driverNumber === driver.driverNumber);
-                if (entry) driverPoints += pointsFor(entry, isSprint);
-            }
+            const racePoints = pointsFor(raceEntry, false);
+
+            const sprintEntry = sprintClassification.find(
+                (c) => c.driverNumber === driver.driverNumber
+            );
+            const sprintPosition = sprintEntry ? sprintEntry.position : null;
+            const sprintPoints = sprintEntry ? pointsFor(sprintEntry, true) : 0;
+
+            const driverPoints = racePoints + sprintPoints;
+            const driverCumulative =
+                (cumulativeByDriver.get(driver.driverNumber) ?? 0) + driverPoints;
+            cumulativeByDriver.set(driver.driverNumber, driverCumulative);
 
             teamPoints += driverPoints;
             breakdown.push({
                 driverNumber: driver.driverNumber,
                 driverName: driver.driverName,
-                points: driverPoints,
                 position: raceEntry.position,
                 dnf: raceEntry.dnf,
                 dns: raceEntry.dns,
                 dsq: raceEntry.dsq,
+                sprintPosition,
+                racePoints,
+                sprintPoints,
+                points: driverPoints,
+                cumulativePoints: driverCumulative,
             });
         }
 
-        if (!anyDriverPresent) continue;
+        if (breakdown.length === 0) continue;
 
         round++;
         cumulative += teamPoints;
@@ -110,6 +129,7 @@ function buildSeasonResults(
             round,
             meetingKey,
             country: raceSession.country,
+            circuit: circuitByMeeting.get(meetingKey) ?? '',
             teamPoints,
             cumulativePoints: cumulative,
             driverBreakdown: breakdown,
@@ -169,7 +189,15 @@ export function buildConstructorProfile(
     const teamDrivers = allDrivers.filter((d) => d.teamName === team.teamName);
     const byMeeting = groupByMeeting(raceRows);
     const meetingOrder = getChronologicalMeetingOrder(weekends);
-    const seasonResults = buildSeasonResults(teamDrivers, byMeeting, meetingOrder);
+    const circuitByMeeting = new Map<number, string>(
+        weekends.map((w): [number, string] => [w.meetingKey, w.circuit])
+    );
+    const seasonResults = buildSeasonResults(
+        teamDrivers,
+        byMeeting,
+        meetingOrder,
+        circuitByMeeting
+    );
 
     return {
         teamName: team.teamName,
