@@ -54,6 +54,7 @@ export interface RaceResult {
     country: string;
     sessionName: string;
     classification: DriverResult[];
+    startingGrid?: DriverResult[];
     pitStops: PitStop[];
     stints: Stint[];
     weather: WeatherSnapshot[];
@@ -66,6 +67,7 @@ export interface SupabaseRaceResultRow {
     country: string;
     session_name: string;
     classification_json: string | DriverResult[];
+    starting_grid_json?: string | DriverResult[];
     pit_stops_json?: string | PitStop[];
     stints_json?: string | Stint[];
     weather_json?: string | WeatherSnapshot[];
