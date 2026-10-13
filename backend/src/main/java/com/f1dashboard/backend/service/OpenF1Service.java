@@ -25,6 +25,7 @@ import com.f1dashboard.backend.dto.OpenF1MeetingDto;
 import com.f1dashboard.backend.dto.OpenF1RaceControlDto;
 import com.f1dashboard.backend.dto.OpenF1SessionDto;
 import com.f1dashboard.backend.dto.OpenF1SessionResultDto;
+import com.f1dashboard.backend.dto.OpenF1StartingGridDto;
 import com.f1dashboard.backend.dto.OpenF1TeamChampionshipDto;
 import com.f1dashboard.backend.dto.OpenF1WeatherDto;
 import com.f1dashboard.backend.model.DriverResult;
@@ -81,6 +82,13 @@ public class OpenF1Service {
             Thread.currentThread().interrupt();
             log.warn("API request delay spacing was interrupted");
         }
+    }
+
+    private boolean isRaceOrSprint(String sessionName) {
+        if (sessionName == null)
+            return false;
+        String n = sessionName.toLowerCase();
+        return n.equals("race") || n.equals("sprint") || n.equals("sprint race");
     }
 
     private <T> List<T> withCacheFallback(String label, Supplier<List<T>> liveFetch, Supplier<List<T>> cachedFallback) {
@@ -265,7 +273,7 @@ public class OpenF1Service {
         }
     }
 
-    public List<RaceResult> fetchRaceResults(Integer sessionKey) {
+        public List<RaceResult> fetchRaceResults(Integer sessionKey) {
         try {
             String targetsKey = (sessionKey != null) ? String.valueOf(sessionKey) : "latest";
 
@@ -379,7 +387,34 @@ public class OpenF1Service {
                 log.warn("Race control data unavailable for session key: {}", activeKey);
             }
 
-            // 6. Construct entity
+            // 6. Fetch Starting Grid (Race and Sprint only) - the real grid after penalties
+            List<DriverResult> startingGridList = new ArrayList<>();
+            if (isRaceOrSprint(activeSession.getSession_name())) {
+                try {
+                    delayBetweenRequests();
+                    String gridUrl = openF1BaseUrl + "/starting_grid?session_key=" + activeKey;
+                    OpenF1StartingGridDto[] fetchedGrid = restTemplate.getForObject(gridUrl,
+                            OpenF1StartingGridDto[].class);
+                    if (fetchedGrid != null) {
+                        startingGridList = Arrays.stream(fetchedGrid)
+                                .filter(g -> g.getPosition() != null && g.getDriverNumber() != null)
+                                .sorted(Comparator.comparing(OpenF1StartingGridDto::getPosition))
+                                .map(g -> new DriverResult(
+                                        g.getPosition(),
+                                        g.getDriverNumber(),
+                                        "0.0",
+                                        g.getLapDuration() != null ? String.valueOf(g.getLapDuration()) : "—",
+                                        false,
+                                        false,
+                                        false))
+                                .collect(Collectors.toList());
+                    }
+                } catch (Exception e) {
+                    log.warn("Starting grid unavailable for session key: {}", activeKey);
+                }
+            }
+
+            // 7. Construct entity
             RaceResult result = new RaceResult(
                     activeSession.getMeeting_key(),
                     activeKey,
@@ -390,6 +425,7 @@ public class OpenF1Service {
                     stintsList,
                     weatherList,
                     raceControlList);
+            result.setStartingGrid(startingGridList);
 
             return List.of(result);
 
@@ -404,7 +440,6 @@ public class OpenF1Service {
             return List.of();
         }
     }
-
     @Transactional
     public List<RaceResult> fetchWeekendSessionResults(int meetingKey) {
         try {
@@ -484,7 +519,13 @@ public class OpenF1Service {
         // 3. Check for structural updates OR content changes
         Set<Integer> localKeys = localRecords.stream().map(RaceResult::getSessionKey).collect(Collectors.toSet());
         Set<Integer> liveKeys = liveResults.stream().map(RaceResult::getSessionKey).collect(Collectors.toSet());
+
+        boolean gridMissing = localRecords.stream()
+                .anyMatch(r -> "Race".equalsIgnoreCase(r.getSessionName())
+                        && (r.getStartingGrid() == null || r.getStartingGrid().isEmpty()));
+
         boolean cacheNeedsRefresh = !localKeys.equals(liveKeys) ||
+                gridMissing ||
                 localRecords.stream()
                         .filter(r -> r.getSessionName() != null
                                 && !r.getSessionName().toLowerCase().contains("practice"))
@@ -511,6 +552,9 @@ public class OpenF1Service {
                     if (live.getRaceControl() == null || live.getRaceControl().isEmpty()) {
                         live.setRaceControl(local.getRaceControl());
                     }
+                    if (live.getStartingGrid() == null || live.getStartingGrid().isEmpty()) {
+                        live.setStartingGrid(local.getStartingGrid());
+                    }
                 });
             }
 
@@ -521,7 +565,6 @@ public class OpenF1Service {
         log.info("Cache validation check passed for active meeting key: {}", meetingKey);
         return localRecords;
     }
-
     @Transactional
     public List<Lap> fetchSessionLapTelemetry(int sessionKey) {
         try {
