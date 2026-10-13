@@ -1,8 +1,10 @@
 package com.f1dashboard.backend.service;
 
+import java.time.OffsetDateTime;
 import java.time.Year;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -12,6 +14,7 @@ import com.f1dashboard.backend.model.Lap;
 import com.f1dashboard.backend.model.RaceResult;
 import com.f1dashboard.backend.model.RaceWeekend;
 import com.f1dashboard.backend.model.TeamStanding;
+import com.f1dashboard.backend.repository.RaceWeekendRepository;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,10 +24,14 @@ public class F1SyncScheduler {
 
     private final OpenF1Service openF1Service;
     private final F1DataWriter dataWriter;
+    private final RaceWeekendRepository raceWeekendRepository;
+    private final AtomicBoolean backfillRunning = new AtomicBoolean(false);
 
-    public F1SyncScheduler(OpenF1Service openF1Service, F1DataWriter dataWriter) {
+    public F1SyncScheduler(OpenF1Service openF1Service, F1DataWriter dataWriter,
+            RaceWeekendRepository raceWeekendRepository) {
         this.openF1Service = openF1Service;
         this.dataWriter = dataWriter;
+        this.raceWeekendRepository = raceWeekendRepository;
     }
 
     @Async
@@ -111,6 +118,10 @@ public class F1SyncScheduler {
     }
 
     public String backfillMeeting(int meetingKey) {
+        return backfillMeeting(meetingKey, true);
+    }
+
+    public String backfillMeeting(int meetingKey, boolean includeLaps) {
         List<RaceResult> results = openF1Service.getCachedWeekendResults(meetingKey);
 
         if (results.isEmpty()) {
@@ -118,17 +129,57 @@ public class F1SyncScheduler {
         }
 
         int lapsSyncedCount = 0;
-        for (RaceResult result : results) {
-            String sessionName = result.getSessionName();
-            if (sessionName != null && !sessionName.toLowerCase().contains("practice")
-                    && result.getSessionKey() != null) {
-                List<Lap> laps = openF1Service.getCachedSessionLaps(result.getSessionKey());
-                lapsSyncedCount += laps.size();
-                log.info("Backfilled {} laps for {} (Key: {})", laps.size(), sessionName, result.getSessionKey());
+        if (includeLaps) {
+            for (RaceResult result : results) {
+                String sessionName = result.getSessionName();
+                if (sessionName != null && !sessionName.toLowerCase().contains("practice")
+                        && result.getSessionKey() != null) {
+                    List<Lap> laps = openF1Service.getCachedSessionLaps(result.getSessionKey());
+                    lapsSyncedCount += laps.size();
+                    log.info("Backfilled {} laps for {} (Key: {})", laps.size(), sessionName,
+                            result.getSessionKey());
+                }
             }
         }
 
         return String.format("Backfilled meeting %d: %d sessions, %d laps.", meetingKey, results.size(),
                 lapsSyncedCount);
+    }
+
+    @Async
+    public void backfillAllMeetings() {
+        if (!backfillRunning.compareAndSet(false, true)) {
+            log.warn("Backfill-all is already running. Ignoring this request.");
+            return;
+        }
+
+        try {
+            OffsetDateTime now = OffsetDateTime.now();
+
+            List<Integer> meetingKeys = raceWeekendRepository.findByYear(Year.now().getValue()).stream()
+                    .filter(w -> w.getSessions().stream()
+                            .anyMatch(s -> s.getDateStart() != null
+                                    && OffsetDateTime.parse(s.getDateStart()).isBefore(now)))
+                    .map(RaceWeekend::getMeetingKey)
+                    .sorted()
+                    .toList();
+
+            log.info("Backfill-all started for {} meetings (laps skipped).", meetingKeys.size());
+
+            int done = 0;
+            for (Integer meetingKey : meetingKeys) {
+                done++;
+                try {
+                    String summary = backfillMeeting(meetingKey, false);
+                    log.info("Backfill {}/{}: {}", done, meetingKeys.size(), summary);
+                } catch (Exception e) {
+                    log.error("Backfill {}/{} failed for meeting {}", done, meetingKeys.size(), meetingKey, e);
+                }
+            }
+
+            log.info("Backfill-all finished.");
+        } finally {
+            backfillRunning.set(false);
+        }
     }
 }
