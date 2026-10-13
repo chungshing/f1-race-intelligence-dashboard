@@ -42,6 +42,11 @@ public class RaceResult {
     @Column(name = "classification_json", columnDefinition = "TEXT")
     private List<DriverResult> classification = new ArrayList<>();
 
+    // whats the point in this?
+    @Convert(converter = DriverResultListConverter.class)
+    @Column(name = "starting_grid_json", columnDefinition = "TEXT")
+    private List<DriverResult> startingGrid;
+
     @Convert(converter = PitStopListConverter.class)
     @Column(name = "pit_stops_json", columnDefinition = "TEXT")
     private List<PitStop> pitStops = new ArrayList<>();
