@@ -16,4 +16,7 @@ public class OpenF1StartingGridDto {
 
     @JsonProperty("lap_duration")
     private Double lapDuration;
+
+    @JsonProperty("session_key")
+    private Integer sessionKey;
 }
