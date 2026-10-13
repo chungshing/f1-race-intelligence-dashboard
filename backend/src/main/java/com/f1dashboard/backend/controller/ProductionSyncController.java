@@ -13,9 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.f1dashboard.backend.service.F1SyncScheduler;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 @RestController
 @RequestMapping("/api/v1/automation")
 public class ProductionSyncController {
@@ -29,19 +26,25 @@ public class ProductionSyncController {
         this.syncScheduler = syncScheduler;
     }
 
-    @PostMapping("/trigger")
-    public ResponseEntity<String> triggerManualSync(@RequestBody Map<String, String> payload) {
+    private ResponseEntity<String> checkToken(Map<String, String> payload) {
         if (cronSecretToken == null || cronSecretToken.isBlank()) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                     .body("Sync endpoint not configured.");
         }
 
-        String token = payload.get("token");
-
-        if (!cronSecretToken.equals(token)) {
+        if (!cronSecretToken.equals(payload.get("token"))) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Unauthorized: Invalid execution token.");
         }
+
+        return null;
+    }
+
+    @PostMapping("/trigger")
+    public ResponseEntity<String> triggerManualSync(@RequestBody Map<String, String> payload) {
+        ResponseEntity<String> denied = checkToken(payload);
+        if (denied != null)
+            return denied;
 
         syncScheduler.syncDataPipeline();
 
@@ -52,20 +55,22 @@ public class ProductionSyncController {
     @PostMapping("/backfill/{meetingKey}")
     public ResponseEntity<String> backfillMeeting(@PathVariable int meetingKey,
             @RequestBody Map<String, String> payload) {
-        String token = payload.get("token");
-        log.info("RECEIVED TOKEN: [{}], EXPECTED TOKEN: [{}]", token, cronSecretToken);
+        ResponseEntity<String> denied = checkToken(payload);
+        if (denied != null)
+            return denied;
 
-        if (cronSecretToken == null || cronSecretToken.isBlank()) {
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body("Sync endpoint not configured.");
-        }
+        return ResponseEntity.ok(syncScheduler.backfillMeeting(meetingKey));
+    }
 
-        if (!cronSecretToken.equals(token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Unauthorized: Invalid execution token.");
-        }
+    @PostMapping("/backfill-all")
+    public ResponseEntity<String> backfillAll(@RequestBody Map<String, String> payload) {
+        ResponseEntity<String> denied = checkToken(payload);
+        if (denied != null)
+            return denied;
 
-        String result = syncScheduler.backfillMeeting(meetingKey);
-        return ResponseEntity.ok(result);
+        syncScheduler.backfillAllMeetings();
+
+        return ResponseEntity.accepted()
+                .body("Backfill of all past meetings started in the background. Watch the server logs for progress.");
     }
 }
