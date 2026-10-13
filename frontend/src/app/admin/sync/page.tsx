@@ -5,6 +5,11 @@ import { useState } from 'react';
 
 export default function AdminSyncPage() {
     const [isSyncing, setIsSyncing] = useState(false);
+    const [meetingKey, setMeetingKey] = useState('');
+    const [backfillResult, setBackfillResult] = useState<string | null>(null);
+    const [backfilling, setBackfilling] = useState(false);
+    const [backfillAllResult, setBackfillAllResult] = useState<string | null>(null);
+    const [backfillingAll, setBackfillingAll] = useState(false);
 
     const handleManualSync = async () => {
         if (isSyncing) return;
@@ -34,10 +39,6 @@ export default function AdminSyncPage() {
         }
     };
 
-    const [meetingKey, setMeetingKey] = useState('');
-    const [backfillResult, setBackfillResult] = useState<string | null>(null);
-    const [backfilling, setBackfilling] = useState(false);
-
     const handleBackfill = async () => {
         if (!meetingKey || backfilling) return;
         setBackfilling(true);
@@ -55,6 +56,28 @@ export default function AdminSyncPage() {
             setBackfillResult('Failed to reach backend.');
         } finally {
             setBackfilling(false);
+        }
+    };
+
+    const handleBackfillAll = async () => {
+        if (backfillingAll) return;
+        if (
+            !window.confirm(
+                'Re-sync every past meeting in the background? This takes about 30 minutes.'
+            )
+        ) {
+            return;
+        }
+        setBackfillingAll(true);
+        setBackfillAllResult(null);
+
+        try {
+            const response = await fetch('/api/backfill-all', { method: 'POST' });
+            setBackfillAllResult(await response.text());
+        } catch {
+            setBackfillAllResult('Failed to reach backend.');
+        } finally {
+            setBackfillingAll(false);
         }
     };
 
@@ -145,6 +168,26 @@ export default function AdminSyncPage() {
                     {backfillResult && (
                         <p className='text-xs text-zinc-400 bg-zinc-950 border border-zinc-800 rounded-lg p-3'>
                             {backfillResult}
+                        </p>
+                    )}
+                </div>
+
+                <div className='pt-6 border-t border-zinc-800/40 space-y-3'>
+                    <h2 className='text-sm font-bold text-zinc-200'>Backfill All Past Meetings</h2>
+                    <p className='text-xs text-zinc-400'>
+                        Re-syncs results (not laps) for every past meeting this season, in the
+                        background. Takes about 30 minutes — progress shows in the server logs.
+                    </p>
+                    <button
+                        onClick={handleBackfillAll}
+                        disabled={backfillingAll}
+                        className='text-xs font-bold px-3 py-2 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-200 rounded-lg transition-colors disabled:opacity-50'
+                    >
+                        {backfillingAll ? 'Starting...' : 'Backfill All'}
+                    </button>
+                    {backfillAllResult && (
+                        <p className='text-xs text-zinc-400 bg-zinc-950 border border-zinc-800 rounded-lg p-3'>
+                            {backfillAllResult}
                         </p>
                     )}
                 </div>

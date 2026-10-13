@@ -15,7 +15,6 @@ import { SectorSpeedTable } from '@/components/table/SectorSpeedTable';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
 import { useSessionLaps } from '@/hooks/useSessionLaps';
 import { getRaceResults } from '@/lib/app';
-import { parseJsonField } from '@/utils/form';
 import {
     DriverResult,
     RaceControlEvent,
@@ -23,6 +22,7 @@ import {
     SupabaseRaceResultRow,
     WeatherSnapshot,
 } from '@/types/results';
+import { parseJsonField } from '@/utils/form';
 import { findGridRacePairs } from '@/utils/gridVsRace';
 import { use, useEffect, useMemo, useState } from 'react';
 
@@ -94,6 +94,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                     country: r.country,
                     sessionName: r.session_name,
                     classification: parseJsonField<DriverResult>(r.classification_json),
+                    startingGrid: parseJsonField<DriverResult>(r.starting_grid_json),
                     pitStops: parseJsonField(r.pit_stops_json),
                     stints: parseJsonField(r.stints_json),
                     weather: parseJsonField<WeatherSnapshot>(r.weather_json),
