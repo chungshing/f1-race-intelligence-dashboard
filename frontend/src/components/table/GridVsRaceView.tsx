@@ -1,15 +1,15 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Minus } from 'lucide-react';
 import { RaceResult } from '@/types/results';
-import { TABLE_CONTAINER_CLASS, TABLE_THEAD_CLASS, getPositionColor } from '@/utils/styles';
 import {
     GridRacePair,
     GridRaceRow,
     buildGridRaceRows,
     summarizeGridRace,
 } from '@/utils/gridVsRace';
+import { TABLE_CONTAINER_CLASS, TABLE_THEAD_CLASS, getPositionColor } from '@/utils/styles';
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Minus } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 interface Lookup {
     name: string;
@@ -38,6 +38,15 @@ function deltaClass(delta: number | null, statusLabel: string | null) {
     if (delta == null || delta === 0) return 'text-zinc-400';
     if (delta > 0) return 'text-emerald-400';
     return 'text-red-400';
+}
+
+function hasGridChange(row: GridRaceRow, usesActualGrid: boolean) {
+    return (
+        usesActualGrid &&
+        row.qualiPosition != null &&
+        row.gridPosition != null &&
+        row.qualiPosition !== row.gridPosition
+    );
 }
 
 function DriverName({
@@ -127,7 +136,9 @@ function StatCard({
                             P{row.gridPosition ?? '—'} → P{row.finishPosition ?? '—'}
                         </p>
                     </div>
-                    <span className={`font-mono text-2xl font-black tabular-nums ${deltaClass(delta, null)}`}>
+                    <span
+                        className={`font-mono text-2xl font-black tabular-nums ${deltaClass(delta, null)}`}
+                    >
                         {formatDelta(delta, null)}
                     </span>
                 </div>
@@ -147,7 +158,11 @@ export function GridVsRaceView({ pairs, lookup }: Props) {
 
     const rows = useMemo(() => {
         if (!pair) return [];
-        const built = buildGridRaceRows(pair.gridSession.classification, pair.raceSession.classification);
+        const built = buildGridRaceRows(
+            pair.gridSession.classification,
+            pair.raceSession.classification,
+            pair.qualifyingSession.classification
+        );
         if (sortMode === 'gainers') {
             return [...built].sort((a, b) => (b.delta ?? -999) - (a.delta ?? -999));
         }
@@ -161,6 +176,9 @@ export function GridVsRaceView({ pairs, lookup }: Props) {
     );
 
     if (!pair) return null;
+
+    const gridLabel = pair.usesActualGrid ? 'Starting grid' : pair.gridSession.sessionName;
+    const gridChanges = rows.filter((r) => hasGridChange(r, pair.usesActualGrid)).length;
 
     return (
         <div className='space-y-6'>
@@ -186,7 +204,7 @@ export function GridVsRaceView({ pairs, lookup }: Props) {
                     </div>
                 ) : (
                     <p className='text-[10px] font-bold text-zinc-400 uppercase tracking-widest'>
-                        {pair.gridSession.sessionName} → {pair.raceSession.sessionName}
+                        {gridLabel} → {pair.raceSession.sessionName}
                     </p>
                 )}
 
@@ -215,13 +233,21 @@ export function GridVsRaceView({ pairs, lookup }: Props) {
             <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
                 <StatCard
                     label='Biggest gainer'
-                    row={summary.biggestGainer && (summary.biggestGainer.delta ?? 0) > 0 ? summary.biggestGainer : null}
+                    row={
+                        summary.biggestGainer && (summary.biggestGainer.delta ?? 0) > 0
+                            ? summary.biggestGainer
+                            : null
+                    }
                     lookup={lookup}
                     empty='No places gained'
                 />
                 <StatCard
                     label='Biggest drop'
-                    row={summary.biggestDrop && (summary.biggestDrop.delta ?? 0) < 0 ? summary.biggestDrop : null}
+                    row={
+                        summary.biggestDrop && (summary.biggestDrop.delta ?? 0) < 0
+                            ? summary.biggestDrop
+                            : null
+                    }
                     lookup={lookup}
                     empty='No places lost'
                 />
@@ -249,9 +275,17 @@ export function GridVsRaceView({ pairs, lookup }: Props) {
                             Grid → Finish
                         </h3>
                     </div>
-                    <span className='text-[10px] text-zinc-400 font-medium uppercase tracking-wider'>
-                        {pair.gridSession.sessionName} vs {pair.raceSession.sessionName}
-                    </span>
+                    <div className='flex items-center gap-3'>
+                        {gridChanges > 0 && (
+                            <span className='text-[10px] text-amber-400 font-medium uppercase tracking-wider'>
+                                {gridChanges} grid change{gridChanges === 1 ? '' : 's'} vs
+                                qualifying
+                            </span>
+                        )}
+                        <span className='text-[10px] text-zinc-400 font-medium uppercase tracking-wider'>
+                            {gridLabel} vs {pair.raceSession.sessionName}
+                        </span>
+                    </div>
                 </div>
 
                 <table className='w-full text-left border-collapse min-w-160'>
@@ -272,6 +306,7 @@ export function GridVsRaceView({ pairs, lookup }: Props) {
                     <tbody className='divide-y divide-zinc-900'>
                         {rows.map((row) => {
                             const info = lookup[row.driverNumber];
+                            const gridChanged = hasGridChange(row, pair.usesActualGrid);
                             const DeltaIcon =
                                 row.statusLabel || row.delta == null || row.delta === 0
                                     ? Minus
@@ -286,15 +321,28 @@ export function GridVsRaceView({ pairs, lookup }: Props) {
                                 >
                                     <td
                                         className={`p-4 pl-5 font-black font-mono tracking-tight ${getPositionColor(row.finishPosition || 0)}`}
-                                        style={{ borderLeft: `4px solid ${info?.teamColor ?? '#3f3f46'}` }}
+                                        style={{
+                                            borderLeft: `4px solid ${info?.teamColor ?? '#3f3f46'}`,
+                                        }}
                                     >
                                         {row.statusLabel ?? row.finishPosition ?? '—'}
                                     </td>
                                     <td className='p-4'>
-                                        <DriverName driverNumber={row.driverNumber} lookup={lookup} />
+                                        <DriverName
+                                            driverNumber={row.driverNumber}
+                                            lookup={lookup}
+                                        />
                                     </td>
                                     <td className='p-4 text-center font-mono text-zinc-400 tabular-nums'>
                                         {row.gridPosition ?? '—'}
+                                        {gridChanged && (
+                                            <span
+                                                className='block text-[10px] text-amber-400'
+                                                title={`Qualified P${row.qualiPosition}`}
+                                            >
+                                                Q{row.qualiPosition}
+                                            </span>
+                                        )}
                                     </td>
                                     <td className='p-4'>
                                         <PositionTrack row={row} maxPos={maxPos} />
