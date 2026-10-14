@@ -42,6 +42,14 @@ export function isGrandPrixSession(name: string): boolean {
     return n === 'race';
 }
 
+// The real starting grid (penalties applied) is stored on the race/sprint row.
+// When it's there, use it in place of the raw qualifying order; otherwise fall back to qualifying.
+function withActualGrid(gridSession: RaceResult, raceSession: RaceResult): RaceResult {
+    const startingGrid = raceSession.startingGrid;
+    if (!startingGrid || startingGrid.length === 0) return gridSession;
+    return { ...gridSession, classification: startingGrid };
+}
+
 export function findGridRacePairs(results: RaceResult[]): GridRacePair[] {
     const qualifying = results.find((r) => isQualifyingSession(r.sessionName));
     const race = results.find((r) => isGrandPrixSession(r.sessionName));
@@ -54,7 +62,7 @@ export function findGridRacePairs(results: RaceResult[]): GridRacePair[] {
         pairs.push({
             kind: 'sprint',
             label: 'Sprint',
-            gridSession: sprintQualifying,
+            gridSession: withActualGrid(sprintQualifying, sprint),
             raceSession: sprint,
         });
     }
@@ -63,7 +71,7 @@ export function findGridRacePairs(results: RaceResult[]): GridRacePair[] {
         pairs.push({
             kind: 'race',
             label: 'Grand Prix',
-            gridSession: qualifying,
+            gridSession: withActualGrid(qualifying, race),
             raceSession: race,
         });
     }
@@ -79,10 +87,7 @@ function statusLabel(result: DriverResult | undefined): string | null {
     return null;
 }
 
-export function buildGridRaceRows(
-    grid: DriverResult[],
-    finish: DriverResult[]
-): GridRaceRow[] {
+export function buildGridRaceRows(grid: DriverResult[], finish: DriverResult[]): GridRaceRow[] {
     const driverNumbers = new Set<number>();
     grid.forEach((r) => driverNumbers.add(r.driverNumber));
     finish.forEach((r) => driverNumbers.add(r.driverNumber));
@@ -94,7 +99,10 @@ export function buildGridRaceRows(
             const gridPosition = gridResult?.position ?? null;
             const finishPosition = finishResult?.position ?? null;
             const classified =
-                finishPosition != null && !finishResult?.dnf && !finishResult?.dns && !finishResult?.dsq;
+                finishPosition != null &&
+                !finishResult?.dnf &&
+                !finishResult?.dns &&
+                !finishResult?.dsq;
             const delta =
                 classified && gridPosition != null && finishPosition != null
                     ? gridPosition - finishPosition
@@ -131,9 +139,7 @@ export function summarizeGridRace(rows: GridRaceRow[]) {
         null
     );
     const placesChanged = withDelta.filter((r) => r.delta !== 0).length;
-    const netPlacesSwung = Math.round(
-        withDelta.reduce((sum, r) => sum + Math.abs(r.delta), 0) / 2
-    );
+    const netPlacesSwung = Math.round(withDelta.reduce((sum, r) => sum + Math.abs(r.delta), 0) / 2);
 
     return { biggestGainer, biggestDrop, placesChanged, netPlacesSwung };
 }
