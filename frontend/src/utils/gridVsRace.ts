@@ -6,12 +6,15 @@ export interface GridRacePair {
     kind: GridRacePairKind;
     label: string;
     gridSession: RaceResult;
+    qualifyingSession: RaceResult;
     raceSession: RaceResult;
+    usesActualGrid: boolean;
 }
 
 export interface GridRaceRow {
     driverNumber: number;
     gridPosition: number | null;
+    qualiPosition: number | null;
     finishPosition: number | null;
     delta: number | null;
     dnf: boolean;
@@ -44,10 +47,18 @@ export function isGrandPrixSession(name: string): boolean {
 
 // The real starting grid (penalties applied) is stored on the race/sprint row.
 // When it's there, use it in place of the raw qualifying order; otherwise fall back to qualifying.
-function withActualGrid(gridSession: RaceResult, raceSession: RaceResult): RaceResult {
+function resolveGrid(
+    qualifying: RaceResult,
+    raceSession: RaceResult
+): { gridSession: RaceResult; usesActualGrid: boolean } {
     const startingGrid = raceSession.startingGrid;
-    if (!startingGrid || startingGrid.length === 0) return gridSession;
-    return { ...gridSession, classification: startingGrid };
+    if (!startingGrid || startingGrid.length === 0) {
+        return { gridSession: qualifying, usesActualGrid: false };
+    }
+    return {
+        gridSession: { ...qualifying, classification: startingGrid },
+        usesActualGrid: true,
+    };
 }
 
 export function findGridRacePairs(results: RaceResult[]): GridRacePair[] {
@@ -62,7 +73,8 @@ export function findGridRacePairs(results: RaceResult[]): GridRacePair[] {
         pairs.push({
             kind: 'sprint',
             label: 'Sprint',
-            gridSession: withActualGrid(sprintQualifying, sprint),
+            ...resolveGrid(sprintQualifying, sprint),
+            qualifyingSession: sprintQualifying,
             raceSession: sprint,
         });
     }
@@ -71,7 +83,8 @@ export function findGridRacePairs(results: RaceResult[]): GridRacePair[] {
         pairs.push({
             kind: 'race',
             label: 'Grand Prix',
-            gridSession: withActualGrid(qualifying, race),
+            ...resolveGrid(qualifying, race),
+            qualifyingSession: qualifying,
             raceSession: race,
         });
     }
@@ -87,7 +100,11 @@ function statusLabel(result: DriverResult | undefined): string | null {
     return null;
 }
 
-export function buildGridRaceRows(grid: DriverResult[], finish: DriverResult[]): GridRaceRow[] {
+export function buildGridRaceRows(
+    grid: DriverResult[],
+    finish: DriverResult[],
+    qualifying: DriverResult[] = []
+): GridRaceRow[] {
     const driverNumbers = new Set<number>();
     grid.forEach((r) => driverNumbers.add(r.driverNumber));
     finish.forEach((r) => driverNumbers.add(r.driverNumber));
@@ -96,6 +113,7 @@ export function buildGridRaceRows(grid: DriverResult[], finish: DriverResult[]):
         .map((driverNumber) => {
             const gridResult = grid.find((r) => r.driverNumber === driverNumber);
             const finishResult = finish.find((r) => r.driverNumber === driverNumber);
+            const qualiResult = qualifying.find((r) => r.driverNumber === driverNumber);
             const gridPosition = gridResult?.position ?? null;
             const finishPosition = finishResult?.position ?? null;
             const classified =
@@ -111,6 +129,7 @@ export function buildGridRaceRows(grid: DriverResult[], finish: DriverResult[]):
             return {
                 driverNumber,
                 gridPosition,
+                qualiPosition: qualiResult?.position ?? null,
                 finishPosition,
                 delta,
                 dnf: !!finishResult?.dnf,
