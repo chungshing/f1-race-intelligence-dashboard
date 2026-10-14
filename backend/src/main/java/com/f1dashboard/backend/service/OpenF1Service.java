@@ -615,6 +615,19 @@ public class OpenF1Service {
         return fetchSessionLapTelemetry(sessionKey);
     }
 
+    private Integer parsePosition(Object raw) {
+        if (raw instanceof Number n)
+            return n.intValue();
+        if (raw instanceof String s) {
+            try {
+                return Integer.parseInt(s.trim());
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
     private DriverResult mapDriverResult(OpenF1SessionResultDto dto) {
         if (dto == null)
             return null;
@@ -663,7 +676,7 @@ public class OpenF1Service {
         boolean isDsq = (dto.getDsq() != null && dto.getDsq());
 
         return new DriverResult(
-                dto.getPosition(),
+                parsePosition(dto.getPosition()),
                 dto.getDriver_number(),
                 latestGap,
                 formattedDuration,
