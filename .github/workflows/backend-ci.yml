@@ -1,33 +1,33 @@
 name: Backend CI
 
 on:
-  push:
-  pull_request:
+    push:
+    pull_request:
 
 permissions:
-  contents: read
+    contents: read
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    env:
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_USER: ${{ secrets.SUPABASE_USER }}
-      SUPABASE_PASSWORD: ${{ secrets.SUPABASE_PASSWORD }}
+    build:
+        runs-on: ubuntu-latest
+        env:
+            SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+            SUPABASE_USER: ${{ secrets.SUPABASE_USERNAME }}
+            SUPABASE_PASSWORD: ${{ secrets.SUPABASE_PASSWORD }}
 
-    defaults:
-      run:
-        working-directory: backend
+        defaults:
+            run:
+                working-directory: backend
 
-    steps:
-      - uses: actions/checkout@v4
+        steps:
+            - uses: actions/checkout@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-          cache: maven
+            - name: Setup Java
+              uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: 21
+                  cache: maven
 
-      - name: Build project
-        run: mvn clean verify
+            - name: Build project
+              run: mvn clean verify
