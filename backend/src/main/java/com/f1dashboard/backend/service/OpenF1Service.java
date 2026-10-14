@@ -84,13 +84,6 @@ public class OpenF1Service {
         }
     }
 
-    private boolean isRaceOrSprint(String sessionName) {
-        if (sessionName == null)
-            return false;
-        String n = sessionName.toLowerCase();
-        return n.equals("race") || n.equals("sprint") || n.equals("sprint race");
-    }
-
     private <T> List<T> withCacheFallback(String label, Supplier<List<T>> liveFetch, Supplier<List<T>> cachedFallback) {
         try {
             return liveFetch.get();
@@ -131,13 +124,13 @@ public class OpenF1Service {
                     delayBetweenRequests();
                     OpenF1DriverDto[] drivers = restTemplate.getForObject(driversUrl, OpenF1DriverDto[].class);
 
-            if (standings == null || standings.length == 0)
-                return List.of();
-            
-            log.info("Driver standings fetched for session_key={}", standings[0].getSessionKey());
-            
-            if (drivers == null || drivers.length == 0)
-                return mapWithoutEnrichment(standings);
+                    if (standings == null || standings.length == 0)
+                        return List.of();
+
+                    log.info("Driver standings fetched for session_key={}", standings[0].getSessionKey());
+
+                    if (drivers == null || drivers.length == 0)
+                        return mapWithoutEnrichment(standings);
 
                     Map<Integer, OpenF1DriverDto> driverMap = Arrays.stream(drivers)
                             .collect(Collectors.toMap(OpenF1DriverDto::getDriverNumber, d -> d, (a, b) -> a));
@@ -273,7 +266,7 @@ public class OpenF1Service {
         }
     }
 
-        public List<RaceResult> fetchRaceResults(Integer sessionKey) {
+    public List<RaceResult> fetchRaceResults(Integer sessionKey) {
         try {
             String targetsKey = (sessionKey != null) ? String.valueOf(sessionKey) : "latest";
 
@@ -387,33 +380,6 @@ public class OpenF1Service {
                 log.warn("Race control data unavailable for session key: {}", activeKey);
             }
 
-            // 6. Fetch Starting Grid (Race and Sprint only) - the real grid after penalties
-            List<DriverResult> startingGridList = new ArrayList<>();
-            if (isRaceOrSprint(activeSession.getSession_name())) {
-                try {
-                    delayBetweenRequests();
-                    String gridUrl = openF1BaseUrl + "/starting_grid?session_key=" + activeKey;
-                    OpenF1StartingGridDto[] fetchedGrid = restTemplate.getForObject(gridUrl,
-                            OpenF1StartingGridDto[].class);
-                    if (fetchedGrid != null) {
-                        startingGridList = Arrays.stream(fetchedGrid)
-                                .filter(g -> g.getPosition() != null && g.getDriverNumber() != null)
-                                .sorted(Comparator.comparing(OpenF1StartingGridDto::getPosition))
-                                .map(g -> new DriverResult(
-                                        g.getPosition(),
-                                        g.getDriverNumber(),
-                                        "0.0",
-                                        g.getLapDuration() != null ? String.valueOf(g.getLapDuration()) : "—",
-                                        false,
-                                        false,
-                                        false))
-                                .collect(Collectors.toList());
-                    }
-                } catch (Exception e) {
-                    log.warn("Starting grid unavailable for session key: {}", activeKey);
-                }
-            }
-
             // 7. Construct entity
             RaceResult result = new RaceResult(
                     activeSession.getMeeting_key(),
@@ -425,7 +391,6 @@ public class OpenF1Service {
                     stintsList,
                     weatherList,
                     raceControlList);
-            result.setStartingGrid(startingGridList);
 
             return List.of(result);
 
@@ -440,6 +405,7 @@ public class OpenF1Service {
             return List.of();
         }
     }
+
     @Transactional
     public List<RaceResult> fetchWeekendSessionResults(int meetingKey) {
         try {
@@ -462,6 +428,8 @@ public class OpenF1Service {
                     })
                     .sorted(Comparator.comparing(OpenF1SessionDto::getDate_start))
                     .toList();
+
+            attachStartingGrids(meetingKey, weekendSessions, allWeekendResults);
 
             for (OpenF1SessionDto session : completedSessions) {
                 log.info("Fetching classification results for completed session: {} (Key: {})",
@@ -565,6 +533,7 @@ public class OpenF1Service {
         log.info("Cache validation check passed for active meeting key: {}", meetingKey);
         return localRecords;
     }
+
     @Transactional
     public List<Lap> fetchSessionLapTelemetry(int sessionKey) {
         try {
@@ -712,5 +681,56 @@ public class OpenF1Service {
                         "#999999",
                         null))
                 .toList();
+    }
+
+    private Integer findSessionKey(OpenF1SessionDto[] sessions, String... names) {
+        return Arrays.stream(sessions)
+                .filter(s -> s.getSession_name() != null && s.getSession_key() != null)
+                .filter(s -> Arrays.stream(names).anyMatch(n -> n.equalsIgnoreCase(s.getSession_name())))
+                .map(OpenF1SessionDto::getSession_key)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private void attachStartingGrids(int meetingKey, OpenF1SessionDto[] weekendSessions,
+            List<RaceResult> results) {
+        try {
+            delayBetweenRequests();
+            OpenF1StartingGridDto[] rows = restTemplate.getForObject(
+                    openF1BaseUrl + "/starting_grid?meeting_key=" + meetingKey,
+                    OpenF1StartingGridDto[].class);
+
+            if (rows == null || rows.length == 0)
+                return;
+
+            Map<Integer, List<DriverResult>> gridBySession = Arrays.stream(rows)
+                    .filter(g -> g.getSessionKey() != null && g.getPosition() != null
+                            && g.getDriverNumber() != null)
+                    .sorted(Comparator.comparing(OpenF1StartingGridDto::getPosition))
+                    .collect(Collectors.groupingBy(
+                            OpenF1StartingGridDto::getSessionKey,
+                            Collectors.mapping(
+                                    g -> new DriverResult(g.getPosition(), g.getDriverNumber(), "0.0",
+                                            g.getLapDuration() != null ? String.valueOf(g.getLapDuration()) : "—",
+                                            false, false, false),
+                                    Collectors.toList())));
+
+            // The grid is published under the qualifying session:
+            // Qualifying -> Race grid, Sprint Qualifying / Sprint Shootout -> Sprint grid.
+            Integer raceGridKey = findSessionKey(weekendSessions, "Qualifying");
+            Integer sprintGridKey = findSessionKey(weekendSessions, "Sprint Qualifying", "Sprint Shootout");
+
+            for (RaceResult r : results) {
+                String name = r.getSessionName() == null ? "" : r.getSessionName().toLowerCase();
+                Integer gridKey = name.equals("race") ? raceGridKey
+                        : (name.equals("sprint") || name.equals("sprint race")) ? sprintGridKey : null;
+
+                if (gridKey != null && gridBySession.containsKey(gridKey)) {
+                    r.setStartingGrid(gridBySession.get(gridKey));
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Starting grid unavailable for meeting {}", meetingKey);
+        }
     }
 }
