@@ -488,6 +488,11 @@ public class OpenF1Service {
 
     @Transactional
     public List<RaceResult> getCachedWeekendResults(Integer meetingKey) {
+        return getCachedWeekendResults(meetingKey, false);
+    }
+
+    @Transactional
+    public List<RaceResult> getCachedWeekendResults(Integer meetingKey, boolean forceRefresh) {
         if (meetingKey == null) {
             meetingKey = resolveLatestMeetingKey();
         }
@@ -510,17 +515,12 @@ public class OpenF1Service {
         // 3. Check for structural updates OR content changes
         Set<Integer> localKeys = localRecords.stream().map(RaceResult::getSessionKey).collect(Collectors.toSet());
         Set<Integer> liveKeys = liveResults.stream().map(RaceResult::getSessionKey).collect(Collectors.toSet());
-        boolean cacheNeedsRefresh = !localKeys.equals(liveKeys) ||
+        boolean cacheNeedsRefresh = forceRefresh || !localKeys.equals(liveKeys) ||
                 localRecords.stream()
                         .filter(r -> r.getSessionName() != null
                                 && !r.getSessionName().toLowerCase().contains("practice"))
                         .anyMatch(r -> (r.getWeather() == null || r.getWeather().isEmpty()) ||
-                                (r.getRaceControl() == null || r.getRaceControl().isEmpty()))
-                ||
-                localRecords.stream()
-                        .filter(r -> r.getSessionName() != null
-                                && r.getSessionName().toLowerCase().contains("qualifying"))
-                        .anyMatch(r -> r.getStartingGrid() == null || r.getStartingGrid().isEmpty());
+                                (r.getRaceControl() == null || r.getRaceControl().isEmpty()));
 
         if (cacheNeedsRefresh) {
             log.info("Cache updates detected. Upserting fresh matrices to database...");
@@ -555,7 +555,6 @@ public class OpenF1Service {
         log.info("Cache validation check passed for active meeting key: {}", meetingKey);
         return localRecords;
     }
-
     @Transactional
     public List<Lap> fetchSessionLapTelemetry(int sessionKey) {
         try {
