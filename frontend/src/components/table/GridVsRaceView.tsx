@@ -5,6 +5,7 @@ import {
     GridRacePair,
     GridRaceRow,
     buildGridRaceRows,
+    pickGridRacePair,
     summarizeGridRace,
 } from '@/utils/gridVsRace';
 import { TABLE_CONTAINER_CLASS, TABLE_THEAD_CLASS, getPositionColor } from '@/utils/styles';
@@ -20,6 +21,7 @@ interface Lookup {
 interface Props {
     pairs: GridRacePair[];
     lookup: Record<number, Lookup>;
+    activeSessionName?: string;
 }
 
 type SortMode = 'finish' | 'gainers';
@@ -140,12 +142,10 @@ function StatCard({
     );
 }
 
-export function GridVsRaceView({ pairs, lookup }: Props) {
-    const defaultKind = pairs.find((p) => p.kind === 'race')?.kind ?? pairs[0]?.kind ?? 'race';
-    const [kind, setKind] = useState<GridRacePair['kind']>(defaultKind);
+export function GridVsRaceView({ pairs, lookup, activeSessionName }: Props) {
     const [sortMode, setSortMode] = useState<SortMode>('finish');
 
-    const pair = pairs.find((p) => p.kind === kind) ?? pairs[0];
+    const pair = pickGridRacePair(pairs, activeSessionName);
 
     const rows = useMemo(() => {
         if (!pair) return [];
@@ -171,30 +171,9 @@ export function GridVsRaceView({ pairs, lookup }: Props) {
     return (
         <div className='space-y-6'>
             <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
-                {pairs.length > 1 ? (
-                    <div className='flex gap-1 bg-zinc-950/60 border border-zinc-800/60 rounded-lg p-1 w-fit'>
-                        {pairs.map((p) => {
-                            const active = p.kind === pair.kind;
-                            return (
-                                <button
-                                    key={p.kind}
-                                    onClick={() => setKind(p.kind)}
-                                    className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-md transition-colors ${
-                                        active
-                                            ? 'bg-zinc-800 text-white border border-zinc-700/60'
-                                            : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-                                    }`}
-                                >
-                                    {p.label}
-                                </button>
-                            );
-                        })}
-                    </div>
-                ) : (
-                    <p className='text-[10px] font-bold text-zinc-400 uppercase tracking-widest'>
-                        {pair.gridLabel} → {pair.raceSession.sessionName}
-                    </p>
-                )}
+                <p className='text-[10px] font-bold text-zinc-400 uppercase tracking-widest'>
+                    {pair.gridSession.sessionName} → {pair.raceSession.sessionName}
+                </p>
 
                 <div className='flex gap-1 bg-zinc-950/60 border border-zinc-800/60 rounded-lg p-1 w-fit'>
                     {(
