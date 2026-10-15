@@ -160,19 +160,19 @@ export function findGridRacePairs(results: RaceResult[]): GridRacePair[] {
     return pairs;
 }
 
+export function isGridRaceSession(name: string): boolean {
+    return isSprintRaceSession(name) || isGrandPrixSession(name);
+}
+
 export function pickGridRacePair(
     pairs: GridRacePair[],
     sessionName: string | undefined
 ): GridRacePair | undefined {
-    if (sessionName) {
-        const kind: GridRacePairKind | null =
-            isSprintQualifyingSession(sessionName) || isSprintRaceSession(sessionName)
-                ? 'sprint'
-                : isQualifyingSession(sessionName) || isGrandPrixSession(sessionName)
-                  ? 'race'
-                  : null;
-        const match = pairs.find((p) => p.kind === kind);
-        if (match) return match;
-    }
-    return pairs.find((p) => p.kind === 'race') ?? pairs[0];
+    if (!sessionName) return undefined;
+    const kind: GridRacePairKind | null = isSprintRaceSession(sessionName)
+        ? 'sprint'
+        : isGrandPrixSession(sessionName)
+          ? 'race'
+          : null;
+    return pairs.find((p) => p.kind === kind);
 }
