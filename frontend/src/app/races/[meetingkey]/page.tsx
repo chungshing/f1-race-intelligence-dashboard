@@ -244,7 +244,11 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                         )}
                         {activeTab === 'gridvsrace' &&
                             (gridRacePairs.length > 0 ? (
-                                <GridVsRaceView pairs={gridRacePairs} lookup={driverLookup} />
+                                <GridVsRaceView
+                                    pairs={gridRacePairs}
+                                    lookup={driverLookup}
+                                    activeSessionName={activeRace?.sessionName}
+                                />
                             ) : (
                                 <GridVsRaceUnavailable results={results} />
                             ))}
