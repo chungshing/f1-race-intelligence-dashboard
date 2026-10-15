@@ -11,6 +11,7 @@ export interface GridRaceRow {
     dns: boolean;
     dsq: boolean;
     statusLabel: string | null;
+    qualiPosition: number | null;
 }
 
 const normalize = (name: string) => name.trim().toLowerCase();
@@ -43,7 +44,11 @@ function statusLabel(result: DriverResult | undefined): string | null {
     return null;
 }
 
-export function buildGridRaceRows(grid: GridEntry[], finish: DriverResult[]): GridRaceRow[] {
+export function buildGridRaceRows(
+    grid: GridEntry[],
+    finish: DriverResult[],
+    quali: GridEntry[] = []
+): GridRaceRow[] {
     const driverNumbers = new Set<number>();
     grid.forEach((r) => driverNumbers.add(r.driverNumber));
     finish.forEach((r) => driverNumbers.add(r.driverNumber));
@@ -54,6 +59,8 @@ export function buildGridRaceRows(grid: GridEntry[], finish: DriverResult[]): Gr
             const finishResult = finish.find((r) => r.driverNumber === driverNumber);
             const gridPosition = gridResult?.position ?? null;
             const finishPosition = finishResult?.position ?? null;
+            const qualiPosition =
+                quali.find((r) => r.driverNumber === driverNumber)?.position ?? null;
             const classified =
                 finishPosition != null &&
                 !finishResult?.dnf &&
@@ -73,6 +80,7 @@ export function buildGridRaceRows(grid: GridEntry[], finish: DriverResult[]): Gr
                 dns: !!finishResult?.dns,
                 dsq: !!finishResult?.dsq,
                 statusLabel: statusLabel(finishResult),
+                qualiPosition,
             };
         })
         .sort((a, b) => {
