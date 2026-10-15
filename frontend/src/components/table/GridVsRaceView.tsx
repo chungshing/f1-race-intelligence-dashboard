@@ -149,7 +149,11 @@ export function GridVsRaceView({ pairs, lookup }: Props) {
 
     const rows = useMemo(() => {
         if (!pair) return [];
-        const built = buildGridRaceRows(pair.grid, pair.raceSession.classification);
+        const built = buildGridRaceRows(
+            pair.grid,
+            pair.raceSession.classification,
+            pair.gridSession.classification
+        );
         if (sortMode === 'gainers') {
             return [...built].sort((a, b) => (b.delta ?? -999) - (a.delta ?? -999));
         }
@@ -269,6 +273,7 @@ export function GridVsRaceView({ pairs, lookup }: Props) {
                         <tr className={TABLE_THEAD_CLASS}>
                             <th className='p-4 pl-5 w-16'>Finish</th>
                             <th className='p-4'>Driver</th>
+                            <th className='p-4 text-center w-16'>Quali</th>
                             <th className='p-4 text-center w-16'>Grid</th>
                             <th className='p-4 min-w-40'>
                                 <span className='flex items-center justify-between text-[10px]'>
@@ -309,6 +314,17 @@ export function GridVsRaceView({ pairs, lookup }: Props) {
                                         />
                                     </td>
                                     <td className='p-4 text-center font-mono text-zinc-400 tabular-nums'>
+                                        {row.qualiPosition ?? '—'}
+                                    </td>
+                                    <td
+                                        className={`p-4 text-center font-mono tabular-nums ${
+                                            row.qualiPosition != null &&
+                                            row.gridPosition != null &&
+                                            row.qualiPosition !== row.gridPosition
+                                                ? 'text-amber-400'
+                                                : 'text-zinc-400'
+                                        }`}
+                                    >
                                         {row.gridPosition ?? '—'}
                                     </td>
                                     <td className='p-4'>
