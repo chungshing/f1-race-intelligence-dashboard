@@ -120,6 +120,7 @@ export interface GridRacePair {
     raceSession: RaceResult;
     grid: GridEntry[];
     gridLabel: string;
+    isOfficialGrid: boolean;
 }
 
 function buildPair(
@@ -138,6 +139,7 @@ function buildPair(
         raceSession,
         grid: useOfficial ? official : gridSession.classification,
         gridLabel: useOfficial ? 'Starting Grid' : gridSession.sessionName,
+        isOfficialGrid: useOfficial,
     };
 }
 
