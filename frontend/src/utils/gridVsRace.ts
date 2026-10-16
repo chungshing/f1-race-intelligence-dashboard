@@ -2,13 +2,6 @@ import { DriverResult, RaceResult } from '@/types/results';
 
 export type GridRacePairKind = 'race' | 'sprint';
 
-export interface GridRacePair {
-    kind: GridRacePairKind;
-    label: string;
-    gridSession: RaceResult;
-    raceSession: RaceResult;
-}
-
 export interface GridRaceRow {
     driverNumber: number;
     gridPosition: number | null;
@@ -18,6 +11,7 @@ export interface GridRaceRow {
     dns: boolean;
     dsq: boolean;
     statusLabel: string | null;
+    qualiPosition: number | null;
 }
 
 const normalize = (name: string) => name.trim().toLowerCase();
@@ -42,35 +36,6 @@ export function isGrandPrixSession(name: string): boolean {
     return n === 'race';
 }
 
-export function findGridRacePairs(results: RaceResult[]): GridRacePair[] {
-    const qualifying = results.find((r) => isQualifyingSession(r.sessionName));
-    const race = results.find((r) => isGrandPrixSession(r.sessionName));
-    const sprintQualifying = results.find((r) => isSprintQualifyingSession(r.sessionName));
-    const sprint = results.find((r) => isSprintRaceSession(r.sessionName));
-
-    const pairs: GridRacePair[] = [];
-
-    if (sprintQualifying && sprint) {
-        pairs.push({
-            kind: 'sprint',
-            label: 'Sprint',
-            gridSession: sprintQualifying,
-            raceSession: sprint,
-        });
-    }
-
-    if (qualifying && race) {
-        pairs.push({
-            kind: 'race',
-            label: 'Grand Prix',
-            gridSession: qualifying,
-            raceSession: race,
-        });
-    }
-
-    return pairs;
-}
-
 function statusLabel(result: DriverResult | undefined): string | null {
     if (!result) return null;
     if (result.dsq) return 'DSQ';
@@ -80,8 +45,9 @@ function statusLabel(result: DriverResult | undefined): string | null {
 }
 
 export function buildGridRaceRows(
-    grid: DriverResult[],
-    finish: DriverResult[]
+    grid: GridEntry[],
+    finish: DriverResult[],
+    quali: GridEntry[] = []
 ): GridRaceRow[] {
     const driverNumbers = new Set<number>();
     grid.forEach((r) => driverNumbers.add(r.driverNumber));
@@ -93,8 +59,13 @@ export function buildGridRaceRows(
             const finishResult = finish.find((r) => r.driverNumber === driverNumber);
             const gridPosition = gridResult?.position ?? null;
             const finishPosition = finishResult?.position ?? null;
+            const qualiPosition =
+                quali.find((r) => r.driverNumber === driverNumber)?.position ?? null;
             const classified =
-                finishPosition != null && !finishResult?.dnf && !finishResult?.dns && !finishResult?.dsq;
+                finishPosition != null &&
+                !finishResult?.dnf &&
+                !finishResult?.dns &&
+                !finishResult?.dsq;
             const delta =
                 classified && gridPosition != null && finishPosition != null
                     ? gridPosition - finishPosition
@@ -109,6 +80,7 @@ export function buildGridRaceRows(
                 dns: !!finishResult?.dns,
                 dsq: !!finishResult?.dsq,
                 statusLabel: statusLabel(finishResult),
+                qualiPosition,
             };
         })
         .sort((a, b) => {
@@ -131,9 +103,78 @@ export function summarizeGridRace(rows: GridRaceRow[]) {
         null
     );
     const placesChanged = withDelta.filter((r) => r.delta !== 0).length;
-    const netPlacesSwung = Math.round(
-        withDelta.reduce((sum, r) => sum + Math.abs(r.delta), 0) / 2
-    );
+    const netPlacesSwung = Math.round(withDelta.reduce((sum, r) => sum + Math.abs(r.delta), 0) / 2);
 
     return { biggestGainer, biggestDrop, placesChanged, netPlacesSwung };
+}
+
+export interface GridEntry {
+    position: number | null;
+    driverNumber: number;
+}
+
+export interface GridRacePair {
+    kind: GridRacePairKind;
+    label: string;
+    gridSession: RaceResult;
+    raceSession: RaceResult;
+    grid: GridEntry[];
+    gridLabel: string;
+    isOfficialGrid: boolean;
+}
+
+function buildPair(
+    kind: GridRacePairKind,
+    label: string,
+    gridSession: RaceResult,
+    raceSession: RaceResult
+): GridRacePair {
+    const official = gridSession.startingGrid ?? [];
+    const useOfficial = official.length > 0;
+
+    return {
+        kind,
+        label,
+        gridSession,
+        raceSession,
+        grid: useOfficial ? official : gridSession.classification,
+        gridLabel: useOfficial ? 'Starting Grid' : gridSession.sessionName,
+        isOfficialGrid: useOfficial,
+    };
+}
+
+export function findGridRacePairs(results: RaceResult[]): GridRacePair[] {
+    const qualifying = results.find((r) => isQualifyingSession(r.sessionName));
+    const race = results.find((r) => isGrandPrixSession(r.sessionName));
+    const sprintQualifying = results.find((r) => isSprintQualifyingSession(r.sessionName));
+    const sprint = results.find((r) => isSprintRaceSession(r.sessionName));
+
+    const pairs: GridRacePair[] = [];
+
+    if (sprintQualifying && sprint) {
+        pairs.push(buildPair('sprint', 'Sprint', sprintQualifying, sprint));
+    }
+
+    if (qualifying && race) {
+        pairs.push(buildPair('race', 'Grand Prix', qualifying, race));
+    }
+
+    return pairs;
+}
+
+export function isGridRaceSession(name: string): boolean {
+    return isSprintRaceSession(name) || isGrandPrixSession(name);
+}
+
+export function pickGridRacePair(
+    pairs: GridRacePair[],
+    sessionName: string | undefined
+): GridRacePair | undefined {
+    if (!sessionName) return undefined;
+    const kind: GridRacePairKind | null = isSprintRaceSession(sessionName)
+        ? 'sprint'
+        : isGrandPrixSession(sessionName)
+          ? 'race'
+          : null;
+    return pairs.find((p) => p.kind === kind);
 }

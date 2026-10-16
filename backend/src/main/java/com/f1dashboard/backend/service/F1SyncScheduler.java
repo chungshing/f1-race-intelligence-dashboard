@@ -111,7 +111,7 @@ public class F1SyncScheduler {
     }
 
     public String backfillMeeting(int meetingKey) {
-        List<RaceResult> results = openF1Service.getCachedWeekendResults(meetingKey);
+        List<RaceResult> results = openF1Service.getCachedWeekendResults(meetingKey, true);
 
         if (results.isEmpty()) {
             return "No results found for meeting " + meetingKey;

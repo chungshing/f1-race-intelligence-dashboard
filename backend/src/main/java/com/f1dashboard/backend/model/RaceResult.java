@@ -8,6 +8,7 @@ import com.f1dashboard.backend.converter.PitStopListConverter;
 import com.f1dashboard.backend.converter.RaceControlEventListConverter;
 import com.f1dashboard.backend.converter.StintListConverter;
 import com.f1dashboard.backend.converter.WeatherSnapshotListConverter;
+import com.f1dashboard.backend.converter.StartingGridListConverter;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -57,6 +58,10 @@ public class RaceResult {
     @Convert(converter = RaceControlEventListConverter.class)
     @Column(name = "race_control_json", columnDefinition = "TEXT")
     private List<RaceControlEvent> raceControl = new ArrayList<>();
+
+    @Convert(converter = StartingGridListConverter.class)
+    @Column(name = "starting_grid_json", columnDefinition = "TEXT")
+    private List<StartingGridEntry> startingGrid = new ArrayList<>();
 
     public RaceResult(Integer meetingKey, Integer sessionKey, String country, String sessionName,
             List<DriverResult> classification, List<PitStop> pitStops, List<Stint> stints,

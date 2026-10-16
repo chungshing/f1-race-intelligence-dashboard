@@ -48,6 +48,12 @@ export interface RaceControlEvent {
     sector: number | null;
 }
 
+export interface StartingGridEntry {
+    position: number | null;
+    driverNumber: number;
+    lapDuration: number | null;
+}
+
 export interface RaceResult {
     sessionKey: number;
     meetingKey: number;
@@ -58,6 +64,7 @@ export interface RaceResult {
     stints: Stint[];
     weather: WeatherSnapshot[];
     raceControl: RaceControlEvent[];
+    startingGrid?: StartingGridEntry[];
 }
 
 export interface SupabaseRaceResultRow {
@@ -70,4 +77,5 @@ export interface SupabaseRaceResultRow {
     stints_json?: string | Stint[];
     weather_json?: string | WeatherSnapshot[];
     race_control_json?: string | RaceControlEvent[];
+    starting_grid_json?: string | StartingGridEntry[];
 }

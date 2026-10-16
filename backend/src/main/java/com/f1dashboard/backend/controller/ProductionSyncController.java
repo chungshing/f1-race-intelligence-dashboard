@@ -53,7 +53,6 @@ public class ProductionSyncController {
     public ResponseEntity<String> backfillMeeting(@PathVariable int meetingKey,
             @RequestBody Map<String, String> payload) {
         String token = payload.get("token");
-        log.info("RECEIVED TOKEN: [{}], EXPECTED TOKEN: [{}]", token, cronSecretToken);
 
         if (cronSecretToken == null || cronSecretToken.isBlank()) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)

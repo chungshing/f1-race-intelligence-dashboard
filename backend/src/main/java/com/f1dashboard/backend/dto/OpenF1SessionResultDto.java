@@ -14,6 +14,6 @@ public class OpenF1SessionResultDto {
 
     private Integer number_of_laps;
     private Integer meeting_key;
-    private Integer position;
+    private Object position;
     private Integer session_key;
 }

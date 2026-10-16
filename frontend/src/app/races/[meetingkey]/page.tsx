@@ -20,10 +20,11 @@ import {
     DriverResult,
     RaceControlEvent,
     RaceResult,
+    StartingGridEntry,
     SupabaseRaceResultRow,
     WeatherSnapshot,
 } from '@/types/results';
-import { findGridRacePairs } from '@/utils/gridVsRace';
+import { findGridRacePairs, isGridRaceSession, pickGridRacePair } from '@/utils/gridVsRace';
 import { use, useEffect, useMemo, useState } from 'react';
 
 type ActiveTab =
@@ -98,6 +99,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                     stints: parseJsonField(r.stints_json),
                     weather: parseJsonField<WeatherSnapshot>(r.weather_json),
                     raceControl: parseJsonField<RaceControlEvent>(r.race_control_json),
+                    startingGrid: parseJsonField<StartingGridEntry>(r.starting_grid_json),
                 }))
                 .sort((a, b) => a.sessionKey - b.sessionKey);
 
@@ -114,18 +116,20 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
         };
     }, [meetingkey]);
 
+    const activeRace = useMemo(() => {
+        return results.find((r) => r.sessionKey === activeSessionKey);
+    }, [results, activeSessionKey]);
+
+    const isGridSession = !!activeRace && isGridRaceSession(activeRace.sessionName);
+
     // Reset tab when session changes
     useEffect(() => {
         if (!activeSessionKey) return;
 
         queueMicrotask(() => {
-            setActiveTab((tab) => (tab === 'gridvsrace' ? tab : 'classification'));
+            setActiveTab((tab) => (tab === 'gridvsrace' && isGridSession ? tab : 'classification'));
         });
-    }, [activeSessionKey]);
-
-    const activeRace = useMemo(() => {
-        return results.find((r) => r.sessionKey === activeSessionKey);
-    }, [results, activeSessionKey]);
+    }, [activeSessionKey, isGridSession]);
 
     const hasStintData = (activeRace?.stints?.length ?? 0) > 0;
 
@@ -137,7 +141,8 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
         (tab) =>
             (!tab.requiresLaps || hasLapData) &&
             (!tab.requiresStints || hasStintData) &&
-            (!tab.requiresRaceControl || hasRaceControlData)
+            (!tab.requiresRaceControl || hasRaceControlData) &&
+            (tab.key !== 'gridvsrace' || isGridSession)
     );
 
     const countryName = results[0]?.country || 'Race Weekend';
@@ -241,8 +246,12 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                             </div>
                         )}
                         {activeTab === 'gridvsrace' &&
-                            (gridRacePairs.length > 0 ? (
-                                <GridVsRaceView pairs={gridRacePairs} lookup={driverLookup} />
+                            (pickGridRacePair(gridRacePairs, activeRace.sessionName) ? (
+                                <GridVsRaceView
+                                    pairs={gridRacePairs}
+                                    lookup={driverLookup}
+                                    activeSessionName={activeRace.sessionName}
+                                />
                             ) : (
                                 <GridVsRaceUnavailable results={results} />
                             ))}

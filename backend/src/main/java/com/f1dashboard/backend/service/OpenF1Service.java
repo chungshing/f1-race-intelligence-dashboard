@@ -25,6 +25,7 @@ import com.f1dashboard.backend.dto.OpenF1MeetingDto;
 import com.f1dashboard.backend.dto.OpenF1RaceControlDto;
 import com.f1dashboard.backend.dto.OpenF1SessionDto;
 import com.f1dashboard.backend.dto.OpenF1SessionResultDto;
+import com.f1dashboard.backend.dto.OpenF1StartingGridDto;
 import com.f1dashboard.backend.dto.OpenF1TeamChampionshipDto;
 import com.f1dashboard.backend.dto.OpenF1WeatherDto;
 import com.f1dashboard.backend.model.DriverResult;
@@ -35,6 +36,7 @@ import com.f1dashboard.backend.model.RaceControlEvent;
 import com.f1dashboard.backend.model.RaceResult;
 import com.f1dashboard.backend.model.RaceSession;
 import com.f1dashboard.backend.model.RaceWeekend;
+import com.f1dashboard.backend.model.StartingGridEntry;
 import com.f1dashboard.backend.model.Stint;
 import com.f1dashboard.backend.model.TeamStanding;
 import com.f1dashboard.backend.model.WeatherSnapshot;
@@ -123,13 +125,13 @@ public class OpenF1Service {
                     delayBetweenRequests();
                     OpenF1DriverDto[] drivers = restTemplate.getForObject(driversUrl, OpenF1DriverDto[].class);
 
-            if (standings == null || standings.length == 0)
-                return List.of();
-            
-            log.info("Driver standings fetched for session_key={}", standings[0].getSessionKey());
-            
-            if (drivers == null || drivers.length == 0)
-                return mapWithoutEnrichment(standings);
+                    if (standings == null || standings.length == 0)
+                        return List.of();
+
+                    log.info("Driver standings fetched for session_key={}", standings[0].getSessionKey());
+
+                    if (drivers == null || drivers.length == 0)
+                        return mapWithoutEnrichment(standings);
 
                     Map<Integer, OpenF1DriverDto> driverMap = Arrays.stream(drivers)
                             .collect(Collectors.toMap(OpenF1DriverDto::getDriverNumber, d -> d, (a, b) -> a));
@@ -379,6 +381,29 @@ public class OpenF1Service {
                 log.warn("Race control data unavailable for session key: {}", activeKey);
             }
 
+            List<StartingGridEntry> startingGridList = new ArrayList<>();
+            boolean isQualifying = activeSession.getSession_name() != null &&
+                    activeSession.getSession_name().toLowerCase().contains("qualifying");
+            if (isQualifying) {
+                try {
+                    delayBetweenRequests();
+                    OpenF1StartingGridDto[] fetchedGrid = restTemplate.getForObject(
+                            openF1BaseUrl + "/starting_grid?session_key=" + activeKey,
+                            OpenF1StartingGridDto[].class);
+                    if (fetchedGrid != null) {
+                        startingGridList = Arrays.stream(fetchedGrid)
+                                .filter(Objects::nonNull)
+                                .map(g -> new StartingGridEntry(g.getPosition(), g.getDriver_number(),
+                                        g.getLap_duration()))
+                                .sorted(Comparator.comparing(StartingGridEntry::getPosition,
+                                        Comparator.nullsLast(Integer::compareTo)))
+                                .toList();
+                    }
+                } catch (Exception e) {
+                    log.warn("Starting grid unavailable for session key: {}", activeKey);
+                }
+            }
+
             // 6. Construct entity
             RaceResult result = new RaceResult(
                     activeSession.getMeeting_key(),
@@ -391,6 +416,7 @@ public class OpenF1Service {
                     weatherList,
                     raceControlList);
 
+            result.setStartingGrid(startingGridList);
             return List.of(result);
 
         } catch (Exception e) {
@@ -462,6 +488,11 @@ public class OpenF1Service {
 
     @Transactional
     public List<RaceResult> getCachedWeekendResults(Integer meetingKey) {
+        return getCachedWeekendResults(meetingKey, false);
+    }
+
+    @Transactional
+    public List<RaceResult> getCachedWeekendResults(Integer meetingKey, boolean forceRefresh) {
         if (meetingKey == null) {
             meetingKey = resolveLatestMeetingKey();
         }
@@ -484,7 +515,7 @@ public class OpenF1Service {
         // 3. Check for structural updates OR content changes
         Set<Integer> localKeys = localRecords.stream().map(RaceResult::getSessionKey).collect(Collectors.toSet());
         Set<Integer> liveKeys = liveResults.stream().map(RaceResult::getSessionKey).collect(Collectors.toSet());
-        boolean cacheNeedsRefresh = !localKeys.equals(liveKeys) ||
+        boolean cacheNeedsRefresh = forceRefresh || !localKeys.equals(liveKeys) ||
                 localRecords.stream()
                         .filter(r -> r.getSessionName() != null
                                 && !r.getSessionName().toLowerCase().contains("practice"))
@@ -511,6 +542,9 @@ public class OpenF1Service {
                     if (live.getRaceControl() == null || live.getRaceControl().isEmpty()) {
                         live.setRaceControl(local.getRaceControl());
                     }
+                    if (live.getStartingGrid() == null || live.getStartingGrid().isEmpty()) {
+                        live.setStartingGrid(local.getStartingGrid());
+                    }
                 });
             }
 
@@ -521,7 +555,6 @@ public class OpenF1Service {
         log.info("Cache validation check passed for active meeting key: {}", meetingKey);
         return localRecords;
     }
-
     @Transactional
     public List<Lap> fetchSessionLapTelemetry(int sessionKey) {
         try {
@@ -581,6 +614,19 @@ public class OpenF1Service {
         return fetchSessionLapTelemetry(sessionKey);
     }
 
+    private Integer parsePosition(Object raw) {
+        if (raw instanceof Number n)
+            return n.intValue();
+        if (raw instanceof String s) {
+            try {
+                return Integer.parseInt(s.trim());
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
     private DriverResult mapDriverResult(OpenF1SessionResultDto dto) {
         if (dto == null)
             return null;
@@ -629,7 +675,7 @@ public class OpenF1Service {
         boolean isDsq = (dto.getDsq() != null && dto.getDsq());
 
         return new DriverResult(
-                dto.getPosition(),
+                parsePosition(dto.getPosition()),
                 dto.getDriver_number(),
                 latestGap,
                 formattedDuration,
