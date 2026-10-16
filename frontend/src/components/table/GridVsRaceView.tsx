@@ -171,9 +171,16 @@ export function GridVsRaceView({ pairs, lookup, activeSessionName }: Props) {
     return (
         <div className='space-y-6'>
             <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
-                <p className='text-[10px] font-bold text-zinc-400 uppercase tracking-widest'>
-                    {pair.gridSession.sessionName} → {pair.raceSession.sessionName}
-                </p>
+                <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
+                    <p className='text-[10px] font-bold text-zinc-400 uppercase tracking-widest'>
+                        {pair.gridSession.sessionName} → {pair.raceSession.sessionName}
+                    </p>
+                    {!pair.isOfficialGrid && (
+                        <span className='text-[10px] font-bold text-amber-500 uppercase tracking-widest'>
+                            Official grid unavailable · using qualifying
+                        </span>
+                    )}
+                </div>
 
                 <div className='flex gap-1 bg-zinc-950/60 border border-zinc-800/60 rounded-lg p-1 w-fit'>
                     {(
