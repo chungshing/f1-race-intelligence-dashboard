@@ -110,25 +110,32 @@ public class F1SyncScheduler {
         }
     }
 
-    public String backfillMeeting(int meetingKey) {
-        List<RaceResult> results = openF1Service.getCachedWeekendResults(meetingKey, true);
+    @Async
+    public void backfillMeeting(int meetingKey) {
+        try {
+            List<RaceResult> results = openF1Service.getCachedWeekendResults(meetingKey, true);
 
-        if (results.isEmpty()) {
-            return "No results found for meeting " + meetingKey;
-        }
-
-        int lapsSyncedCount = 0;
-        for (RaceResult result : results) {
-            String sessionName = result.getSessionName();
-            if (sessionName != null && !sessionName.toLowerCase().contains("practice")
-                    && result.getSessionKey() != null) {
-                List<Lap> laps = openF1Service.getCachedSessionLaps(result.getSessionKey());
-                lapsSyncedCount += laps.size();
-                log.info("Backfilled {} laps for {} (Key: {})", laps.size(), sessionName, result.getSessionKey());
+            if (results.isEmpty()) {
+                log.warn("No results found for meeting {}", meetingKey);
+                return;
             }
-        }
 
-        return String.format("Backfilled meeting %d: %d sessions, %d laps.", meetingKey, results.size(),
-                lapsSyncedCount);
+            int lapsSyncedCount = 0;
+            for (RaceResult result : results) {
+                String sessionName = result.getSessionName();
+                if (sessionName != null && !sessionName.toLowerCase().contains("practice")
+                        && result.getSessionKey() != null) {
+                    List<Lap> laps = openF1Service.getCachedSessionLaps(result.getSessionKey());
+                    lapsSyncedCount += laps.size();
+                    log.info("Backfilled {} laps for {} (Key: {})", laps.size(), sessionName,
+                            result.getSessionKey());
+                }
+            }
+
+            log.info("Backfilled meeting {}: {} sessions, {} laps.", meetingKey, results.size(),
+                    lapsSyncedCount);
+        } catch (Exception e) {
+            log.error("Backfill failed for meeting {}", meetingKey, e);
+        }
     }
 }
