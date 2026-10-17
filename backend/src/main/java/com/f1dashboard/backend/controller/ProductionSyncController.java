@@ -64,7 +64,8 @@ public class ProductionSyncController {
                     .body("Unauthorized: Invalid execution token.");
         }
 
-        String result = syncScheduler.backfillMeeting(meetingKey);
-        return ResponseEntity.ok(result);
+        syncScheduler.backfillMeeting(meetingKey);
+        return ResponseEntity.accepted()
+                .body("Backfill for meeting " + meetingKey + " started in the background.");
     }
 }
