@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 import com.f1dashboard.backend.service.F1SyncScheduler;
 
@@ -38,7 +40,7 @@ public class ProductionSyncController {
 
         String token = payload.get("token");
 
-        if (!cronSecretToken.equals(token)) {
+        if (!tokenMatches(token)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Unauthorized: Invalid execution token.");
         }
@@ -59,7 +61,7 @@ public class ProductionSyncController {
                     .body("Sync endpoint not configured.");
         }
 
-        if (!cronSecretToken.equals(token)) {
+        if (!tokenMatches(token)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Unauthorized: Invalid execution token.");
         }
@@ -67,5 +69,11 @@ public class ProductionSyncController {
         syncScheduler.backfillMeeting(meetingKey);
         return ResponseEntity.accepted()
                 .body("Backfill for meeting " + meetingKey + " started in the background.");
+    }
+
+    private boolean tokenMatches(String token) {
+        return token != null && MessageDigest.isEqual(
+                cronSecretToken.getBytes(StandardCharsets.UTF_8),
+                token.getBytes(StandardCharsets.UTF_8));
     }
 }
