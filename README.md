@@ -14,11 +14,12 @@ A high-performance full-stack F1 analytics platform that visualizes real-time an
 
 ## 📊 Features
 
-- **Historical Data Persistence**: Full-season backfilling with stateful storage in Supabase.
-- **Live Telemetry & Tracking**: Real-time driver position and interval tracking.
-- **Performance Analytics**: Comparative driver lap-time and stint analysis.
-- **Standings Engine**: Backend-computed driver and constructor championship standings.
-- **Interactive Data Visualization**: Dynamic charts for lap trends and championship battles.
+- **Historical Data Persistence**: Per-meeting backfilling with stateful storage in Supabase.
+- **Session Results**: Classification, weather and race control for every session of a weekend, including sprints.
+- **Grid vs Race**: Official starting grid (with penalties) against qualifying and finishing positions, for both the Sprint and the Grand Prix.
+- **Strategy & Performance Analytics**: Tyre stints, pit stop leaderboard, lap heatmap and pace charts, sector times and speeds, pace consistency.
+- **Driver & Constructor Profiles**: Season form, points progression and head-to-head driver comparison.
+- **Standings**: Driver and constructor championship standings synced from OpenF1.
 
 ## 🧠 Architecture & Data Flow
 
@@ -39,7 +40,8 @@ A high-performance full-stack F1 analytics platform that visualizes real-time an
 - **✅ Phase 2: Backend Development** – OpenF1 integration, in-memory data processing, and REST endpoints.
 - **✅ Phase 3: Full-Stack Integration** – Connected Next.js to Spring Boot, added state management, and handled loading states.
 - **✅ Phase 4: Persistent Data Layer** – Migration to Supabase/PostgreSQL for historical data storage.
-- **🔄 Phase 5: Advanced Features (In Progress)** – Driver profile pages and historical post-race tyre strategy visualizers.
+- **✅ Phase 5: Advanced Features** – Driver profile pages and historical post-race tyre strategy visualizers.
+- **🔄 Phase 6: Race Narrative & Season Insights (Planned)** – Position-by-lap chart for races and sprints, and a season-wide places-gained leaderboard.
 
 <details>
 <summary>⚙️ <b>Local Development Setup</b> (Click to expand)</summary>
