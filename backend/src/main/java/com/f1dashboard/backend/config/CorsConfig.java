@@ -15,10 +15,9 @@ public class CorsConfig {
             public void addCorsMappings(CorsRegistry registry) {
 
                 registry.addMapping("/api/**")
-                        .allowedOriginPatterns(
+                        .allowedOrigins(
                                 "http://localhost:3000",
-                                "https://*.vercel.app"
-                        )
+                                "https://f1-race-intelligence-dashboard.vercel.app")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*");
             }
