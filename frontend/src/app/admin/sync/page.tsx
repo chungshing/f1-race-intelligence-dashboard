@@ -26,11 +26,9 @@ export default function AdminSyncPage() {
                 throw new Error(`Server returned status: ${response.status}`);
             }
         } catch (error) {
-            console.warn('Backend unreachable, retrying in 60s...', error);
-            setTimeout(() => {
-                setIsSyncing(false);
-                handleManualSync();
-            }, 60000);
+            console.warn('Backend unreachable.', error);
+            alert('Backend unreachable. Try again in a minute.');
+            setIsSyncing(false);
         }
     };
 
