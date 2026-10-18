@@ -2,9 +2,11 @@
 
 import AppLayout from '@/components/layout/AppLayout';
 import { TeamTable } from '@/components/table/TeamTable';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { useTeamStandings } from '@/hooks/useStandings';
 
 export default function ConstructorsPage() {
+    usePageTitle('Constructors');
     const { data: teams = [], loading } = useTeamStandings();
 
     return (
