@@ -8,6 +8,7 @@ import { RaceResultsTable } from '@/components/table/RaceResultsTable';
 import RaceWeekendCard from '@/components/table/RaceWeekendCard';
 import { TeamTable } from '@/components/table/TeamTable';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { useRaceResults } from '@/hooks/useRaceResults';
 import { useRaceWeekends } from '@/hooks/useRaceWeekends';
 import { useStandings, useTeamStandings } from '@/hooks/useStandings';
@@ -21,6 +22,7 @@ import { useEffect, useMemo, useState } from 'react';
 type TabType = 'drivers' | 'constructors';
 
 export default function Home() {
+    usePageTitle();
     const { data: standings = [], loading: driverLoading } = useStandings();
     const { data: teams = [], loading: teamLoading } = useTeamStandings();
     const { data: races = [] } = useRaceWeekends();
