@@ -2,6 +2,7 @@
 
 import AppLayout from '@/components/layout/AppLayout';
 import { DriverTable } from '@/components/table/DriverTable';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { useRaceResults } from '@/hooks/useRaceResults';
 import { useStandings } from '@/hooks/useStandings';
 import { buildRecentForm } from '@/utils/form';
@@ -9,6 +10,7 @@ import Link from 'next/link';
 import { useMemo } from 'react';
 
 export default function DriversPage() {
+    usePageTitle('Drivers');
     const { data: standings = [], loading } = useStandings();
     const { data: allRaceRows } = useRaceResults();
 
