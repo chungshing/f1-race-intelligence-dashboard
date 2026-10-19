@@ -8,6 +8,7 @@ import { getPositionColor } from '@/utils/styles';
 import NextImage from 'next/image';
 import Link from 'next/link';
 import { use } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 const compoundTone = (compound: string) => {
     const c = compound.toUpperCase();
@@ -27,6 +28,7 @@ export default function DriverProfilePage({ params }: { params: Promise<{ number
     const { number } = use(params);
     const driverNumber = Number(number);
     const { data: profile, loading, error } = useDriverProfile(driverNumber);
+    usePageTitle(profile?.driverName);
 
     if (loading) {
         return (
