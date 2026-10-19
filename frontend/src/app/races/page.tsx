@@ -3,11 +3,13 @@
 import SeasonTimeline from '@/components/dashboard/SeasonTimeline';
 import AppLayout from '@/components/layout/AppLayout';
 import RaceWeekendCard from '@/components/table/RaceWeekendCard';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { useRaceWeekends } from '@/hooks/useRaceWeekends';
 import { getNextRaceWeekend } from '@/utils/race';
 import { useMemo } from 'react';
 
 export default function RacesPage() {
+    usePageTitle('Races');
     const { data, loading, error } = useRaceWeekends();
 
     const nextRace = useMemo(() => getNextRaceWeekend(data || []), [data]);
