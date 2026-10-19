@@ -9,6 +9,7 @@ import { getPositionColor, TABLE_CONTAINER_CLASS, TABLE_THEAD_CLASS } from '@/ut
 import NextImage from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 function formatPosition(position: number | null, status: PositionStatus | null): string {
     if (status) return status;
@@ -73,6 +74,7 @@ function DriverPickerRow({
 }
 
 export default function DriverComparePage() {
+    usePageTitle('Compare Drivers');
     const [driverA, setDriverA] = useState<number | null>(null);
     const [driverB, setDriverB] = useState<number | null>(null);
     const { data: comparison, allDrivers, loading } = useDriverComparison(driverA, driverB);
