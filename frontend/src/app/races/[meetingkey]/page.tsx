@@ -13,9 +13,9 @@ import { RaceStrategyTable } from '@/components/table/RaceStrategyTable';
 import { SectorDurationTable } from '@/components/table/SectorDurationTable';
 import { SectorSpeedTable } from '@/components/table/SectorSpeedTable';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { useSessionLaps } from '@/hooks/useSessionLaps';
 import { getRaceResults } from '@/lib/app';
-import { parseJsonField } from '@/utils/form';
 import {
     DriverResult,
     RaceControlEvent,
@@ -24,6 +24,7 @@ import {
     SupabaseRaceResultRow,
     WeatherSnapshot,
 } from '@/types/results';
+import { parseJsonField } from '@/utils/form';
 import { findGridRacePairs, isGridRaceSession, pickGridRacePair } from '@/utils/gridVsRace';
 import { use, useEffect, useMemo, useState } from 'react';
 
@@ -146,6 +147,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
     );
 
     const countryName = results[0]?.country || 'Race Weekend';
+    usePageTitle(countryName);
 
     if (loading) {
         return (
