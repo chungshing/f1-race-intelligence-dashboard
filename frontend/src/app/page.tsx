@@ -18,6 +18,7 @@ import { buildRecentForm, parseJsonField } from '@/utils/form';
 import { getNextRaceWeekend } from '@/utils/race';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { TitleFightCard } from '@/components/dashboard/TitleFightCard';
 
 type TabType = 'drivers' | 'constructors';
 
@@ -178,6 +179,10 @@ export default function Home() {
                     ))}
                 </div>
 
+                {!driverLoading && !teamLoading && races.length > 0 && (
+                    <TitleFightCard drivers={standings} teams={teams} races={races} />
+                )}
+
                 {/* Main Grid */}
                 <div className='grid grid-cols-1 lg:grid-cols-3 gap-5 items-start'>
                     {/* Left: Standings */}
@@ -278,7 +283,6 @@ export default function Home() {
                         points={progression.points}
                     />
                 </div>
-
             </div>
         </AppLayout>
     );
