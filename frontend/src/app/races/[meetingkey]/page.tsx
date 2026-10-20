@@ -4,6 +4,7 @@ import { LapHeatmapGrid } from '@/components/chart/LapHeatmapGrid';
 import { LapPaceChart } from '@/components/chart/LapPaceChart';
 import { PaceConsistencyCard } from '@/components/chart/PaceConsistencyCard';
 import { PitStopLeaderboard } from '@/components/chart/PitStopLeaderboard';
+import { PositionByLapChart } from '@/components/chart/PositionByLapChart';
 import { RaceControlPanel } from '@/components/chart/RaceControlPanel';
 import { WeatherPanel } from '@/components/chart/WeatherPanel';
 import AppLayout from '@/components/layout/AppLayout';
@@ -138,6 +139,11 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
 
     const gridRacePairs = useMemo(() => findGridRacePairs(results), [results]);
 
+    const activeGridPair = useMemo(
+        () => (activeRace ? pickGridRacePair(gridRacePairs, activeRace.sessionName) : undefined),
+        [gridRacePairs, activeRace]
+    );
+
     const visibleTabs = TABS.filter(
         (tab) =>
             (!tab.requiresLaps || hasLapData) &&
@@ -248,12 +254,22 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                             </div>
                         )}
                         {activeTab === 'gridvsrace' &&
-                            (pickGridRacePair(gridRacePairs, activeRace.sessionName) ? (
-                                <GridVsRaceView
-                                    pairs={gridRacePairs}
-                                    lookup={driverLookup}
-                                    activeSessionName={activeRace.sessionName}
-                                />
+                            (activeGridPair ? (
+                                <div className='space-y-6'>
+                                    <GridVsRaceView
+                                        pairs={gridRacePairs}
+                                        lookup={driverLookup}
+                                        activeSessionName={activeRace.sessionName}
+                                    />
+                                    <PositionByLapChart
+                                        key={activeRace.sessionKey}
+                                        sessionKey={activeRace.sessionKey}
+                                        driversList={activeRace.classification}
+                                        grid={activeGridPair.grid}
+                                        lookup={driverLookup}
+                                        raceControl={activeRace.raceControl}
+                                    />
+                                </div>
                             ) : (
                                 <GridVsRaceUnavailable results={results} />
                             ))}
