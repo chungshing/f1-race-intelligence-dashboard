@@ -1,13 +1,14 @@
-import { parseJsonField } from '@/utils/form';
+import { TeamPitSummary, buildTeamPitSummary } from '@/lib/pitStops';
 import {
-    pointsFor,
-    groupByMeeting,
     getChronologicalMeetingOrder,
+    groupByMeeting,
     isSprintSession,
+    pointsFor,
 } from '@/lib/racePoints';
+import { RaceWeekend } from '@/types/race';
 import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
 import { DriverStanding, Team } from '@/types/standing';
-import { RaceWeekend } from '@/types/race';
+import { parseJsonField } from '@/utils/form';
 
 export interface DriverContribution {
     driverNumber: number;
@@ -55,6 +56,7 @@ export interface ConstructorProfile {
     seasonResults: ConstructorRoundResult[];
     stats: ConstructorStats;
     driverContributions: DriverPointsContribution[];
+    pitStops: TeamPitSummary;
 }
 
 function buildSeasonResults(
@@ -208,5 +210,6 @@ export function buildConstructorProfile(
         seasonResults,
         stats: buildConstructorStats(seasonResults),
         driverContributions: buildDriverContributions(teamDrivers, seasonResults),
+        pitStops: buildTeamPitSummary(team.teamName, allDrivers, raceRows, meetingOrder),
     };
 }
