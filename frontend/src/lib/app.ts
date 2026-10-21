@@ -72,7 +72,6 @@ export async function getRaceResults(meetingKey?: number): Promise<SupabaseRaceR
     return data || [];
 }
 
-
 export async function getLapsBySession(sessionKey: number): Promise<SupabaseLapRow[]> {
     const { data, error } = await supabase
         .from('laps')
@@ -87,7 +86,9 @@ export async function getLapsBySession(sessionKey: number): Promise<SupabaseLapR
 export async function getRaceResultsWithStints(): Promise<SupabaseRaceResultRow[]> {
     const { data, error } = await supabase
         .from('race_results')
-        .select('session_key, meeting_key, country, session_name, classification_json, stints_json')
+        .select(
+            'session_key, meeting_key, country, session_name, classification_json, stints_json, pit_stops_json'
+        )
         .order('meeting_key', { ascending: true });
 
     if (error) throw new Error(error.message);
