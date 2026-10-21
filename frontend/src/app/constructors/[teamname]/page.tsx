@@ -10,6 +10,7 @@ import NextImage from 'next/image';
 import Link from 'next/link';
 import { use } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { ConstructorPitStops } from '@/components/dashboard/ConstructorPitStops';
 
 const STAT_CARD = 'rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-3.5';
 const STAT_LABEL = 'text-[10px] font-bold uppercase tracking-wider text-zinc-400';
@@ -194,6 +195,7 @@ export default function ConstructorProfilePage({
                     results={profile.seasonResults}
                     drivers={profile.drivers}
                 />
+                <ConstructorPitStops summary={profile.pitStops} teamColor={teamColor} />
             </div>
         </AppLayout>
     );
