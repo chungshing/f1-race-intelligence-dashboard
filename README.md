@@ -20,6 +20,9 @@ A high-performance full-stack F1 analytics platform that visualizes real-time an
 - **Strategy & Performance Analytics**: Tyre stints, pit stop leaderboard, lap heatmap and pace charts, sector times and speeds, pace consistency.
 - **Driver & Constructor Profiles**: Season form, points progression and head-to-head driver comparison.
 - **Standings**: Driver and constructor championship standings synced from OpenF1.
+- **Race Narrative**: Position-by-lap chart for races and sprints, with safety car periods shaded.
+- **Title Fight**: Live driver and constructor championship maths showing who is still mathematically alive and how many points are left.
+- **Pit Crew Ranking**: Team pit stop performance by race and across the season, ranked by median stop time.
 
 ## 🧠 Architecture & Data Flow
 
@@ -41,7 +44,7 @@ A high-performance full-stack F1 analytics platform that visualizes real-time an
 - **✅ Phase 3: Full-Stack Integration** – Connected Next.js to Spring Boot, added state management, and handled loading states.
 - **✅ Phase 4: Persistent Data Layer** – Migration to Supabase/PostgreSQL for historical data storage.
 - **✅ Phase 5: Advanced Features** – Driver profile pages and historical post-race tyre strategy visualizers.
-- **🔄 Phase 6: Race Narrative & Season Insights (Planned)** – Position-by-lap chart for races and sprints, and a season-wide places-gained leaderboard.
+- **✅ Phase 6: Race Narrative & Season Insights** – Position-by-lap chart, title fight calculator, and constructor pit crew ranking.
 
 <details>
 <summary>⚙️ <b>Local Development Setup</b> (Click to expand)</summary>
