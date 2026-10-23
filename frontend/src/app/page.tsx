@@ -1,10 +1,10 @@
 'use client';
 
+import { LastRaceRecap } from '@/components/dashboard/LastRaceRecap';
 import { PointsProgressionChart } from '@/components/dashboard/PointsProgressionChart';
-import { RaceAnalysisBanner } from '@/components/dashboard/RaceAnalysisBanner';
+import { TitleFightCard } from '@/components/dashboard/TitleFightCard';
 import AppLayout from '@/components/layout/AppLayout';
 import { DriverTable } from '@/components/table/DriverTable';
-import { RaceResultsTable } from '@/components/table/RaceResultsTable';
 import RaceWeekendCard from '@/components/table/RaceWeekendCard';
 import { TeamTable } from '@/components/table/TeamTable';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
@@ -18,29 +18,20 @@ import { buildRecentForm, parseJsonField } from '@/utils/form';
 import { getNextRaceWeekend } from '@/utils/race';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { TitleFightCard } from '@/components/dashboard/TitleFightCard';
 
 type TabType = 'drivers' | 'constructors';
 
 export default function Home() {
     usePageTitle();
+
     const { data: standings = [], loading: driverLoading } = useStandings();
     const { data: teams = [], loading: teamLoading } = useTeamStandings();
     const { data: races = [] } = useRaceWeekends();
     const [activeTab, setActiveTab] = useState<TabType>('drivers');
     const driverLookup = useDriverLookup();
 
-    const { data: allRaceRows } = useRaceResults();
+    const { data: allRaceRows, loading: rowsLoading } = useRaceResults();
     const [mountTimestamp] = useState(() => Date.now());
-    const [resultsState, setResultsState] = useState<{
-        data: DriverResult[];
-        loading: boolean;
-    }>({ data: [], loading: true });
-    const [latestAnalysis, setLatestAnalysis] = useState<{
-        meetingKey: number;
-        country: string;
-        sessionName: string;
-    } | null>(null);
 
     const nextRace = useMemo(() => getNextRaceWeekend(races), [races]);
 
@@ -67,33 +58,19 @@ export default function Home() {
         fetch('https://f1-race-intelligence-dashboard.onrender.com/api/health').catch(() => null);
     }, []);
 
+    // Most recent race that actually has a classification
+    const latestRace = useMemo(() => {
+        for (const race of sortedRaces) {
+            const raceSession = allRaceRows.find(
+                (r) => r.meeting_key === race.meetingKey && r.session_name === 'Race'
+            );
+            if (!raceSession) continue;
 
-    // Derive latest race classification + set latestAnalysis banner from allRaceRows
-    useEffect(() => {
-        if (!allRaceRows.length || !sortedRaces.length) return;
-
-        queueMicrotask(() => {
-            for (const race of sortedRaces) {
-                const raceSession = allRaceRows.find(
-                    (r) => r.meeting_key === race.meetingKey && r.session_name === 'Race'
-                );
-                if (!raceSession) continue;
-
-                const rawData = parseJsonField<DriverResult>(raceSession.classification_json);
-
-                if (rawData.length > 0) {
-                    setResultsState({ data: rawData as DriverResult[], loading: false });
-                    setLatestAnalysis({
-                        meetingKey: race.meetingKey,
-                        country: race.country,
-                        sessionName: 'Grand Prix',
-                    });
-                    return;
-                }
+            if (parseJsonField<DriverResult>(raceSession.classification_json).length > 0) {
+                return race;
             }
-
-            setResultsState((prev) => ({ ...prev, loading: false }));
-        });
+        }
+        return null;
     }, [allRaceRows, sortedRaces]);
 
     const formMap = useMemo(() => {
@@ -103,28 +80,6 @@ export default function Home() {
         );
         return Object.fromEntries(rows.map((r) => [r.driverNumber, r.results]));
     }, [allRaceRows, standings]);
-
-    const leader = standings[0];
-    const topTeam = teams[0];
-
-    const statsCards = useMemo(() => {
-        return [
-            {
-                label: 'Championship Leader',
-                val: driverLoading ? null : leader?.driverName,
-                sub: leader
-                    ? `${leader.teamName ?? 'No Active Team'} · ${leader.points ?? 0} PTS`
-                    : '—',
-                color: leader?.teamColor ? `#${leader.teamColor}` : '#71717a',
-            },
-            {
-                label: 'Constructor Leader',
-                val: teamLoading ? null : topTeam?.teamName,
-                sub: topTeam ? `Factory Lead · ${topTeam.points ?? 0} PTS` : '—',
-                color: '#e4e4e7',
-            },
-        ];
-    }, [leader, topTeam, driverLoading, teamLoading]);
 
     return (
         <AppLayout>
@@ -139,45 +94,19 @@ export default function Home() {
                     </div>
                 </div>
 
-                {/* Analysis Banner */}
-                {latestAnalysis && (
-                    <RaceAnalysisBanner
-                        meetingKey={latestAnalysis.meetingKey}
-                        countryName={latestAnalysis.country}
-                        sessionName={latestAnalysis.sessionName}
-                    />
+                {/* Last Race Recap */}
+                {rowsLoading ? (
+                    <div className='h-52 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
+                ) : (
+                    latestRace && (
+                        <LastRaceRecap
+                            meetingKey={latestRace.meetingKey}
+                            country={latestRace.country}
+                            rows={allRaceRows}
+                            lookup={driverLookup}
+                        />
+                    )
                 )}
-
-                {/* Stats Cards */}
-                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-                    {statsCards.map((card, i) => (
-                        <div
-                            key={i}
-                            className='bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-3.5 flex flex-col justify-between'
-                        >
-                            <div className='flex items-center justify-between gap-2'>
-                                <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400 truncate'>
-                                    {card.label}
-                                </p>
-                            </div>
-                            <div className='mt-2 flex items-baseline justify-between gap-4'>
-                                {card.val === null ? (
-                                    <div className='h-9 w-24 bg-zinc-800 animate-pulse rounded-md' />
-                                ) : (
-                                    <h2 className='text-3xl font-mono font-bold truncate tracking-tight text-zinc-100'>
-                                        {card.val || '—'}
-                                    </h2>
-                                )}
-                                <span
-                                    className='text-[10px] font-medium truncate max-w-[50%] border-l border-zinc-800 pl-2'
-                                    style={{ color: card.color }}
-                                >
-                                    {card.sub}
-                                </span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
 
                 {!driverLoading && !teamLoading && races.length > 0 && (
                     <TitleFightCard drivers={standings} teams={teams} races={races} />
@@ -230,48 +159,16 @@ export default function Home() {
                         </div>
                     </div>
 
-                    {/* Right: Race Weekend + Latest Results */}
-                    <div className='lg:col-span-1 lg:sticky lg:top-6 space-y-5'>
-                        <div className='space-y-2'>
-                            <h3 className='text-[10px] font-bold uppercase tracking-widest text-zinc-400 px-1'>
-                                Next Race Weekend
-                            </h3>
-                            {nextRace ? (
-                                <RaceWeekendCard variant='card' data={nextRace} />
-                            ) : (
-                                <div className='h-44 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
-                            )}
-                        </div>
-
-                        <div className='space-y-2'>
-                            <div className='flex items-center justify-between px-1'>
-                                <h3 className='text-[10px] font-bold uppercase tracking-widest text-zinc-400'>
-                                    Latest Race Results
-                                </h3>
-                                {sortedRaces.length > 0 && (
-                                    <Link
-                                        href={`/races/${sortedRaces[0].meetingKey}`}
-                                        className='text-[11px] font-bold text-zinc-400 hover:text-zinc-200 transition-colors tracking-tight'
-                                    >
-                                        Full Session Breakdown →
-                                    </Link>
-                                )}
-                            </div>
-
-                            {resultsState.loading ? (
-                                <div className='h-64 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
-                            ) : resultsState.data.length > 0 ? (
-                                <RaceResultsTable
-                                    classification={resultsState.data}
-                                    lookup={driverLookup}
-                                    variant='landing'
-                                />
-                            ) : (
-                                <div className='text-xs text-zinc-400 bg-zinc-900/20 border border-zinc-800/60 rounded-xl p-6 text-center shadow-inner'>
-                                    No completed race sessions found.
-                                </div>
-                            )}
-                        </div>
+                    {/* Right: Next Race Weekend */}
+                    <div className='lg:col-span-1 lg:sticky lg:top-6 space-y-2'>
+                        <h3 className='text-[10px] font-bold uppercase tracking-widest text-zinc-400 px-1'>
+                            Next Race Weekend
+                        </h3>
+                        {nextRace ? (
+                            <RaceWeekendCard variant='card' data={nextRace} />
+                        ) : (
+                            <div className='h-44 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
+                        )}
                     </div>
                 </div>
 
