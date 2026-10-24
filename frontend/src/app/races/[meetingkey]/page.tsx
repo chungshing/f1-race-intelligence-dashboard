@@ -29,46 +29,23 @@ import { parseJsonField } from '@/utils/form';
 import { findGridRacePairs, isGridRaceSession, pickGridRacePair } from '@/utils/gridVsRace';
 import { use, useEffect, useMemo, useState } from 'react';
 
-type ActiveTab =
-    | 'classification'
-    | 'gridvsrace'
-    | 'strategy'
-    | 'racecontrol'
-    | 'telemetry'
-    | 'performance';
+type ActiveTab = 'classification' | 'strategy' | 'pace' | 'racecontrol';
 
 const TABS = [
     {
         key: 'classification' as const,
-        label: 'Classification',
-        requiresLaps: false,
-        requiresStints: false,
-    },
-    {
-        key: 'gridvsrace' as const,
-        label: 'Grid vs Race',
+        label: 'Results',
         requiresLaps: false,
         requiresStints: false,
     },
     { key: 'strategy' as const, label: 'Race Strategy', requiresLaps: false, requiresStints: true },
+    { key: 'pace' as const, label: 'Pace', requiresLaps: true, requiresStints: false },
     {
         key: 'racecontrol' as const,
         label: 'Race Control',
         requiresLaps: false,
         requiresStints: false,
         requiresRaceControl: true,
-    },
-    {
-        key: 'telemetry' as const,
-        label: 'Lap Telemetry',
-        requiresLaps: true,
-        requiresStints: false,
-    },
-    {
-        key: 'performance' as const,
-        label: 'Performance',
-        requiresLaps: true,
-        requiresStints: false,
     },
 ];
 
@@ -118,26 +95,26 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
         };
     }, [meetingkey]);
 
-    const activeRace = useMemo(() => {
-        return results.find((r) => r.sessionKey === activeSessionKey);
-    }, [results, activeSessionKey]);
-
-    const isGridSession = !!activeRace && isGridRaceSession(activeRace.sessionName);
-
     // Reset tab when session changes
     useEffect(() => {
         if (!activeSessionKey) return;
 
         queueMicrotask(() => {
-            setActiveTab((tab) => (tab === 'gridvsrace' && isGridSession ? tab : 'classification'));
+            setActiveTab('classification');
         });
-    }, [activeSessionKey, isGridSession]);
+    }, [activeSessionKey]);
+
+    const activeRace = useMemo(() => {
+        return results.find((r) => r.sessionKey === activeSessionKey);
+    }, [results, activeSessionKey]);
 
     const hasStintData = (activeRace?.stints?.length ?? 0) > 0;
 
     const hasRaceControlData = (activeRace?.raceControl?.length ?? 0) > 0;
 
     const gridRacePairs = useMemo(() => findGridRacePairs(results), [results]);
+
+    const isGridSession = !!activeRace && isGridRaceSession(activeRace.sessionName);
 
     const activeGridPair = useMemo(
         () => (activeRace ? pickGridRacePair(gridRacePairs, activeRace.sessionName) : undefined),
@@ -148,8 +125,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
         (tab) =>
             (!tab.requiresLaps || hasLapData) &&
             (!tab.requiresStints || hasStintData) &&
-            (!tab.requiresRaceControl || hasRaceControlData) &&
-            (tab.key !== 'gridvsrace' || isGridSession)
+            (!tab.requiresRaceControl || hasRaceControlData)
     );
 
     const countryName = results[0]?.country || 'Race Weekend';
@@ -251,41 +227,47 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                     lookup={driverLookup}
                                     sessionName={activeRace.sessionName}
                                 />
+                                {activeGridPair && (
+                                    <>
+                                        <GridVsRaceView
+                                            pairs={gridRacePairs}
+                                            lookup={driverLookup}
+                                            activeSessionName={activeRace.sessionName}
+                                        />
+                                        <PositionByLapChart
+                                            key={activeRace.sessionKey}
+                                            sessionKey={activeRace.sessionKey}
+                                            driversList={activeRace.classification}
+                                            grid={activeGridPair.grid}
+                                            lookup={driverLookup}
+                                            raceControl={activeRace.raceControl}
+                                        />
+                                    </>
+                                )}
+                                {isGridSession && !activeGridPair && (
+                                    <GridVsRaceUnavailable results={results} />
+                                )}
                             </div>
                         )}
-                        {activeTab === 'gridvsrace' &&
-                            (activeGridPair ? (
-                                <div className='space-y-6'>
-                                    <GridVsRaceView
-                                        pairs={gridRacePairs}
-                                        lookup={driverLookup}
-                                        activeSessionName={activeRace.sessionName}
-                                    />
-                                    <PositionByLapChart
-                                        key={activeRace.sessionKey}
-                                        sessionKey={activeRace.sessionKey}
-                                        driversList={activeRace.classification}
-                                        grid={activeGridPair.grid}
-                                        lookup={driverLookup}
-                                        raceControl={activeRace.raceControl}
-                                    />
-                                </div>
-                            ) : (
-                                <GridVsRaceUnavailable results={results} />
-                            ))}
                         {activeTab === 'racecontrol' && (
                             <RaceControlPanel raceControl={activeRace.raceControl} />
                         )}
                         {activeTab === 'strategy' && (
-                            <RaceStrategyTable
-                                pitStops={activeRace.pitStops}
-                                stints={activeRace.stints}
-                                lookup={driverLookup}
-                                results={activeRace.classification}
-                                raceControl={activeRace.raceControl}
-                            />
+                            <div className='space-y-6'>
+                                <RaceStrategyTable
+                                    pitStops={activeRace.pitStops}
+                                    stints={activeRace.stints}
+                                    lookup={driverLookup}
+                                    results={activeRace.classification}
+                                    raceControl={activeRace.raceControl}
+                                />
+                                <PitStopLeaderboard
+                                    pitStops={activeRace.pitStops}
+                                    lookup={driverLookup}
+                                />
+                            </div>
                         )}
-                        {activeTab === 'telemetry' && (
+                        {activeTab === 'pace' && (
                             <div className='space-y-6'>
                                 <LapHeatmapGrid
                                     sessionKey={activeRace.sessionKey}
@@ -298,32 +280,22 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                     lookup={driverLookup}
                                     raceControl={activeRace.raceControl}
                                 />
-                            </div>
-                        )}
-                        {activeTab === 'performance' && (
-                            <div className='space-y-6'>
                                 <div className='grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch '>
-                                    <PitStopLeaderboard
-                                        pitStops={activeRace.pitStops}
-                                        lookup={driverLookup}
-                                    />
                                     <SectorDurationTable
                                         sessionKey={activeRace.sessionKey}
                                         driversList={activeRace.classification}
                                         lookup={driverLookup}
                                     />
-                                </div>
-                                <div className='grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch '>
                                     <SectorSpeedTable
                                         sessionKey={activeRace.sessionKey}
                                         lookup={driverLookup}
                                     />
-                                    <PaceConsistencyCard
-                                        sessionKey={activeRace.sessionKey}
-                                        lookup={driverLookup}
-                                        raceControl={activeRace.raceControl}
-                                    />
                                 </div>
+                                <PaceConsistencyCard
+                                    sessionKey={activeRace.sessionKey}
+                                    lookup={driverLookup}
+                                    raceControl={activeRace.raceControl}
+                                />
                             </div>
                         )}
                     </section>
