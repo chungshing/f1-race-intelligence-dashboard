@@ -85,7 +85,16 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
             setResults(normalizedResults);
 
             if (normalizedResults.length > 0) {
-                setActiveSessionKey(normalizedResults[normalizedResults.length - 1].sessionKey);
+                const search = new URLSearchParams(window.location.search);
+                const requestedSession = Number(search.get('session'));
+                const requestedTab = TABS.find((t) => t.key === search.get('tab'))?.key;
+
+                const initial =
+                    normalizedResults.find((r) => r.sessionKey === requestedSession) ??
+                    normalizedResults[normalizedResults.length - 1];
+
+                setActiveSessionKey(initial.sessionKey);
+                if (requestedTab) setActiveTab(requestedTab);
             }
             setLoading(false);
         });
@@ -95,14 +104,11 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
         };
     }, [meetingkey]);
 
-    // Reset tab when session changes
+    // Keep the URL in sync so refresh and shared links open the same view
     useEffect(() => {
-        if (!activeSessionKey) return;
-
-        queueMicrotask(() => {
-            setActiveTab('classification');
-        });
-    }, [activeSessionKey]);
+        if (loading || activeSessionKey == null) return;
+        window.history.replaceState(null, '', `?session=${activeSessionKey}&tab=${activeTab}`);
+    }, [loading, activeSessionKey, activeTab]);
 
     const activeRace = useMemo(() => {
         return results.find((r) => r.sessionKey === activeSessionKey);
@@ -185,7 +191,10 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                             return (
                                 <button
                                     key={race.sessionKey}
-                                    onClick={() => setActiveSessionKey(race.sessionKey)}
+                                    onClick={() => {
+                                        setActiveSessionKey(race.sessionKey);
+                                        setActiveTab('classification');
+                                    }}
                                     className={`snap-center px-4 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all whitespace-nowrap ${
                                         isActive
                                             ? 'bg-zinc-800 text-white shadow-md border border-zinc-700/60'
