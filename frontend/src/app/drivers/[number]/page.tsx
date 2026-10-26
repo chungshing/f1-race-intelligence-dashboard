@@ -1,14 +1,14 @@
 'use client';
 
-import AppLayout from '@/components/layout/AppLayout';
 import { SeasonSection } from '@/components/dashboard/SeasonSection';
+import AppLayout from '@/components/layout/AppLayout';
 import { useDriverProfile } from '@/hooks/useDriverProfile';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { formatHexColor } from '@/utils/sessions';
 import { getPositionColor } from '@/utils/styles';
 import NextImage from 'next/image';
 import Link from 'next/link';
 import { use } from 'react';
-import { usePageTitle } from '@/hooks/usePageTitle';
 
 const compoundTone = (compound: string) => {
     const c = compound.toUpperCase();
@@ -126,10 +126,14 @@ export default function DriverProfilePage({ params }: { params: Promise<{ number
                     </div>
                 </div>
 
-                <div className='grid grid-cols-2 gap-3 lg:grid-cols-[repeat(4,1fr)_2fr]'>
+                <div className='grid grid-cols-2 gap-3 lg:grid-cols-[repeat(5,1fr)_2fr]'>
                     <div className={STAT_CARD}>
                         <p className={STAT_LABEL}>Wins</p>
                         <h2 className={STAT_VALUE}>{profile.stats.wins}</h2>
+                    </div>
+                    <div className={`${STAT_CARD} col-span-2 lg:col-span-1`}>
+                        <p className={STAT_LABEL}>Poles</p>
+                        <h2 className={STAT_VALUE}>{profile.poles}</h2>
                     </div>
                     <div className={STAT_CARD}>
                         <p className={STAT_LABEL}>Podiums</p>
