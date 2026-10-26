@@ -1,16 +1,19 @@
 'use client';
 
+import { PoleStatsCard } from '@/components/dashboard/PoleStatsCard';
 import AppLayout from '@/components/layout/AppLayout';
 import { DriverTable } from '@/components/table/DriverTable';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useRaceResults } from '@/hooks/useRaceResults';
 import { useStandings } from '@/hooks/useStandings';
+import { buildPoleStats } from '@/lib/poles';
 import { buildRecentForm } from '@/utils/form';
 import Link from 'next/link';
 import { useMemo } from 'react';
 
 export default function DriversPage() {
     usePageTitle('Drivers');
+
     const { data: standings = [], loading } = useStandings();
     const { data: allRaceRows } = useRaceResults();
 
@@ -21,6 +24,11 @@ export default function DriversPage() {
         );
         return Object.fromEntries(rows.map((r) => [r.driverNumber, r.results]));
     }, [allRaceRows, standings]);
+
+    const poleSummary = useMemo(
+        () => buildPoleStats(allRaceRows, standings),
+        [allRaceRows, standings]
+    );
 
     return (
         <AppLayout>
@@ -43,7 +51,10 @@ export default function DriversPage() {
             {loading ? (
                 <div className='h-96 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
             ) : (
-                <DriverTable standings={standings} formMap={formMap} />
+                <div className='space-y-6'>
+                    <DriverTable standings={standings} formMap={formMap} />
+                    <PoleStatsCard summary={poleSummary} />
+                </div>
             )}
         </AppLayout>
     );
