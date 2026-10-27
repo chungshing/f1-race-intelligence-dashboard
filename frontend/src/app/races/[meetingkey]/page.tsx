@@ -7,6 +7,7 @@ import { PitStopLeaderboard } from '@/components/chart/PitStopLeaderboard';
 import { PositionByLapChart } from '@/components/chart/PositionByLapChart';
 import { RaceControlPanel } from '@/components/chart/RaceControlPanel';
 import { WeatherPanel } from '@/components/chart/WeatherPanel';
+import { RaceSummaryChips } from '@/components/dashboard/RaceSummaryChips';
 import AppLayout from '@/components/layout/AppLayout';
 import { GridVsRaceUnavailable, GridVsRaceView } from '@/components/table/GridVsRaceView';
 import { RaceResultsTable } from '@/components/table/RaceResultsTable';
@@ -27,6 +28,7 @@ import {
 } from '@/types/results';
 import { parseJsonField } from '@/utils/form';
 import { findGridRacePairs, isGridRaceSession, pickGridRacePair } from '@/utils/gridVsRace';
+import { buildRaceSummary } from '@/utils/raceSummary';
 import { use, useEffect, useMemo, useState } from 'react';
 
 type ActiveTab = 'classification' | 'strategy' | 'pace' | 'racecontrol';
@@ -230,6 +232,15 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                     <section className='animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out'>
                         {activeTab === 'classification' && (
                             <div className='space-y-6'>
+                                {isGridSession && (
+                                    <RaceSummaryChips
+                                        summary={buildRaceSummary(
+                                            activeRace.classification,
+                                            activeRace.raceControl,
+                                            activeRace.weather
+                                        )}
+                                    />
+                                )}
                                 <WeatherPanel weather={activeRace.weather} />
                                 <RaceResultsTable
                                     classification={activeRace.classification}
