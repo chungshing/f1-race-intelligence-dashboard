@@ -87,7 +87,7 @@ export async function getRaceResultsWithStints(): Promise<SupabaseRaceResultRow[
     const { data, error } = await supabase
         .from('race_results')
         .select(
-            'session_key, meeting_key, country, session_name, classification_json, stints_json, pit_stops_json, starting_grid_json'
+            'session_key, meeting_key, country, session_name, classification_json, stints_json, pit_stops_json'
         )
         .order('meeting_key', { ascending: true });
 

@@ -8,6 +8,7 @@ import { RaceWeekend } from '@/types/race';
 import { DriverResult, Stint, SupabaseRaceResultRow } from '@/types/results';
 import { DriverStanding } from '@/types/standing';
 import { parseJsonField } from '@/utils/form';
+import { buildPoleStats } from '@/lib/poles';
 
 export interface RoundResult {
     round: number;
@@ -58,6 +59,7 @@ export interface DriverProfile {
     teammateH2H: TeammateH2H[];
     tyreTendencies: TyreCompoundUsage[];
     stats: DriverStats;
+    poles: number;
 }
 
 function buildSeasonResults(
@@ -249,5 +251,8 @@ export function buildDriverProfile(
         teammateH2H: buildTeammateH2H(driverNumber, standing.teamName, allDrivers, byMeeting),
         tyreTendencies: buildTyreTendencies(driverNumber, scoringRows),
         stats: buildDriverStats(seasonResults),
+        poles:
+            buildPoleStats(raceRows, allDrivers).drivers.find((d) => d.key === String(driverNumber))
+                ?.poles ?? 0,
     };
 }

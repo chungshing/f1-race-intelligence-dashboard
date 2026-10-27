@@ -102,7 +102,6 @@ export default function Home() {
                         <LastRaceRecap
                             meetingKey={latestRace.meetingKey}
                             country={latestRace.country}
-                            rows={allRaceRows}
                             lookup={driverLookup}
                         />
                     )

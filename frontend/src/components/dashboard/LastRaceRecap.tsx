@@ -1,10 +1,13 @@
 'use client';
 
+import { RaceSummaryChips } from '@/components/dashboard/RaceSummaryChips';
+import { useMeetingResults } from '@/hooks/useMeetingResults';
 import {
     DriverResult,
+    RaceControlEvent,
     RaceResult,
     StartingGridEntry,
-    SupabaseRaceResultRow,
+    WeatherSnapshot,
 } from '@/types/results';
 import { parseJsonField } from '@/utils/form';
 import {
@@ -13,6 +16,7 @@ import {
     isGrandPrixSession,
     summarizeGridRace,
 } from '@/utils/gridVsRace';
+import { buildRaceSummary } from '@/utils/raceSummary';
 import Link from 'next/link';
 import { useMemo } from 'react';
 
@@ -25,7 +29,6 @@ interface Lookup {
 interface Props {
     meetingKey: number;
     country: string;
-    rows: SupabaseRaceResultRow[];
     lookup: Record<number, Lookup>;
 }
 
@@ -42,22 +45,22 @@ function driverInfo(driverNumber: number, lookup: Record<number, Lookup>): Looku
     );
 }
 
-export function LastRaceRecap({ meetingKey, country, rows, lookup }: Props) {
+export function LastRaceRecap({ meetingKey, country, lookup }: Props) {
+    const { data: rows, loading } = useMeetingResults(meetingKey);
+
     const recap = useMemo(() => {
-        const sessions: RaceResult[] = rows
-            .filter((r) => r.meeting_key === meetingKey)
-            .map((r) => ({
-                sessionKey: r.session_key,
-                meetingKey: r.meeting_key,
-                country: r.country,
-                sessionName: r.session_name,
-                classification: parseJsonField<DriverResult>(r.classification_json),
-                pitStops: parseJsonField(r.pit_stops_json),
-                stints: parseJsonField(r.stints_json),
-                weather: [],
-                raceControl: [],
-                startingGrid: parseJsonField<StartingGridEntry>(r.starting_grid_json),
-            }));
+        const sessions: RaceResult[] = rows.map((r) => ({
+            sessionKey: r.session_key,
+            meetingKey: r.meeting_key,
+            country: r.country,
+            sessionName: r.session_name,
+            classification: parseJsonField<DriverResult>(r.classification_json),
+            pitStops: parseJsonField(r.pit_stops_json),
+            stints: parseJsonField(r.stints_json),
+            weather: parseJsonField<WeatherSnapshot>(r.weather_json),
+            raceControl: parseJsonField<RaceControlEvent>(r.race_control_json),
+            startingGrid: parseJsonField<StartingGridEntry>(r.starting_grid_json),
+        }));
 
         const race = sessions.find((s) => isGrandPrixSession(s.sessionName));
         if (!race) return null;
@@ -90,8 +93,13 @@ export function LastRaceRecap({ meetingKey, country, rows, lookup }: Props) {
             gainer: gainer && (gainer.delta ?? 0) > 0 ? gainer : null,
             gainerVsQualifying: pair ? !pair.isOfficialGrid : false,
             fastestPit,
+            summary: buildRaceSummary(race.classification, race.raceControl, race.weather),
         };
-    }, [rows, meetingKey]);
+    }, [rows]);
+
+    if (loading) {
+        return <div className='h-52 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />;
+    }
 
     if (!recap || recap.podium.length === 0) return null;
 
@@ -113,6 +121,8 @@ export function LastRaceRecap({ meetingKey, country, rows, lookup }: Props) {
                     Full Breakdown →
                 </Link>
             </div>
+
+            <RaceSummaryChips summary={recap.summary} />
 
             <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
                 {recap.podium.map((entry) => {
