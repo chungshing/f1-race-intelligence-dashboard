@@ -1,13 +1,24 @@
 'use client';
 
+import { QualiPaceCard } from '@/components/dashboard/QualiPaceCard';
 import AppLayout from '@/components/layout/AppLayout';
 import { TeamTable } from '@/components/table/TeamTable';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { useTeamStandings } from '@/hooks/useStandings';
+import { useRaceResults } from '@/hooks/useRaceResults';
+import { useRaceWeekends } from '@/hooks/useRaceWeekends';
+import { useStandings, useTeamStandings } from '@/hooks/useStandings';
+import { getChronologicalMeetingOrder } from '@/lib/racePoints';
+import { useMemo } from 'react';
 
 export default function ConstructorsPage() {
     usePageTitle('Constructors');
+
     const { data: teams = [], loading } = useTeamStandings();
+    const { data: drivers = [] } = useStandings();
+    const { data: allRaceRows } = useRaceResults();
+    const { data: races = [] } = useRaceWeekends();
+
+    const meetingOrder = useMemo(() => getChronologicalMeetingOrder(races), [races]);
 
     return (
         <AppLayout>
@@ -22,7 +33,14 @@ export default function ConstructorsPage() {
             {loading ? (
                 <div className='h-96 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
             ) : (
-                <TeamTable standings={teams} />
+                <div className='space-y-6'>
+                    <TeamTable standings={teams} />
+                    <QualiPaceCard
+                        rows={allRaceRows}
+                        drivers={drivers}
+                        meetingOrder={meetingOrder}
+                    />
+                </div>
             )}
         </AppLayout>
     );
