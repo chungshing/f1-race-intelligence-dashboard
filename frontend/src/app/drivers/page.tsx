@@ -1,11 +1,13 @@
 'use client';
 
+import { PlacesGainedCard } from '@/components/dashboard/PlacesGainedCard';
 import { PoleStatsCard } from '@/components/dashboard/PoleStatsCard';
 import AppLayout from '@/components/layout/AppLayout';
 import { DriverTable } from '@/components/table/DriverTable';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useRaceResults } from '@/hooks/useRaceResults';
 import { useStandings } from '@/hooks/useStandings';
+import { buildPlacesGained } from '@/lib/placesGained';
 import { buildPoleStats } from '@/lib/poles';
 import { buildRecentForm } from '@/utils/form';
 import Link from 'next/link';
@@ -27,6 +29,11 @@ export default function DriversPage() {
 
     const poleSummary = useMemo(
         () => buildPoleStats(allRaceRows, standings),
+        [allRaceRows, standings]
+    );
+
+    const placesGained = useMemo(
+        () => buildPlacesGained(allRaceRows, standings),
         [allRaceRows, standings]
     );
 
@@ -54,6 +61,7 @@ export default function DriversPage() {
                 <div className='space-y-6'>
                     <DriverTable standings={standings} formMap={formMap} />
                     <PoleStatsCard summary={poleSummary} />
+                    <PlacesGainedCard summary={placesGained} />
                 </div>
             )}
         </AppLayout>
