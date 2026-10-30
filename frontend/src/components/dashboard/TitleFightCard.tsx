@@ -1,8 +1,15 @@
 'use client';
 
+import { TitleSimulator } from '@/components/dashboard/TitleSimulator';
 import { RaceWeekend } from '@/types/race';
 import { DriverStanding, Team } from '@/types/standing';
-import { TitleEntry, TitleKind, computeTitleFight, countRemainingRounds } from '@/utils/titleFight';
+import {
+    TitleEntry,
+    TitleKind,
+    computeTitleFight,
+    countRemainingRounds,
+    listRemainingRounds,
+} from '@/utils/titleFight';
 import { Trophy } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -13,6 +20,7 @@ interface Props {
 }
 
 const MAX_ROWS = 6;
+const SIMULATED_DRIVERS = 5;
 
 function toHex(color: string) {
     return color.startsWith('#') ? color : `#${color}`;
@@ -20,8 +28,10 @@ function toHex(color: string) {
 
 export function TitleFightCard({ drivers, teams, races }: Props) {
     const [kind, setKind] = useState<TitleKind>('drivers');
+    const [simulating, setSimulating] = useState(false);
 
     const remaining = useMemo(() => countRemainingRounds(races), [races]);
+    const rounds = useMemo(() => listRemainingRounds(races), [races]);
 
     const entries = useMemo<TitleEntry[]>(
         () =>
@@ -50,6 +60,7 @@ export function TitleFightCard({ drivers, teams, races }: Props) {
 
     const shown = fight.contenders.slice(0, MAX_ROWS);
     const hiddenAlive = fight.contenders.length - shown.length;
+    const canSimulate = kind === 'drivers' && !fight.champion && rounds.length > 0;
 
     return (
         <div className='bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-4 space-y-4'>
@@ -151,6 +162,24 @@ export function TitleFightCard({ drivers, teams, races }: Props) {
                     {fight.eliminated > 0 && ` · ${fight.eliminated} eliminated`}. Bar length is the
                     gap as a share of the points left, counting only the best case.
                 </p>
+            )}
+
+            {canSimulate && (
+                <>
+                    <button
+                        onClick={() => setSimulating((open) => !open)}
+                        className='text-[11px] font-bold px-3 py-2 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-200 rounded-lg transition-colors'
+                    >
+                        {simulating ? 'Hide simulator' : 'Simulate the remaining races'}
+                    </button>
+
+                    {simulating && (
+                        <TitleSimulator
+                            contenders={fight.contenders.slice(0, SIMULATED_DRIVERS)}
+                            rounds={rounds}
+                        />
+                    )}
+                </>
             )}
         </div>
     );
