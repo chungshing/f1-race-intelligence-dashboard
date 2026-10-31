@@ -1,19 +1,20 @@
 'use client';
 
-import { MatrixCell, ResultsMatrix as ResultsMatrixData } from '@/lib/resultsMatrix';
+import { CellStatus, MatrixRound, ResultsMatrix as ResultsMatrixData } from '@/lib/resultsMatrix';
 import { TABLE_CONTAINER_CLASS } from '@/utils/styles';
 import { LayoutGrid } from 'lucide-react';
+
+const SPRINT_BAND = 'bg-amber-500/[0.06]';
 
 function toHex(color: string) {
     return color.startsWith('#') ? color : `#${color}`;
 }
 
-function cellClass(cell: MatrixCell | null) {
-    if (!cell) return 'text-zinc-700';
-    if (cell.status === 'DNS') return 'bg-amber-500/15 text-amber-400';
-    if (cell.status) return 'bg-red-500/15 text-red-400';
+function resultClass(position: number | null, status: CellStatus | null, present: boolean) {
+    if (!present) return 'text-zinc-700';
+    if (status === 'DNS') return 'bg-amber-500/15 text-amber-400';
+    if (status) return 'bg-red-500/15 text-red-400';
 
-    const position = cell.position;
     if (position === 1) return 'bg-yellow-400/20 text-yellow-300 font-bold';
     if (position === 2) return 'bg-zinc-300/15 text-zinc-200 font-bold';
     if (position === 3) return 'bg-amber-700/25 text-amber-500 font-bold';
@@ -21,9 +22,31 @@ function cellClass(cell: MatrixCell | null) {
     return 'text-zinc-400';
 }
 
-function cellLabel(cell: MatrixCell | null) {
-    if (!cell) return '·';
-    return cell.status ?? cell.position ?? '—';
+function ResultCell({
+    position,
+    status,
+    present,
+    title,
+    sprintBand,
+}: {
+    position: number | null;
+    status: CellStatus | null;
+    present: boolean;
+    title: string;
+    sprintBand: boolean;
+}) {
+    return (
+        <td
+            title={title}
+            className={`border-t border-zinc-900 p-0.5 ${sprintBand ? SPRINT_BAND : ''}`}
+        >
+            <div
+                className={`w-8 h-7 mx-auto rounded flex items-center justify-center font-mono tabular-nums text-[11px] ${resultClass(position, status, present)}`}
+            >
+                {present ? (status ?? position ?? '—') : '·'}
+            </div>
+        </td>
+    );
 }
 
 const LEGEND = [
@@ -35,18 +58,41 @@ const LEGEND = [
     { label: 'DNF/DSQ', className: 'bg-red-500/15 text-red-400' },
 ];
 
+function HeaderCell({ round }: { round: MatrixRound }) {
+    return (
+        <th
+            colSpan={round.hasSprint ? 2 : 1}
+            title={`Round ${round.round}: ${round.country}${round.hasSprint ? ' (sprint weekend)' : ''}`}
+            className={`px-0.5 pt-2 align-bottom ${round.hasSprint ? SPRINT_BAND : ''}`}
+        >
+            <span
+                className={`block mx-auto h-24 text-[10px] font-semibold whitespace-nowrap ${
+                    round.hasSprint ? 'text-amber-400' : 'text-zinc-400'
+                }`}
+                style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+            >
+                {round.country}
+            </span>
+        </th>
+    );
+}
+
 export function ResultsMatrix({ matrix }: { matrix: ResultsMatrixData }) {
     if (matrix.rounds.length === 0 || matrix.rows.length === 0) return null;
 
+    const sprintWeekends = matrix.rounds.filter((r) => r.hasSprint).length;
+
     return (
         <div className={TABLE_CONTAINER_CLASS}>
-            <div className='p-4 pl-5 border-b border-zinc-900 bg-zinc-900/20 flex items-center gap-2'>
+            <div className='p-4 pl-5 border-b border-zinc-900 bg-zinc-900/20 flex items-center gap-2 flex-wrap'>
                 <LayoutGrid className='w-4 h-4 text-zinc-400' />
                 <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
                     Season Results
                 </h3>
                 <span className='text-[10px] font-medium text-zinc-400'>
-                    Race finishing positions
+                    Finishing positions
+                    {sprintWeekends > 0 &&
+                        ` · ${sprintWeekends} sprint ${sprintWeekends === 1 ? 'weekend' : 'weekends'} highlighted`}
                 </span>
             </div>
 
@@ -54,34 +100,35 @@ export function ResultsMatrix({ matrix }: { matrix: ResultsMatrixData }) {
                 <table className='border-separate border-spacing-0 text-xs'>
                     <thead>
                         <tr>
-                            <th className='sticky left-0 z-10 bg-zinc-950 py-2 px-4 text-left text-[10px] font-bold text-zinc-400 uppercase tracking-wider min-w-44'>
+                            <th
+                                rowSpan={2}
+                                className='sticky left-0 z-10 bg-zinc-950 py-2 px-4 text-left align-bottom text-[10px] font-bold text-zinc-400 uppercase tracking-wider min-w-44'
+                            >
                                 Driver
                             </th>
                             {matrix.rounds.map((round) => (
-                                <th
-                                    key={round.meetingKey}
-                                    title={`Round ${round.round}: ${round.country}`}
-                                    className='px-0.5 pb-2 align-bottom'
-                                >
-                                    <span
-                                        className='block mx-auto h-24 text-[10px] font-semibold text-zinc-400 whitespace-nowrap'
-                                        style={{
-                                            writingMode: 'vertical-rl',
-                                            transform: 'rotate(180deg)',
-                                        }}
-                                    >
-                                        {round.country}
-                                    </span>
-                                </th>
+                                <HeaderCell key={round.meetingKey} round={round} />
                             ))}
-                            <th className='py-2 px-4 text-right text-[10px] font-bold text-zinc-400 uppercase tracking-wider'>
+                            <th
+                                rowSpan={2}
+                                className='py-2 px-4 text-right align-bottom text-[10px] font-bold text-zinc-400 uppercase tracking-wider'
+                            >
                                 Pts
                             </th>
+                        </tr>
+                        <tr>
+                            {matrix.rounds.map((round) =>
+                                round.hasSprint ? (
+                                    <FragmentLabels key={round.meetingKey} />
+                                ) : (
+                                    <th key={round.meetingKey} className='h-4' />
+                                )
+                            )}
                         </tr>
                     </thead>
                     <tbody>
                         {matrix.rows.map((row) => (
-                            <tr key={row.driverNumber} className='group'>
+                            <tr key={row.driverNumber}>
                                 <td className='sticky left-0 z-10 bg-zinc-950 py-1 px-4 border-t border-zinc-900'>
                                     <div className='flex items-center gap-2.5 min-w-0'>
                                         <span
@@ -93,25 +140,42 @@ export function ResultsMatrix({ matrix }: { matrix: ResultsMatrixData }) {
                                         </span>
                                     </div>
                                 </td>
-                                {row.cells.map((cell, index) => {
+                                {row.cells.flatMap((cell, index) => {
                                     const round = matrix.rounds[index];
-                                    const sprint =
-                                        cell?.sprintPosition != null
-                                            ? ` · Sprint P${cell.sprintPosition}`
-                                            : '';
-                                    return (
-                                        <td
-                                            key={round.meetingKey}
-                                            title={`${row.name}, ${round.country}: ${cell ? (cell.status ?? `P${cell.position}`) : 'did not take part'}${sprint}`}
-                                            className='border-t border-zinc-900 p-0.5'
-                                        >
-                                            <div
-                                                className={`w-8 h-7 mx-auto rounded flex items-center justify-center font-mono tabular-nums text-[11px] ${cellClass(cell)}`}
-                                            >
-                                                {cellLabel(cell)}
-                                            </div>
-                                        </td>
+                                    const cells = [];
+
+                                    if (round.hasSprint) {
+                                        cells.push(
+                                            <ResultCell
+                                                key={`${round.meetingKey}-s`}
+                                                position={cell?.sprintPosition ?? null}
+                                                status={cell?.sprintStatus ?? null}
+                                                present={!!cell?.tookPartInSprint}
+                                                sprintBand
+                                                title={`${row.name}, ${round.country} Sprint: ${
+                                                    cell?.tookPartInSprint
+                                                        ? (cell.sprintStatus ??
+                                                          `P${cell.sprintPosition}`)
+                                                        : 'did not take part'
+                                                }`}
+                                            />
+                                        );
+                                    }
+
+                                    cells.push(
+                                        <ResultCell
+                                            key={`${round.meetingKey}-r`}
+                                            position={cell?.position ?? null}
+                                            status={cell?.status ?? null}
+                                            present={!!cell}
+                                            sprintBand={round.hasSprint}
+                                            title={`${row.name}, ${round.country}${
+                                                round.hasSprint ? ' Race' : ''
+                                            }: ${cell ? (cell.status ?? `P${cell.position}`) : 'did not take part'}`}
+                                        />
                                     );
+
+                                    return cells;
                                 })}
                                 <td className='border-t border-zinc-900 py-1 px-4 text-right font-mono font-bold text-zinc-100 tabular-nums'>
                                     {row.points}
@@ -132,8 +196,30 @@ export function ResultsMatrix({ matrix }: { matrix: ResultsMatrixData }) {
                         {item.label}
                     </span>
                 ))}
-                <span className='text-[10px] text-zinc-400'>Hover a cell for sprint results</span>
+                {sprintWeekends > 0 && (
+                    <span className='flex items-center gap-1.5 text-[10px] text-zinc-400'>
+                        <span className='w-3.5 h-3.5 rounded bg-amber-500/20 border border-amber-500/30' />
+                        Sprint weekend (S = Sprint, R = Race)
+                    </span>
+                )}
             </div>
         </div>
+    );
+}
+
+function FragmentLabels() {
+    return (
+        <>
+            <th
+                className={`h-4 pb-1 text-[9px] font-bold text-amber-400 text-center ${SPRINT_BAND}`}
+            >
+                S
+            </th>
+            <th
+                className={`h-4 pb-1 text-[9px] font-bold text-zinc-400 text-center ${SPRINT_BAND}`}
+            >
+                R
+            </th>
+        </>
     );
 }
