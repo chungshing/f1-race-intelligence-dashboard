@@ -9,12 +9,15 @@ export interface MatrixCell {
     position: number | null;
     status: CellStatus | null;
     sprintPosition: number | null;
+    sprintStatus: CellStatus | null;
+    tookPartInSprint: boolean;
 }
 
 export interface MatrixRound {
     meetingKey: number;
     country: string;
     round: number;
+    hasSprint: boolean;
 }
 
 export interface MatrixRow {
@@ -64,7 +67,12 @@ export function buildResultsMatrix(
             ? parseJsonField<DriverResult>(sprintSession.classification_json)
             : [];
 
-        rounds.push({ meetingKey, country: raceSession.country, round: rounds.length + 1 });
+        rounds.push({
+            meetingKey,
+            country: raceSession.country,
+            round: rounds.length + 1,
+            hasSprint: sprint.length > 0,
+        });
         raceByRound.push(race);
         sprintByRound.push(sprint);
     }
@@ -85,6 +93,8 @@ export function buildResultsMatrix(
                     position: entry.position,
                     status: statusOf(entry),
                     sprintPosition: sprintEntry?.position ?? null,
+                    sprintStatus: sprintEntry ? statusOf(sprintEntry) : null,
+                    tookPartInSprint: !!sprintEntry,
                 };
             });
 
