@@ -2,22 +2,39 @@
 
 import { PlacesGainedCard } from '@/components/dashboard/PlacesGainedCard';
 import { PoleStatsCard } from '@/components/dashboard/PoleStatsCard';
+import { ResultsMatrix } from '@/components/dashboard/ResultsMatrix';
 import AppLayout from '@/components/layout/AppLayout';
 import { DriverTable } from '@/components/table/DriverTable';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useRaceResults } from '@/hooks/useRaceResults';
+import { useRaceWeekends } from '@/hooks/useRaceWeekends';
 import { useStandings } from '@/hooks/useStandings';
 import { buildPlacesGained } from '@/lib/placesGained';
 import { buildPoleStats } from '@/lib/poles';
+import { getChronologicalMeetingOrder } from '@/lib/racePoints';
+import { buildResultsMatrix } from '@/lib/resultsMatrix';
 import { buildRecentForm } from '@/utils/form';
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+
+type Tab = 'standings' | 'results' | 'stats';
+
+const TABS: { key: Tab; label: string }[] = [
+    { key: 'standings', label: 'Standings' },
+    { key: 'results', label: 'Season Results' },
+    { key: 'stats', label: 'Season Stats' },
+];
 
 export default function DriversPage() {
     usePageTitle('Drivers');
 
+    const [activeTab, setActiveTab] = useState<Tab>('standings');
+
     const { data: standings = [], loading } = useStandings();
     const { data: allRaceRows } = useRaceResults();
+    const { data: races = [] } = useRaceWeekends();
+
+    const meetingOrder = useMemo(() => getChronologicalMeetingOrder(races), [races]);
 
     const formMap = useMemo(() => {
         const rows = buildRecentForm(
@@ -35,6 +52,11 @@ export default function DriversPage() {
     const placesGained = useMemo(
         () => buildPlacesGained(allRaceRows, standings),
         [allRaceRows, standings]
+    );
+
+    const resultsMatrix = useMemo(
+        () => buildResultsMatrix(allRaceRows, standings, meetingOrder),
+        [allRaceRows, standings, meetingOrder]
     );
 
     return (
@@ -55,14 +77,38 @@ export default function DriversPage() {
                     Compare Drivers
                 </Link>
             </div>
+
+            <div className='flex space-x-6 border-b border-zinc-800/80 text-xs font-bold uppercase tracking-wider pb-px overflow-x-auto scrollbar-none mb-6'>
+                {TABS.map((tab) => (
+                    <button
+                        key={tab.key}
+                        onClick={() => setActiveTab(tab.key)}
+                        className={`pb-3 whitespace-nowrap transition-colors ${
+                            activeTab === tab.key
+                                ? 'text-red-500 border-b-2 border-red-500 font-black'
+                                : 'text-zinc-400 hover:text-zinc-200'
+                        }`}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
+
             {loading ? (
                 <div className='h-96 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
             ) : (
-                <div className='space-y-6'>
-                    <DriverTable standings={standings} formMap={formMap} />
-                    <PoleStatsCard summary={poleSummary} />
-                    <PlacesGainedCard summary={placesGained} />
-                </div>
+                <>
+                    {activeTab === 'standings' && (
+                        <DriverTable standings={standings} formMap={formMap} />
+                    )}
+                    {activeTab === 'results' && <ResultsMatrix matrix={resultsMatrix} />}
+                    {activeTab === 'stats' && (
+                        <div className='space-y-6'>
+                            <PoleStatsCard summary={poleSummary} />
+                            <PlacesGainedCard summary={placesGained} />
+                        </div>
+                    )}
+                </>
             )}
         </AppLayout>
     );
