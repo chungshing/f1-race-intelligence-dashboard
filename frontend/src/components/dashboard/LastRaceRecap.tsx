@@ -17,6 +17,7 @@ import {
     summarizeGridRace,
 } from '@/utils/gridVsRace';
 import { buildRaceSummary } from '@/utils/raceSummary';
+import NextImage from 'next/image';
 import Link from 'next/link';
 import { useMemo } from 'react';
 
@@ -24,6 +25,7 @@ interface Lookup {
     name: string;
     team: string;
     teamColor: string;
+    headshotUrl?: string | null;
 }
 
 interface Props {
@@ -98,7 +100,9 @@ export function LastRaceRecap({ meetingKey, country, lookup }: Props) {
     }, [rows]);
 
     if (loading) {
-        return <div className='h-52 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />;
+        return (
+            <div className='h-52 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
+        );
     }
 
     if (!recap || recap.podium.length === 0) return null;
@@ -136,6 +140,17 @@ export function LastRaceRecap({ meetingKey, country, lookup }: Props) {
                             <span className='font-mono text-lg font-black text-zinc-100 tabular-nums'>
                                 P{entry.position}
                             </span>
+                            {info.headshotUrl && (
+                                <div className='relative w-10 h-10 rounded-full border border-zinc-700 overflow-hidden bg-zinc-800 shrink-0'>
+                                    <NextImage
+                                        src={info.headshotUrl}
+                                        alt={info.name}
+                                        fill
+                                        sizes='40px'
+                                        className='object-cover'
+                                    />
+                                </div>
+                            )}
                             <div className='min-w-0'>
                                 <p className='text-sm font-bold text-zinc-100 truncate'>
                                     {info.name}
