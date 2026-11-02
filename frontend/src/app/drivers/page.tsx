@@ -5,6 +5,7 @@ import { PoleStatsCard } from '@/components/dashboard/PoleStatsCard';
 import { ResultsMatrix } from '@/components/dashboard/ResultsMatrix';
 import AppLayout from '@/components/layout/AppLayout';
 import { DriverTable } from '@/components/table/DriverTable';
+import { TabBar } from '@/components/ui/tabbar';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useRaceResults } from '@/hooks/useRaceResults';
 import { useRaceWeekends } from '@/hooks/useRaceWeekends';
@@ -78,38 +79,33 @@ export default function DriversPage() {
                 </Link>
             </div>
 
-            <div className='flex space-x-6 border-b border-zinc-800/80 text-xs font-bold uppercase tracking-wider pb-px overflow-x-auto scrollbar-none mb-6'>
-                {TABS.map((tab) => (
-                    <button
-                        key={tab.key}
-                        onClick={() => setActiveTab(tab.key)}
-                        className={`pb-3 whitespace-nowrap transition-colors ${
-                            activeTab === tab.key
-                                ? 'text-red-500 border-b-2 border-red-500 font-black'
-                                : 'text-zinc-400 hover:text-zinc-200'
-                        }`}
-                    >
-                        {tab.label}
-                    </button>
-                ))}
-            </div>
+            <TabBar
+                tabs={TABS}
+                active={activeTab}
+                onChange={setActiveTab}
+                label='Driver views'
+                idPrefix='drivers'
+                className='mb-6'
+            />
 
-            {loading ? (
-                <div className='h-96 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
-            ) : (
-                <>
-                    {activeTab === 'standings' && (
-                        <DriverTable standings={standings} formMap={formMap} />
-                    )}
-                    {activeTab === 'results' && <ResultsMatrix matrix={resultsMatrix} />}
-                    {activeTab === 'stats' && (
-                        <div className='space-y-6'>
-                            <PoleStatsCard summary={poleSummary} />
-                            <PlacesGainedCard summary={placesGained} />
-                        </div>
-                    )}
-                </>
-            )}
+            <div role='tabpanel' id='drivers-panel' aria-labelledby={`drivers-tab-${activeTab}`}>
+                {loading ? (
+                    <div className='h-96 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
+                ) : (
+                    <>
+                        {activeTab === 'standings' && (
+                            <DriverTable standings={standings} formMap={formMap} />
+                        )}
+                        {activeTab === 'results' && <ResultsMatrix matrix={resultsMatrix} />}
+                        {activeTab === 'stats' && (
+                            <div className='space-y-6'>
+                                <PoleStatsCard summary={poleSummary} />
+                                <PlacesGainedCard summary={placesGained} />
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
         </AppLayout>
     );
 }
