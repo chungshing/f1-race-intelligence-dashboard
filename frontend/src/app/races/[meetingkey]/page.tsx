@@ -14,6 +14,7 @@ import { RaceResultsTable } from '@/components/table/RaceResultsTable';
 import { RaceStrategyTable } from '@/components/table/RaceStrategyTable';
 import { SectorDurationTable } from '@/components/table/SectorDurationTable';
 import { SectorSpeedTable } from '@/components/table/SectorSpeedTable';
+import { TabBar } from '@/components/ui/tabbar';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useSessionLaps } from '@/hooks/useSessionLaps';
@@ -187,12 +188,17 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
 
                 {/* Session Select Bar */}
                 <div className='bg-zinc-950/60 border border-zinc-800/60 rounded-xl p-1 backdrop-blur-md shadow-inner'>
-                    <div className='flex gap-1 overflow-x-auto scrollbar-none snap-x'>
+                    <div
+                        role='group'
+                        aria-label='Sessions'
+                        className='flex gap-1 overflow-x-auto scrollbar-none snap-x'
+                    >
                         {results.map((race) => {
                             const isActive = activeSessionKey === race.sessionKey;
                             return (
                                 <button
                                     key={race.sessionKey}
+                                    aria-pressed={isActive}
                                     onClick={() => {
                                         setActiveSessionKey(race.sessionKey);
                                         setActiveTab('classification');
@@ -211,25 +217,22 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                 </div>
 
                 {/* View State Navigation Tabs */}
-                <div className='flex space-x-6 border-b border-zinc-800/80 text-xs font-bold uppercase tracking-wider pb-px overflow-x-auto scrollbar-none'>
-                    {visibleTabs.map((tab) => (
-                        <button
-                            key={tab.key}
-                            onClick={() => setActiveTab(tab.key)}
-                            className={`pb-3 whitespace-nowrap transition-colors ${
-                                activeTab === tab.key
-                                    ? 'text-red-500 border-b-2 border-red-500 font-black'
-                                    : 'text-zinc-400 hover:text-zinc-200'
-                            }`}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
+                <TabBar
+                    tabs={visibleTabs}
+                    active={activeTab}
+                    onChange={setActiveTab}
+                    label='Race views'
+                    idPrefix='race'
+                />
 
                 {/* Render Selection Context */}
                 {activeRace && (
-                    <section className='animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out'>
+                    <section
+                        role='tabpanel'
+                        id='race-panel'
+                        aria-labelledby={`race-tab-${activeTab}`}
+                        className='animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out'
+                    >
                         {activeTab === 'classification' && (
                             <div className='space-y-6'>
                                 {isGridSession && (
