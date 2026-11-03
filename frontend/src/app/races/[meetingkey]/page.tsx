@@ -6,6 +6,7 @@ import { PaceConsistencyCard } from '@/components/chart/PaceConsistencyCard';
 import { PitStopLeaderboard } from '@/components/chart/PitStopLeaderboard';
 import { PositionByLapChart } from '@/components/chart/PositionByLapChart';
 import { RaceControlPanel } from '@/components/chart/RaceControlPanel';
+import { TyreDegradationCard } from '@/components/chart/TyreDegradationCard';
 import { WeatherPanel } from '@/components/chart/WeatherPanel';
 import { RaceSummaryChips } from '@/components/dashboard/RaceSummaryChips';
 import AppLayout from '@/components/layout/AppLayout';
@@ -320,6 +321,13 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                     raceControl={activeRace.raceControl}
                                 />
                             </div>
+                        )}
+                        {isGridSession && (
+                            <TyreDegradationCard
+                                sessionKey={activeRace.sessionKey}
+                                stints={activeRace.stints}
+                                raceControl={activeRace.raceControl}
+                            />
                         )}
                     </section>
                 )}
