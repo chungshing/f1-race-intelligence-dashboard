@@ -22,7 +22,7 @@ function toSeconds(value: string | null | undefined): number | null {
     return Number.isFinite(seconds) && seconds > 0 ? seconds : null;
 }
 
-function bestTime(result: DriverResult): number | null {
+export function bestTime(result: DriverResult): number | null {
     const raw = Array.isArray(result.formattedDuration)
         ? [...result.formattedDuration].reverse().find((t) => t)
         : result.formattedDuration;
