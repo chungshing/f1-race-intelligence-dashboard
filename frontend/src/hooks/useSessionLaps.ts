@@ -6,6 +6,7 @@ export function useSessionLaps(sessionKey: number) {
         queryKey: ['sessionLaps', sessionKey],
         queryFn: () => getLapsBySession(sessionKey),
         enabled: !!sessionKey,
+        staleTime: Infinity,
     });
 
     return { data: data ?? [], loading: isLoading, error: !!error };
