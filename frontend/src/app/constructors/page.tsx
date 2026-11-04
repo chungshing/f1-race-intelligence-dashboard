@@ -1,6 +1,7 @@
 'use client';
 
 import { QualiPaceCard } from '@/components/dashboard/QualiPaceCard';
+import { TeammateBattles } from '@/components/dashboard/TeammateBattles';
 import AppLayout from '@/components/layout/AppLayout';
 import { TeamTable } from '@/components/table/TeamTable';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -40,6 +41,7 @@ export default function ConstructorsPage() {
                         drivers={drivers}
                         meetingOrder={meetingOrder}
                     />
+                    <TeammateBattles rows={allRaceRows} drivers={drivers} />
                 </div>
             )}
         </AppLayout>
