@@ -1,6 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
-import { getStandings, getTeamStandings } from "@/lib/app";
+import { getStandings, getTeamStandings } from '@/lib/app';
+import { STALE } from '@/lib/cacheTimes';
 import { DriverStanding, RawDriverStanding, RawTeamStanding, Team } from '@/types/standing';
+import { queryOptions, useQuery } from '@tanstack/react-query';
 
 // ==========================================
 // Data Mapping Helpers
@@ -49,30 +50,39 @@ export function mapTeamStandings(apiData: RawTeamStanding[]): Team[] {
 }
 
 // ==========================================
+// Shared query definitions (one place for keys and cache times)
+// ==========================================
+export const driverStandingsQuery = queryOptions({
+    queryKey: ['driverStandings'],
+    queryFn: async () => mapDriverStandings(await getStandings()),
+    staleTime: STALE.standings,
+});
+
+export const teamStandingsQuery = queryOptions({
+    queryKey: ['teamStandings'],
+    queryFn: async () => mapTeamStandings(await getTeamStandings()),
+    staleTime: STALE.standings,
+});
+
+// ==========================================
 // Custom React Hooks
 // ==========================================
 export function useStandings() {
-    const { data, isLoading, error } = useQuery({
-        queryKey: ['driverStandings'],
-        queryFn: async () => mapDriverStandings(await getStandings()),
-    });
+    const { data, isPending, error } = useQuery(driverStandingsQuery);
 
     return {
         data: data ?? [],
-        loading: isLoading,
+        loading: isPending,
         error: error ? 'Failed to load standings' : null,
     };
 }
 
 export function useTeamStandings() {
-    const { data, isLoading, error } = useQuery({
-        queryKey: ['teamStandings'],
-        queryFn: async () => mapTeamStandings(await getTeamStandings()),
-    });
+    const { data, isPending, error } = useQuery(teamStandingsQuery);
 
     return {
         data: data ?? [],
-        loading: isLoading,
+        loading: isPending,
         error: error ? 'Failed to load team standings' : null,
     };
 }
