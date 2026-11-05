@@ -1,6 +1,7 @@
 import { getRaces } from '@/lib/app';
+import { STALE } from '@/lib/cacheTimes';
 import { RaceWeekend, SupabaseRaceRow } from '@/types/race';
-import { useQuery } from '@tanstack/react-query';
+import { queryOptions, useQuery } from '@tanstack/react-query';
 
 export function mapRaceWeekends(rows: SupabaseRaceRow[]): RaceWeekend[] {
     const parsed: RaceWeekend[] = rows.map((race) => ({
@@ -23,11 +24,15 @@ export function mapRaceWeekends(rows: SupabaseRaceRow[]): RaceWeekend[] {
     return parsed;
 }
 
-export function useRaceWeekends() {
-    const { data, isLoading, error } = useQuery({
-        queryKey: ['raceWeekends'],
-        queryFn: async () => mapRaceWeekends(await getRaces()),
-    });
+// The calendar barely changes, so it stays fresh for an hour.
+export const raceWeekendsQuery = queryOptions({
+    queryKey: ['raceWeekends'],
+    queryFn: async () => mapRaceWeekends(await getRaces()),
+    staleTime: STALE.schedule,
+});
 
-    return { data: data ?? [], loading: isLoading, error: !!error };
+export function useRaceWeekends() {
+    const { data, isPending, error } = useQuery(raceWeekendsQuery);
+
+    return { data: data ?? [], loading: isPending, error: !!error };
 }

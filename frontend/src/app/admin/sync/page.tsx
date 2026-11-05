@@ -1,10 +1,13 @@
 'use client';
 
 import AppLayout from '@/components/layout/AppLayout';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 export default function AdminSyncPage() {
+    const queryClient = useQueryClient();
     const [isSyncing, setIsSyncing] = useState(false);
+    const [cacheRefreshed, setCacheRefreshed] = useState(false);
 
     const handleManualSync = async () => {
         if (isSyncing) return;
@@ -54,6 +57,14 @@ export default function AdminSyncPage() {
         } finally {
             setBackfilling(false);
         }
+    };
+
+    // Pages keep data for up to 10 minutes. After a sync finishes, this marks everything
+    // stale so the next page you open loads fresh data instead of the cached copy.
+    const handleRefreshCache = () => {
+        queryClient.invalidateQueries();
+        setCacheRefreshed(true);
+        setTimeout(() => setCacheRefreshed(false), 4000);
     };
 
     return (
@@ -145,6 +156,28 @@ export default function AdminSyncPage() {
                             {backfillResult}
                         </p>
                     )}
+                </div>
+
+                <div className='pt-6 border-t border-zinc-800/40 space-y-3'>
+                    <h2 className='text-sm font-bold text-zinc-200'>Cached Data</h2>
+                    <p className='text-xs text-zinc-400'>
+                        Pages reuse loaded data for up to 10 minutes (and keep a saved copy in this
+                        browser). Run this after a sync or backfill finishes to load fresh data on
+                        the next page you open.
+                    </p>
+                    <div className='flex items-center gap-3'>
+                        <button
+                            onClick={handleRefreshCache}
+                            className='text-xs font-bold px-3 py-2 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-200 rounded-lg transition-colors'
+                        >
+                            Refresh cached data
+                        </button>
+                        {cacheRefreshed && (
+                            <span className='text-xs text-emerald-400'>
+                                Cache marked stale. Open any page to load fresh data.
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
         </AppLayout>

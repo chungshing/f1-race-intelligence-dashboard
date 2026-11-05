@@ -17,21 +17,20 @@ import { SectorDurationTable } from '@/components/table/SectorDurationTable';
 import { SectorSpeedTable } from '@/components/table/SectorSpeedTable';
 import { TabBar } from '@/components/ui/tabbar';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
+import { useMeetingResults } from '@/hooks/useMeetingResults';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useSessionLaps } from '@/hooks/useSessionLaps';
-import { getRaceResults } from '@/lib/app';
 import {
     DriverResult,
     RaceControlEvent,
     RaceResult,
     StartingGridEntry,
-    SupabaseRaceResultRow,
     WeatherSnapshot,
 } from '@/types/results';
 import { parseJsonField } from '@/utils/form';
 import { findGridRacePairs, isGridRaceSession, pickGridRacePair } from '@/utils/gridVsRace';
 import { buildRaceSummary } from '@/utils/raceSummary';
-import { use, useEffect, useMemo, useState } from 'react';
+import { use, useEffect, useMemo, useRef, useState } from 'react';
 
 type ActiveTab = 'classification' | 'strategy' | 'pace' | 'racecontrol';
 
@@ -57,21 +56,11 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
     const { meetingkey } = use(params);
     const driverLookup = useDriverLookup();
 
-    const [results, setResults] = useState<RaceResult[]>([]);
-    const [activeSessionKey, setActiveSessionKey] = useState<number | null>(null);
-    const [activeTab, setActiveTab] = useState<ActiveTab>('classification');
-    const [loading, setLoading] = useState(true);
+    const { data: rows, loading } = useMeetingResults(Number(meetingkey));
 
-    const { data: activeSessionLaps } = useSessionLaps(activeSessionKey ?? 0);
-    const hasLapData = activeSessionLaps.length > 0;
-
-    useEffect(() => {
-        let isMounted = true;
-
-        getRaceResults(Number(meetingkey)).then((data: SupabaseRaceResultRow[]) => {
-            if (!isMounted) return;
-
-            const normalizedResults: RaceResult[] = data
+    const results = useMemo<RaceResult[]>(
+        () =>
+            rows
                 .map((r) => ({
                     sessionKey: r.session_key,
                     meetingKey: r.meeting_key,
@@ -84,29 +73,34 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                     raceControl: parseJsonField<RaceControlEvent>(r.race_control_json),
                     startingGrid: parseJsonField<StartingGridEntry>(r.starting_grid_json),
                 }))
-                .sort((a, b) => a.sessionKey - b.sessionKey);
+                .sort((a, b) => a.sessionKey - b.sessionKey),
+        [rows]
+    );
 
-            setResults(normalizedResults);
+    const [activeSessionKey, setActiveSessionKey] = useState<number | null>(null);
+    const [activeTab, setActiveTab] = useState<ActiveTab>('classification');
+    const initialised = useRef(false);
 
-            if (normalizedResults.length > 0) {
-                const search = new URLSearchParams(window.location.search);
-                const requestedSession = Number(search.get('session'));
-                const requestedTab = TABS.find((t) => t.key === search.get('tab'))?.key;
+    const { data: activeSessionLaps } = useSessionLaps(activeSessionKey ?? 0);
+    const hasLapData = activeSessionLaps.length > 0;
 
-                const initial =
-                    normalizedResults.find((r) => r.sessionKey === requestedSession) ??
-                    normalizedResults[normalizedResults.length - 1];
+    // Pick the starting session and tab (from the URL if present) once results arrive
+    useEffect(() => {
+        if (initialised.current || results.length === 0) return;
+        initialised.current = true;
 
-                setActiveSessionKey(initial.sessionKey);
-                if (requestedTab) setActiveTab(requestedTab);
-            }
-            setLoading(false);
+        const search = new URLSearchParams(window.location.search);
+        const requestedSession = Number(search.get('session'));
+        const requestedTab = TABS.find((t) => t.key === search.get('tab'))?.key;
+
+        const initial =
+            results.find((r) => r.sessionKey === requestedSession) ?? results[results.length - 1];
+
+        queueMicrotask(() => {
+            setActiveSessionKey(initial.sessionKey);
+            if (requestedTab) setActiveTab(requestedTab);
         });
-
-        return () => {
-            isMounted = false;
-        };
-    }, [meetingkey]);
+    }, [results]);
 
     // Keep the URL in sync so refresh and shared links open the same view
     useEffect(() => {
