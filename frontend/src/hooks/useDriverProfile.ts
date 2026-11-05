@@ -1,26 +1,15 @@
-import { useQuery } from '@tanstack/react-query';
-import { getStandings, getRaceResultsWithStints, getRaces } from '@/lib/app';
+import { raceWeekendsQuery } from '@/hooks/useRaceWeekends';
+import { raceResultsQuery } from '@/hooks/useRaceResults';
+import { driverStandingsQuery } from '@/hooks/useStandings';
 import { buildDriverProfile, DriverProfile } from '@/lib/driverProfile';
-import { mapDriverStandings } from '@/hooks/useStandings';
-import { mapRaceWeekends } from '@/hooks/useRaceWeekends';
+import { useQuery } from '@tanstack/react-query';
 
 export function useDriverProfile(driverNumber: number) {
-    const standingsQuery = useQuery({
-        queryKey: ['driverStandings'],
-        queryFn: async () => mapDriverStandings(await getStandings()),
-    });
+    const standingsQuery = useQuery(driverStandingsQuery);
+    const raceRowsQuery = useQuery(raceResultsQuery);
+    const weekendsQuery = useQuery(raceWeekendsQuery);
 
-    const raceRowsQuery = useQuery({
-        queryKey: ['raceResultsWithStints'],
-        queryFn: getRaceResultsWithStints,
-    });
-
-    const weekendsQuery = useQuery({
-        queryKey: ['raceWeekends'],
-        queryFn: async () => mapRaceWeekends(await getRaces()),
-    });
-
-    const loading = standingsQuery.isLoading || raceRowsQuery.isLoading || weekendsQuery.isLoading;
+    const loading = standingsQuery.isPending || raceRowsQuery.isPending || weekendsQuery.isPending;
     const queryError = standingsQuery.error || raceRowsQuery.error || weekendsQuery.error;
 
     let data: DriverProfile | null = null;
