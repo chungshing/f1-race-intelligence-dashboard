@@ -20,6 +20,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 type TabType = 'drivers' | 'constructors';
+let renderPinged = false;
 
 export default function Home() {
     usePageTitle();
@@ -55,6 +56,8 @@ export default function Home() {
 
     // Wake Render from cold sleep
     useEffect(() => {
+        if (renderPinged) return;
+        renderPinged = true;
         fetch('https://f1-race-intelligence-dashboard.onrender.com/api/health').catch(() => null);
     }, []);
 
