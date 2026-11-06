@@ -1,9 +1,9 @@
 'use client';
 
+import { isNavActive, navItems } from '@/components/layout/navItems';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, ShieldAlert, Flag } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export default function Topbar() {
     const pathname = usePathname();
@@ -36,19 +36,12 @@ export default function Topbar() {
         return () => clearInterval(intervalId);
     }, []);
 
-    const navItems = [
-        { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-        { href: '/drivers', label: 'Drivers', icon: Users },
-        { href: '/constructors', label: 'Constructors', icon: ShieldAlert },
-        { href: '/races', label: 'Races', icon: Flag },
-    ];
-
     return (
-        <header className='w-full border-b border-zinc-900/60 bg-zinc-950/70 sticky top-0 z-50 backdrop-blur-xl select-none'>
+        <header className='w-full border-b border-zinc-900/60 bg-zinc-950/70 sticky top-0 z-50 backdrop-blur-xl select-none pt-[env(safe-area-inset-top)]'>
             {/* Fine Red Accent Top Track */}
             <div className='h-0.5 w-full bg-linear-to-r from-red-600/20 via-red-600 to-red-600/20' />
 
-            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between'>
+            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between'>
                 {/* 1. Left Side: Brand Logo Mark */}
                 <Link
                     href='/'
@@ -63,16 +56,20 @@ export default function Topbar() {
                     </h1>
                 </Link>
 
-                {/* 2. Center: Modular Application Navigation Bar */}
-                <nav className='hidden md:flex items-center gap-1 bg-zinc-900/40 border border-zinc-800/50 p-1.5 rounded-full backdrop-blur-md'>
+                {/* 2. Center: Modular Application Navigation Bar (desktop; phones use the bottom bar) */}
+                <nav
+                    aria-label='Main'
+                    className='hidden md:flex items-center gap-1 bg-zinc-900/40 border border-zinc-800/50 p-1.5 rounded-full backdrop-blur-md'
+                >
                     {navItems.map((item) => {
-                        const isActive = pathname === item.href;
+                        const isActive = isNavActive(pathname, item.href);
                         const Icon = item.icon;
 
                         return (
                             <Link
                                 key={item.href}
                                 href={item.href}
+                                aria-current={isActive ? 'page' : undefined}
                                 className={`flex items-center gap-2.5 px-5 py-2 rounded-full font-medium text-xs tracking-wide transition-all duration-300 relative ${
                                     isActive
                                         ? 'text-white font-semibold'
@@ -109,29 +106,6 @@ export default function Topbar() {
                         </span>
                     </div>
                 </div>
-            </div>
-
-            {/* 4. Secondary Mobile Sub-Navigation Bar */}
-            <div className='md:hidden w-full border-t border-zinc-900/40 bg-zinc-950/40 py-2 px-4 flex justify-around items-center'>
-                {navItems.map((item) => {
-                    const isActive = pathname === item.href;
-                    const Icon = item.icon;
-
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all duration-200 ${
-                                isActive ? 'text-red-500' : 'text-zinc-400 hover:text-zinc-300'
-                            }`}
-                        >
-                            <Icon className='w-4 h-4' />
-                            <span className='text-[10px] font-medium tracking-wide'>
-                                {item.label}
-                            </span>
-                        </Link>
-                    );
-                })}
             </div>
         </header>
     );
