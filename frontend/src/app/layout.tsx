@@ -1,4 +1,5 @@
-import type { Metadata } from 'next';
+import RegisterServiceWorker from '@/components/pwa/RegisterServiceWorker';
+import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
@@ -16,6 +17,19 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
     title: 'F1 Dashboard',
     description: 'A dashboard for Formula 1 data built with Next.js and React.',
+    applicationName: 'F1 Pitwall',
+    appleWebApp: {
+        capable: true,
+        title: 'Pitwall',
+        statusBarStyle: 'black-translucent',
+    },
+};
+
+export const viewport: Viewport = {
+    width: 'device-width',
+    initialScale: 1,
+    viewportFit: 'cover',
+    themeColor: '#09090b',
 };
 
 export default function RootLayout({
@@ -30,6 +44,7 @@ export default function RootLayout({
         >
             <body className='min-h-full flex flex-col'>
                 <Providers>{children}</Providers>
+                <RegisterServiceWorker />
             </body>
         </html>
     );
