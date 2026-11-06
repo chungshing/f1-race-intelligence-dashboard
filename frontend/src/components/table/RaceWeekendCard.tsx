@@ -1,8 +1,9 @@
 'use client';
 
 import { RaceWeekend } from '@/types/race';
+import { buildWeekendIcs, downloadIcs } from '@/utils/calender';
 import { getNextSession, getTimeRemaining, getWeekendLabel } from '@/utils/race';
-import { Calendar, Check, Circle, MapPin, Play, Timer, Trophy } from 'lucide-react';
+import { Calendar, CalendarPlus, Check, Circle, MapPin, Play, Timer, Trophy } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -38,6 +39,15 @@ export default function RaceWeekendCard({ variant = 'card', data }: Props) {
     const isSprintWeekend = sortedSessions.some((s) =>
         s.sessionName.toLowerCase().includes('sprint')
     );
+
+    const hasUpcomingSessions = sortedSessions.some(
+        (s) => new Date(s.dateEnd || s.dateStart).getTime() > now
+    );
+
+    const addToCalendar = (keyOnly: boolean) => {
+        const ics = buildWeekendIcs(data, { keyOnly });
+        if (ics) downloadIcs(ics, `f1-${data.country}-${data.year}`);
+    };
 
     /* Sticky Compact Mode */
     if (variant === 'sticky') {
@@ -246,6 +256,27 @@ export default function RaceWeekendCard({ variant = 'card', data }: Props) {
                     );
                 })}
             </div>
+
+            {hasUpcomingSessions && (
+                <div className='flex flex-wrap items-center gap-2'>
+                    <span className='flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400'>
+                        <CalendarPlus className='w-3 h-3' /> Add to calendar
+                    </span>
+                    <button
+                        onClick={() => addToCalendar(false)}
+                        className='text-[11px] font-bold px-2.5 py-1 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-200 rounded-lg transition-colors'
+                    >
+                        All sessions
+                    </button>
+                    <button
+                        onClick={() => addToCalendar(true)}
+                        title='Qualifying, sprint and race, without practice'
+                        className='text-[11px] font-bold px-2.5 py-1 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-200 rounded-lg transition-colors'
+                    >
+                        Key sessions
+                    </button>
+                </div>
+            )}
 
             <Link
                 href={`/races/${data.meetingKey}`}
