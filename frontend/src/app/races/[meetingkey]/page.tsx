@@ -246,7 +246,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                     sessionName={activeRace.sessionName}
                                 />
                                 {activeGridPair && (
-                                    <>
+                                    <div className='grid grid-cols-1 xl:grid-cols-2 gap-6 items-start'>
                                         <GridVsRaceView
                                             pairs={gridRacePairs}
                                             lookup={driverLookup}
@@ -260,7 +260,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                             lookup={driverLookup}
                                             raceControl={activeRace.raceControl}
                                         />
-                                    </>
+                                    </div>
                                 )}
                                 {isGridSession && !activeGridPair && (
                                     <GridVsRaceUnavailable results={results} />
@@ -287,16 +287,29 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                         )}
                         {activeTab === 'pace' && (
                             <div className='space-y-6'>
+                                <div
+                                    className={`grid grid-cols-1 gap-6 items-start ${
+                                        isGridSession ? 'xl:grid-cols-2' : ''
+                                    }`}
+                                >
+                                    <LapPaceChart
+                                        sessionKey={activeRace.sessionKey}
+                                        driversList={activeRace.classification}
+                                        lookup={driverLookup}
+                                        raceControl={activeRace.raceControl}
+                                    />
+                                    {isGridSession && (
+                                        <TyreDegradationCard
+                                            sessionKey={activeRace.sessionKey}
+                                            stints={activeRace.stints}
+                                            raceControl={activeRace.raceControl}
+                                        />
+                                    )}
+                                </div>
                                 <LapHeatmapGrid
                                     sessionKey={activeRace.sessionKey}
                                     driversList={activeRace.classification}
                                     lookup={driverLookup}
-                                />
-                                <LapPaceChart
-                                    sessionKey={activeRace.sessionKey}
-                                    driversList={activeRace.classification}
-                                    lookup={driverLookup}
-                                    raceControl={activeRace.raceControl}
                                 />
                                 <div className='grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch '>
                                     <SectorDurationTable
@@ -315,13 +328,6 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                     raceControl={activeRace.raceControl}
                                 />
                             </div>
-                        )}
-                        {isGridSession && (
-                            <TyreDegradationCard
-                                sessionKey={activeRace.sessionKey}
-                                stints={activeRace.stints}
-                                raceControl={activeRace.raceControl}
-                            />
                         )}
                     </section>
                 )}
