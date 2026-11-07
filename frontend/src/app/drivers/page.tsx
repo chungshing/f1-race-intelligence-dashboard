@@ -98,7 +98,7 @@ export default function DriversPage() {
                         )}
                         {activeTab === 'results' && <ResultsMatrix matrix={resultsMatrix} />}
                         {activeTab === 'stats' && (
-                            <div className='space-y-6'>
+                            <div className='grid grid-cols-1 xl:grid-cols-2 gap-6 items-start'>
                                 <PoleStatsCard summary={poleSummary} />
                                 <PlacesGainedCard summary={placesGained} />
                             </div>
