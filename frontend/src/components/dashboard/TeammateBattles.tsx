@@ -66,7 +66,7 @@ export function TeammateBattles({ rows, drivers }: Props) {
 
     return (
         <div className={TABLE_CONTAINER_CLASS}>
-            <div className='p-4 pl-5 border-b border-zinc-900 bg-zinc-900/20 flex items-center gap-2 flex-wrap'>
+            <div className='p-4 grid grid-cols-1 gap-3 md:max-h-152 md:overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent'>
                 <Users className='w-4 h-4 text-zinc-400' />
                 <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
                     Teammate Battles
