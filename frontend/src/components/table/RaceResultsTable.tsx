@@ -1,7 +1,12 @@
 'use client';
 
 import { DriverResult } from '@/types/results';
-import { getPositionColor, TABLE_CONTAINER_CLASS, TABLE_THEAD_CLASS } from '@/utils/styles';
+import {
+    getPositionColor,
+    SCROLL_PANEL_CLASS,
+    TABLE_CONTAINER_CLASS,
+    TABLE_THEAD_CLASS,
+} from '@/utils/styles';
 import { ListOrdered, Timer, Trophy } from 'lucide-react';
 
 interface Props {
@@ -95,78 +100,80 @@ export const RaceResultsTable = ({
                     Official Classification
                 </h3>
             </div>
-
-            <table className='w-full text-left border-collapse'>
-                <thead>
-                    <tr className={TABLE_THEAD_CLASS}>
-                        <th className='p-4 pl-5'>Pos</th>
-                        <th className='p-4'>Driver</th>
-                        <th className='p-4'>Team</th>
-                        <th className='p-4 text-right'>{isQualifying ? 'Best Time' : 'Gap'}</th>
-                    </tr>
-                </thead>
-                <tbody className='divide-y divide-zinc-900'>
-                    {rows.map(({ r, info, hasStatus, statusText }) => (
-                        <tr
-                            key={r.driverNumber}
-                            className='hover:bg-zinc-900/50 transition-colors group'
-                        >
-                            <td
-                                className={`p-4 pl-5 font-black font-mono tracking-tight transition-all ${getPositionColor(r.position || 0)}`}
-                                style={{ borderLeft: `4px solid ${info.teamColor}` }}
-                            >
-                                {hasStatus ? (
-                                    <span
-                                        className={
-                                            r.dsq
-                                                ? 'text-red-500'
-                                                : r.dnf
-                                                  ? 'text-zinc-400'
-                                                  : 'text-amber-500'
-                                        }
-                                    >
-                                        {statusText}
-                                    </span>
-                                ) : (
-                                    r.position || '-'
-                                )}
-                            </td>
-                            <td className='p-4 font-semibold text-zinc-200'>{info.name}</td>
-                            <td className='p-4 text-zinc-400 text-xs tracking-tight'>
-                                {info.team}
-                            </td>
-                            <td className='p-4 text-right font-mono text-zinc-400 tabular-nums'>
-                                {hasStatus ? (
-                                    statusText
-                                ) : isQualifying ? (
-                                    Array.isArray(r.formattedDuration) ? (
-                                        <div className='flex flex-col items-end gap-0.5'>
-                                            {r.formattedDuration.map((t, i) => (
-                                                <span key={i} className='text-[10px]'>
-                                                    <span className='text-zinc-400 mr-1'>
-                                                        Q{i + 1}
-                                                    </span>
-                                                    {t || '—'}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <span>{r.formattedDuration || '—'}</span>
-                                    )
-                                ) : r.position === 1 ? (
-                                    <span className='inline-flex items-center gap-1 text-xs text-amber-400 font-bold'>
-                                        <Trophy className='w-3.5 h-3.5 fill-amber-400/10' /> Winner
-                                    </span>
-                                ) : r.gapToLeader != null ? (
-                                    `${r.gapToLeader}`
-                                ) : (
-                                    '-'
-                                )}
-                            </td>
+            <div className={SCROLL_PANEL_CLASS}>
+                <table className='w-full text-left border-collapse'>
+                    <thead>
+                        <tr className={TABLE_THEAD_CLASS}>
+                            <th className='p-4 pl-5'>Pos</th>
+                            <th className='p-4'>Driver</th>
+                            <th className='p-4'>Team</th>
+                            <th className='p-4 text-right'>{isQualifying ? 'Best Time' : 'Gap'}</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody className='divide-y divide-zinc-900'>
+                        {rows.map(({ r, info, hasStatus, statusText }) => (
+                            <tr
+                                key={r.driverNumber}
+                                className='hover:bg-zinc-900/50 transition-colors group'
+                            >
+                                <td
+                                    className={`p-4 pl-5 font-black font-mono tracking-tight transition-all ${getPositionColor(r.position || 0)}`}
+                                    style={{ borderLeft: `4px solid ${info.teamColor}` }}
+                                >
+                                    {hasStatus ? (
+                                        <span
+                                            className={
+                                                r.dsq
+                                                    ? 'text-red-500'
+                                                    : r.dnf
+                                                      ? 'text-zinc-400'
+                                                      : 'text-amber-500'
+                                            }
+                                        >
+                                            {statusText}
+                                        </span>
+                                    ) : (
+                                        r.position || '-'
+                                    )}
+                                </td>
+                                <td className='p-4 font-semibold text-zinc-200'>{info.name}</td>
+                                <td className='p-4 text-zinc-400 text-xs tracking-tight'>
+                                    {info.team}
+                                </td>
+                                <td className='p-4 text-right font-mono text-zinc-400 tabular-nums'>
+                                    {hasStatus ? (
+                                        statusText
+                                    ) : isQualifying ? (
+                                        Array.isArray(r.formattedDuration) ? (
+                                            <div className='flex flex-col items-end gap-0.5'>
+                                                {r.formattedDuration.map((t, i) => (
+                                                    <span key={i} className='text-[10px]'>
+                                                        <span className='text-zinc-400 mr-1'>
+                                                            Q{i + 1}
+                                                        </span>
+                                                        {t || '—'}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <span>{r.formattedDuration || '—'}</span>
+                                        )
+                                    ) : r.position === 1 ? (
+                                        <span className='inline-flex items-center gap-1 text-xs text-amber-400 font-bold'>
+                                            <Trophy className='w-3.5 h-3.5 fill-amber-400/10' />{' '}
+                                            Winner
+                                        </span>
+                                    ) : r.gapToLeader != null ? (
+                                        `${r.gapToLeader}`
+                                    ) : (
+                                        '-'
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };
