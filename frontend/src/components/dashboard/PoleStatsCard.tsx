@@ -1,7 +1,7 @@
 'use client';
 
 import { PoleSummary } from '@/lib/poles';
-import { TABLE_CONTAINER_CLASS } from '@/utils/styles';
+import { SCROLL_PANEL_CLASS, TABLE_CONTAINER_CLASS } from '@/utils/styles';
 import { Medal } from 'lucide-react';
 import { useState } from 'react';
 
@@ -51,7 +51,7 @@ export function PoleStatsCard({ summary }: { summary: PoleSummary }) {
                 </div>
             </div>
 
-            <div className='overflow-x-auto'>
+            <div className={SCROLL_PANEL_CLASS}>
                 <table className='w-full text-xs'>
                     <thead>
                         <tr className='border-b border-zinc-900'>
