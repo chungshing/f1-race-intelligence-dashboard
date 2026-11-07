@@ -8,7 +8,12 @@ import {
     pickGridRacePair,
     summarizeGridRace,
 } from '@/utils/gridVsRace';
-import { TABLE_CONTAINER_CLASS, TABLE_THEAD_CLASS, getPositionColor } from '@/utils/styles';
+import {
+    SCROLL_PANEL_CLASS,
+    TABLE_CONTAINER_CLASS,
+    TABLE_THEAD_CLASS,
+    getPositionColor,
+} from '@/utils/styles';
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Minus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -254,81 +259,83 @@ export function GridVsRaceView({ pairs, lookup, activeSessionName }: Props) {
                     </span>
                 </div>
 
-                <table className='w-full text-left border-collapse min-w-160'>
-                    <thead>
-                        <tr className={TABLE_THEAD_CLASS}>
-                            <th className='p-4 pl-5 w-16'>Finish</th>
-                            <th className='p-4'>Driver</th>
-                            <th className='p-4 text-center w-16'>Quali</th>
-                            <th className='p-4 text-center w-16'>Grid</th>
-                            <th className='p-4 min-w-40'>
-                                <span className='flex items-center justify-between text-[10px]'>
-                                    <span>P1</span>
-                                    <span>Last</span>
-                                </span>
-                            </th>
-                            <th className='p-4 text-right w-24'>Delta</th>
-                        </tr>
-                    </thead>
-                    <tbody className='divide-y divide-zinc-900'>
-                        {rows.map((row) => {
-                            const info = lookup[row.driverNumber];
-                            const DeltaIcon =
-                                row.statusLabel || row.delta == null || row.delta === 0
-                                    ? Minus
-                                    : row.delta > 0
-                                      ? ArrowUpRight
-                                      : ArrowDownRight;
+                <div className={SCROLL_PANEL_CLASS}>
+                    <table className='w-full text-left border-collapse min-w-120'>
+                        <thead>
+                            <tr className={TABLE_THEAD_CLASS}>
+                                <th className='p-3 pl-4 w-16'>Finish</th>
+                                <th className='p-3'>Driver</th>
+                                <th className='p-3 text-center w-14'>Quali</th>
+                                <th className='p-3 text-center w-14'>Grid</th>
+                                <th className='p-3 min-w-28'>
+                                    <span className='flex items-center justify-between text-[10px]'>
+                                        <span>P1</span>
+                                        <span>Last</span>
+                                    </span>
+                                </th>
+                                <th className='p-3 text-right w-20'>Delta</th>
+                            </tr>
+                        </thead>
+                        <tbody className='divide-y divide-zinc-900'>
+                            {rows.map((row) => {
+                                const info = lookup[row.driverNumber];
+                                const DeltaIcon =
+                                    row.statusLabel || row.delta == null || row.delta === 0
+                                        ? Minus
+                                        : row.delta > 0
+                                          ? ArrowUpRight
+                                          : ArrowDownRight;
 
-                            return (
-                                <tr
-                                    key={row.driverNumber}
-                                    className='hover:bg-zinc-900/50 transition-colors'
-                                >
-                                    <td
-                                        className={`p-4 pl-5 font-black font-mono tracking-tight ${getPositionColor(row.finishPosition || 0)}`}
-                                        style={{
-                                            borderLeft: `4px solid ${info?.teamColor ?? '#3f3f46'}`,
-                                        }}
+                                return (
+                                    <tr
+                                        key={row.driverNumber}
+                                        className='hover:bg-zinc-900/50 transition-colors'
                                     >
-                                        {row.statusLabel ?? row.finishPosition ?? '—'}
-                                    </td>
-                                    <td className='p-4'>
-                                        <DriverName
-                                            driverNumber={row.driverNumber}
-                                            lookup={lookup}
-                                        />
-                                    </td>
-                                    <td className='p-4 text-center font-mono text-zinc-400 tabular-nums'>
-                                        {row.qualiPosition ?? '—'}
-                                    </td>
-                                    <td
-                                        className={`p-4 text-center font-mono tabular-nums ${
-                                            row.qualiPosition != null &&
-                                            row.gridPosition != null &&
-                                            row.qualiPosition !== row.gridPosition
-                                                ? 'text-amber-400'
-                                                : 'text-zinc-400'
-                                        }`}
-                                    >
-                                        {row.gridPosition ?? '—'}
-                                    </td>
-                                    <td className='p-4'>
-                                        <PositionTrack row={row} maxPos={maxPos} />
-                                    </td>
-                                    <td className='p-4 text-right'>
-                                        <span
-                                            className={`inline-flex items-center justify-end gap-1 font-mono font-bold tabular-nums ${deltaClass(row.delta, row.statusLabel)}`}
+                                        <td
+                                            className={`p-3 pl-4 font-black font-mono tracking-tight ${getPositionColor(row.finishPosition || 0)}`}
+                                            style={{
+                                                borderLeft: `4px solid ${info?.teamColor ?? '#3f3f46'}`,
+                                            }}
                                         >
-                                            <DeltaIcon className='w-3.5 h-3.5' />
-                                            {formatDelta(row.delta, row.statusLabel)}
-                                        </span>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                                            {row.statusLabel ?? row.finishPosition ?? '—'}
+                                        </td>
+                                        <td className='p-3'>
+                                            <DriverName
+                                                driverNumber={row.driverNumber}
+                                                lookup={lookup}
+                                            />
+                                        </td>
+                                        <td className='p-3 text-center font-mono text-zinc-400 tabular-nums'>
+                                            {row.qualiPosition ?? '—'}
+                                        </td>
+                                        <td
+                                            className={`p-3 text-center font-mono tabular-nums ${
+                                                row.qualiPosition != null &&
+                                                row.gridPosition != null &&
+                                                row.qualiPosition !== row.gridPosition
+                                                    ? 'text-amber-400'
+                                                    : 'text-zinc-400'
+                                            }`}
+                                        >
+                                            {row.gridPosition ?? '—'}
+                                        </td>
+                                        <td className='p-3'>
+                                            <PositionTrack row={row} maxPos={maxPos} />
+                                        </td>
+                                        <td className='p-3 text-right'>
+                                            <span
+                                                className={`inline-flex items-center justify-end gap-1 font-mono font-bold tabular-nums ${deltaClass(row.delta, row.statusLabel)}`}
+                                            >
+                                                <DeltaIcon className='w-3.5 h-3.5' />
+                                                {formatDelta(row.delta, row.statusLabel)}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );
