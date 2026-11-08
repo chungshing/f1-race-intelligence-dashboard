@@ -1,7 +1,9 @@
+import { CONTENT_WIDTH } from '@/lib/layout';
+
 export default function Footer() {
     return (
         <footer className='border-t border-zinc-900 py-4 px-6'>
-            <div className='max-w-7xl mx-auto flex items-center justify-between'>
+            <div className={`${CONTENT_WIDTH} mx-auto flex items-center justify-between`}>
                 <span className='text-[10px] font-mono text-zinc-400 uppercase tracking-widest'>
                     F1 Pitwall · Data via OpenF1
                 </span>
