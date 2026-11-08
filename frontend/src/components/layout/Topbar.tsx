@@ -1,6 +1,7 @@
 'use client';
 
 import { isNavActive, navItems } from '@/components/layout/navItems';
+import { CONTENT_WIDTH } from '@/lib/layout';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -41,7 +42,9 @@ export default function Topbar() {
             {/* Fine Red Accent Top Track */}
             <div className='h-0.5 w-full bg-linear-to-r from-red-600/20 via-red-600 to-red-600/20' />
 
-            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between'>
+            <div
+                className={`${CONTENT_WIDTH} mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between`}
+            >
                 {/* 1. Left Side: Brand Logo Mark */}
                 <Link
                     href='/'
