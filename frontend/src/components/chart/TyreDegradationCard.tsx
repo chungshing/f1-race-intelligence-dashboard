@@ -1,9 +1,9 @@
 'use client';
 
+import { Card, CardBody, CardHeader, CardNote, StatTile } from '@/components/ui/Card';
 import { useSessionLaps } from '@/hooks/useSessionLaps';
 import { RaceControlEvent, Stint } from '@/types/results';
 import { getSafetyCarWindows } from '@/utils/raceControl';
-import { TABLE_CONTAINER_CLASS } from '@/utils/styles';
 import { DryCompound, buildTyreDegradation } from '@/utils/tyres';
 import { CircleDot } from 'lucide-react';
 import { useMemo } from 'react';
@@ -54,46 +54,36 @@ export function TyreDegradationCard({ sessionKey, stints, raceControl }: Props) 
     if (degradation.summaries.length === 0 || degradation.curve.length < 2) return null;
 
     return (
-        <div className={TABLE_CONTAINER_CLASS}>
-            <div className='p-4 pl-5 border-b border-zinc-900 bg-zinc-900/20 flex items-center gap-2 flex-wrap'>
-                <CircleDot className='w-4 h-4 text-zinc-400' />
-                <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
-                    Tyre Degradation
-                </h3>
-                <span className='text-[10px] font-medium text-zinc-400'>
-                    Lap time change as the tyre ages
-                </span>
-            </div>
+        <Card>
+            <CardHeader
+                icon={CircleDot}
+                title='Tyre Degradation'
+                subtitle='Lap time change as the tyre ages'
+            />
 
-            <div className='p-5 space-y-6'>
+            <CardBody className='space-y-6'>
                 <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
                     {degradation.summaries.map((summary) => {
                         const style = COMPOUND_STYLE[summary.compound];
                         return (
-                            <div
-                                key={summary.compound}
-                                className='rounded-lg border border-zinc-800/80 bg-zinc-950/60 px-3 py-2.5'
-                            >
-                                <div className='flex items-center gap-2'>
+                            <StatTile key={summary.compound} label={style.label}>
+                                <div className='mt-1 flex items-center gap-2'>
                                     <span
-                                        className='w-2.5 h-2.5 rounded-full'
+                                        className='w-2.5 h-2.5 rounded-full shrink-0'
                                         style={{ backgroundColor: style.color }}
                                     />
-                                    <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400'>
-                                        {style.label}
+                                    <p className='font-mono text-2xl font-black text-zinc-100 tabular-nums'>
+                                        {signed(summary.degPerLap)}
+                                        <span className='ml-1 text-xs font-medium text-zinc-400'>
+                                            s/lap
+                                        </span>
                                     </p>
                                 </div>
-                                <p className='mt-1 font-mono text-2xl font-black text-zinc-100 tabular-nums'>
-                                    {signed(summary.degPerLap)}
-                                    <span className='ml-1 text-xs font-medium text-zinc-400'>
-                                        s/lap
-                                    </span>
-                                </p>
                                 <p className='text-[11px] text-zinc-400 font-mono'>
                                     {summary.stints} {summary.stints === 1 ? 'stint' : 'stints'} ·{' '}
                                     {Math.round(summary.avgStintLaps)} laps avg
                                 </p>
-                            </div>
+                            </StatTile>
                         );
                     })}
                 </div>
@@ -172,19 +162,20 @@ export function TyreDegradationCard({ sessionKey, stints, raceControl }: Props) 
                                     dot={false}
                                     activeDot={{ r: 4, strokeWidth: 0 }}
                                     connectNulls
+                                    isAnimationActive={false}
                                 />
                             ))}
                         </LineChart>
                     </ResponsiveContainer>
                 </div>
-            </div>
+            </CardBody>
 
-            <p className='px-4 py-3 border-t border-zinc-900 text-[10px] text-zinc-400 leading-relaxed'>
+            <CardNote>
                 The curve is the average lap time against the first three clean laps of each stint.
-                Lap 1, pit in and out laps, safety car laps and slow outliers are left out.
-                It&apos;s not fuel-corrected: cars get lighter and quicker as fuel burns off, so
-                real tyre wear is steeper than shown. Stints with under six clean laps are skipped.
-            </p>
-        </div>
+                Lap 1, pit in and out laps, safety car laps and slow outliers are left out. It&apos;s
+                not fuel-corrected: cars get lighter and quicker as fuel burns off, so real tyre wear
+                is steeper than shown. Stints with under six clean laps are skipped.
+            </CardNote>
+        </Card>
     );
 }
