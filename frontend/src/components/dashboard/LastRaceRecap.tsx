@@ -107,8 +107,10 @@ export function LastRaceRecap({ meetingKey, country, lookup }: Props) {
 
     if (!recap || recap.podium.length === 0) return null;
 
+    // @container: the layout inside follows this card's own width, not the screen's,
+    // so it still looks right when the card shares a row with another one.
     return (
-        <div className={`${CARD} space-y-4 p-4`}>
+        <div className={`@container ${CARD} space-y-4 p-4`}>
             <div className='flex items-start justify-between gap-4'>
                 <div>
                     <p className='text-[10px] font-bold text-red-500 tracking-widest uppercase'>
@@ -128,7 +130,7 @@ export function LastRaceRecap({ meetingKey, country, lookup }: Props) {
 
             <RaceSummaryChips summary={recap.summary} />
 
-            <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
+            <div className='grid grid-cols-1 @2xl:grid-cols-3 gap-3'>
                 {recap.podium.map((entry) => {
                     const info = driverInfo(entry.driverNumber, lookup);
                     return (
@@ -163,7 +165,7 @@ export function LastRaceRecap({ meetingKey, country, lookup }: Props) {
             </div>
 
             {(recap.gainer || recap.fastestPit) && (
-                <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+                <div className='grid grid-cols-1 @xl:grid-cols-2 gap-3'>
                     {recap.gainer && (
                         <div className='rounded-lg border border-zinc-800/80 bg-zinc-950/60 px-3 py-2.5'>
                             <p className={LABEL}>
