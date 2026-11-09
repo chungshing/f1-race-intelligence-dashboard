@@ -240,30 +240,41 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                     />
                                 )}
                                 <WeatherPanel weather={activeRace.weather} />
-                                <RaceResultsTable
-                                    classification={activeRace.classification}
-                                    lookup={driverLookup}
-                                    sessionName={activeRace.sessionName}
-                                />
-                                {activeGridPair && (
-                                    <div className='grid grid-cols-1 xl:grid-cols-2 gap-6 items-start'>
-                                        <GridVsRaceView
-                                            pairs={gridRacePairs}
-                                            lookup={driverLookup}
-                                            activeSessionName={activeRace.sessionName}
-                                        />
-                                        <PositionByLapChart
-                                            key={activeRace.sessionKey}
-                                            sessionKey={activeRace.sessionKey}
-                                            driversList={activeRace.classification}
-                                            grid={activeGridPair.grid}
-                                            lookup={driverLookup}
-                                            raceControl={activeRace.raceControl}
-                                        />
-                                    </div>
-                                )}
-                                {isGridSession && !activeGridPair && (
-                                    <GridVsRaceUnavailable results={results} />
+                                {isGridSession ? (
+                                    <>
+                                        <div className='grid grid-cols-1 xl:grid-cols-2 gap-6 items-start'>
+                                            <RaceResultsTable
+                                                classification={activeRace.classification}
+                                                lookup={driverLookup}
+                                                sessionName={activeRace.sessionName}
+                                            />
+                                            {activeGridPair ? (
+                                                <GridVsRaceView
+                                                    pairs={gridRacePairs}
+                                                    lookup={driverLookup}
+                                                    activeSessionName={activeRace.sessionName}
+                                                />
+                                            ) : (
+                                                <GridVsRaceUnavailable results={results} />
+                                            )}
+                                        </div>
+                                        {activeGridPair && (
+                                            <PositionByLapChart
+                                                key={activeRace.sessionKey}
+                                                sessionKey={activeRace.sessionKey}
+                                                driversList={activeRace.classification}
+                                                grid={activeGridPair.grid}
+                                                lookup={driverLookup}
+                                                raceControl={activeRace.raceControl}
+                                            />
+                                        )}
+                                    </>
+                                ) : (
+                                    <RaceResultsTable
+                                        classification={activeRace.classification}
+                                        lookup={driverLookup}
+                                        sessionName={activeRace.sessionName}
+                                    />
                                 )}
                             </div>
                         )}
@@ -271,7 +282,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                             <RaceControlPanel raceControl={activeRace.raceControl} />
                         )}
                         {activeTab === 'strategy' && (
-                            <div className='space-y-6'>
+                            <div className='grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-6 items-start'>
                                 <RaceStrategyTable
                                     pitStops={activeRace.pitStops}
                                     stints={activeRace.stints}
@@ -311,7 +322,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                     driversList={activeRace.classification}
                                     lookup={driverLookup}
                                 />
-                                <div className='grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch '>
+                                <div className='grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6 items-stretch'>
                                     <SectorDurationTable
                                         sessionKey={activeRace.sessionKey}
                                         driversList={activeRace.classification}
@@ -321,12 +332,14 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                         sessionKey={activeRace.sessionKey}
                                         lookup={driverLookup}
                                     />
+                                    <div className='md:col-span-2 2xl:col-span-1'>
+                                        <PaceConsistencyCard
+                                            sessionKey={activeRace.sessionKey}
+                                            lookup={driverLookup}
+                                            raceControl={activeRace.raceControl}
+                                        />
+                                    </div>
                                 </div>
-                                <PaceConsistencyCard
-                                    sessionKey={activeRace.sessionKey}
-                                    lookup={driverLookup}
-                                    raceControl={activeRace.raceControl}
-                                />
                             </div>
                         )}
                     </section>
