@@ -1,12 +1,14 @@
 'use client';
 
+import { ChampionshipCard } from '@/components/dashboard/ChampionshipCard';
 import { LastRaceRecap } from '@/components/dashboard/LastRaceRecap';
 import { PointsProgressionChart } from '@/components/dashboard/PointsProgressionChart';
-import { TitleFightCard } from '@/components/dashboard/TitleFightCard';
 import AppLayout from '@/components/layout/AppLayout';
 import { DriverTable } from '@/components/table/DriverTable';
 import RaceWeekendCard from '@/components/table/RaceWeekendCard';
 import { TeamTable } from '@/components/table/TeamTable';
+import { Card, CardBody, CardHeader, CardMeta } from '@/components/ui/Card';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useRaceResults } from '@/hooks/useRaceResults';
@@ -16,10 +18,16 @@ import { buildPointsProgression } from '@/lib/pointsProgression';
 import { DriverResult } from '@/types/results';
 import { buildRecentForm, parseJsonField } from '@/utils/form';
 import { getNextRaceWeekend } from '@/utils/race';
+import { TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 type TabType = 'drivers' | 'constructors';
+
+const STANDINGS_TABS: { key: TabType; label: string }[] = [
+    { key: 'drivers', label: 'Drivers' },
+    { key: 'constructors', label: 'Constructors' },
+];
 
 // Wake Render from cold sleep once per page load, not on every visit to the home page.
 let renderPinged = false;
@@ -85,13 +93,13 @@ export default function Home() {
         return Object.fromEntries(rows.map((r) => [r.driverNumber, r.results]));
     }, [allRaceRows, standings]);
 
-    const showTitleFight = !driverLoading && !teamLoading && races.length > 0;
+    const showChampionship = !driverLoading && !teamLoading && races.length > 0;
 
     return (
         <AppLayout>
-            <div className='space-y-5 text-zinc-100'>
+            <div className='space-y-6 text-zinc-100'>
                 {/* Header */}
-                <div className='mb-5 flex items-center justify-between border-b border-zinc-800/40 pb-4'>
+                <div className='flex items-center justify-between border-b border-zinc-800/40 pb-4'>
                     <div>
                         <h1 className='text-2xl font-bold text-zinc-100'>Command Hub</h1>
                         <p className='text-xs text-zinc-400 mt-1'>
@@ -100,54 +108,38 @@ export default function Home() {
                     </div>
                 </div>
 
-                {/* Last race and title fight share a row on wide screens */}
-                <div className='grid grid-cols-1 xl:grid-cols-2 gap-5 items-start'>
-                    {rowsLoading ? (
-                        <div className='h-52 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
-                    ) : (
-                        latestRace && (
-                            <LastRaceRecap
-                                meetingKey={latestRace.meetingKey}
-                                country={latestRace.country}
-                                lookup={driverLookup}
-                            />
-                        )
-                    )}
+                <div className='grid grid-cols-1 lg:grid-cols-3 gap-6 items-start'>
+                    {/* Left: last race, then standings */}
+                    <div className='lg:col-span-2 space-y-6 min-w-0'>
+                        {rowsLoading ? (
+                            <div className='h-52 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
+                        ) : (
+                            latestRace && (
+                                <LastRaceRecap
+                                    meetingKey={latestRace.meetingKey}
+                                    country={latestRace.country}
+                                    lookup={driverLookup}
+                                />
+                            )
+                        )}
 
-                    {showTitleFight && (
-                        <TitleFightCard drivers={standings} teams={teams} races={races} />
-                    )}
-                </div>
-
-                {/* Main Grid */}
-                <div className='grid grid-cols-1 lg:grid-cols-3 gap-5 items-start'>
-                    {/* Left: Standings */}
-                    <div className='lg:col-span-2 space-y-4'>
-                        <div className='flex items-center justify-between border-b border-zinc-800/60 pb-3 gap-4'>
-                            <div className='flex bg-zinc-950 p-1 rounded-lg border border-zinc-800 w-full max-w-60'>
-                                {(['drivers', 'constructors'] as const).map((tab) => (
-                                    <button
-                                        key={tab}
-                                        onClick={() => setActiveTab(tab)}
-                                        className={`flex-1 py-1 text-[11px] font-bold uppercase rounded-md transition-all ${
-                                            activeTab === tab
-                                                ? 'bg-zinc-800 text-zinc-100 shadow-xs'
-                                                : 'text-zinc-400 hover:text-zinc-300'
-                                        }`}
-                                    >
-                                        {tab}
-                                    </button>
-                                ))}
+                        <div className='space-y-4'>
+                            <div className='flex items-center justify-between gap-4'>
+                                <SegmentedControl
+                                    options={STANDINGS_TABS}
+                                    value={activeTab}
+                                    onChange={setActiveTab}
+                                    label='Standings'
+                                    className='w-full max-w-60'
+                                />
+                                <Link
+                                    href={activeTab === 'drivers' ? '/drivers' : '/constructors'}
+                                    className='text-[11px] font-bold text-zinc-400 hover:text-zinc-200 transition-colors tracking-tight whitespace-nowrap'
+                                >
+                                    View Full Standings →
+                                </Link>
                             </div>
-                            <Link
-                                href={activeTab === 'drivers' ? '/drivers' : '/constructors'}
-                                className='text-[11px] font-bold text-zinc-400 hover:text-zinc-200 transition-colors tracking-tight whitespace-nowrap'
-                            >
-                                View Full Standings →
-                            </Link>
-                        </div>
 
-                        <div className='w-full'>
                             {activeTab === 'drivers' ? (
                                 driverLoading ? (
                                     <div className='h-96 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
@@ -166,27 +158,41 @@ export default function Home() {
                         </div>
                     </div>
 
-                    {/* Right: Next Race Weekend */}
-                    <div className='lg:col-span-1 lg:sticky lg:top-6 space-y-2'>
-                        <h3 className='text-[10px] font-bold uppercase tracking-widest text-zinc-400 px-1'>
-                            Next Race Weekend
-                        </h3>
-                        {nextRace ? (
-                            <RaceWeekendCard variant='card' data={nextRace} />
+                    {/* Right: the championship picture, then the next race weekend */}
+                    <div className='lg:col-span-1 space-y-6 min-w-0'>
+                        {showChampionship ? (
+                            <ChampionshipCard drivers={standings} teams={teams} races={races} />
                         ) : (
-                            <div className='h-44 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
+                            <div className='h-64 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
                         )}
+
+                        <div className='space-y-2'>
+                            <h3 className='text-[10px] font-bold uppercase tracking-widest text-zinc-400 px-1'>
+                                Next Race Weekend
+                            </h3>
+                            {nextRace ? (
+                                <RaceWeekendCard variant='card' data={nextRace} />
+                            ) : (
+                                <div className='h-44 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
+                            )}
+                        </div>
                     </div>
                 </div>
 
                 {/* Points Progression Chart */}
-                <div className='bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-4'>
-                    <h3 className='text-sm font-bold text-zinc-300 mb-2'>Championship Battle</h3>
-                    <PointsProgressionChart
-                        series={progression.series}
-                        points={progression.points}
+                <Card>
+                    <CardHeader
+                        icon={TrendingUp}
+                        title='Championship Battle'
+                        right={<CardMeta>Top 5 drivers, points by round</CardMeta>}
                     />
-                </div>
+                    <CardBody>
+                        <PointsProgressionChart
+                            series={progression.series}
+                            points={progression.points}
+                        />
+                    </CardBody>
+                </Card>
             </div>
         </AppLayout>
     );
