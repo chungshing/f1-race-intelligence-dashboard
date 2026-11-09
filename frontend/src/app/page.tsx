@@ -20,6 +20,8 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 type TabType = 'drivers' | 'constructors';
+
+// Wake Render from cold sleep once per page load, not on every visit to the home page.
 let renderPinged = false;
 
 export default function Home() {
@@ -54,7 +56,6 @@ export default function Home() {
         return buildPointsProgression(standings.slice(0, 5), allRaceRows, races);
     }, [standings, allRaceRows, races]);
 
-    // Wake Render from cold sleep
     useEffect(() => {
         if (renderPinged) return;
         renderPinged = true;
@@ -84,6 +85,8 @@ export default function Home() {
         return Object.fromEntries(rows.map((r) => [r.driverNumber, r.results]));
     }, [allRaceRows, standings]);
 
+    const showTitleFight = !driverLoading && !teamLoading && races.length > 0;
+
     return (
         <AppLayout>
             <div className='space-y-5 text-zinc-100'>
@@ -97,22 +100,24 @@ export default function Home() {
                     </div>
                 </div>
 
-                {/* Last Race Recap */}
-                {rowsLoading ? (
-                    <div className='h-52 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
-                ) : (
-                    latestRace && (
-                        <LastRaceRecap
-                            meetingKey={latestRace.meetingKey}
-                            country={latestRace.country}
-                            lookup={driverLookup}
-                        />
-                    )
-                )}
+                {/* Last race and title fight share a row on wide screens */}
+                <div className='grid grid-cols-1 xl:grid-cols-2 gap-5 items-start'>
+                    {rowsLoading ? (
+                        <div className='h-52 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
+                    ) : (
+                        latestRace && (
+                            <LastRaceRecap
+                                meetingKey={latestRace.meetingKey}
+                                country={latestRace.country}
+                                lookup={driverLookup}
+                            />
+                        )
+                    )}
 
-                {!driverLoading && !teamLoading && races.length > 0 && (
-                    <TitleFightCard drivers={standings} teams={teams} races={races} />
-                )}
+                    {showTitleFight && (
+                        <TitleFightCard drivers={standings} teams={teams} races={races} />
+                    )}
+                </div>
 
                 {/* Main Grid */}
                 <div className='grid grid-cols-1 lg:grid-cols-3 gap-5 items-start'>
