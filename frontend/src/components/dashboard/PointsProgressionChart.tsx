@@ -2,14 +2,14 @@
 
 import { PointsProgressionPoint, PointsProgressionSeries } from '@/lib/pointsProgression';
 import {
-    LineChart,
+    CartesianGrid,
+    Legend,
     Line,
+    LineChart,
+    ResponsiveContainer,
+    Tooltip,
     XAxis,
     YAxis,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
-    CartesianGrid,
 } from 'recharts';
 
 interface PointsProgressionChartProps {
@@ -129,6 +129,7 @@ export function PointsProgressionChart({ series, points }: PointsProgressionChar
                         strokeWidth={2}
                         dot={false}
                         activeDot={{ r: 4 }}
+                        isAnimationActive={false}
                     />
                 ))}
             </LineChart>
