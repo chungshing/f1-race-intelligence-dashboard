@@ -1,11 +1,18 @@
 'use client';
 
+import { Card, CardHeader, CardNote } from '@/components/ui/Card';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { PoleSummary } from '@/lib/poles';
-import { SCROLL_PANEL_CLASS, TABLE_CONTAINER_CLASS } from '@/utils/styles';
+import { SCROLL_PANEL_CLASS } from '@/utils/styles';
 import { Medal } from 'lucide-react';
 import { useState } from 'react';
 
 type View = 'drivers' | 'teams';
+
+const VIEWS: { key: View; label: string }[] = [
+    { key: 'drivers', label: 'Drivers' },
+    { key: 'teams', label: 'Teams' },
+];
 
 const TH = 'py-2.5 px-4 text-right text-[10px] font-bold text-zinc-400 uppercase tracking-wider';
 
@@ -20,36 +27,25 @@ export function PoleStatsCard({ summary }: { summary: PoleSummary }) {
     if (summary.drivers.length === 0) return null;
 
     return (
-        <div className={TABLE_CONTAINER_CLASS}>
-            <div className='p-4 pl-5 border-b border-zinc-900 bg-zinc-900/20 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
-                <div className='flex items-center gap-2 flex-wrap'>
-                    <Medal className='w-4 h-4 text-zinc-400' />
-                    <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
-                        Poles vs Wins
-                    </h3>
-                    {summary.racesCompared > 0 && (
-                        <span className='text-[10px] font-medium text-zinc-400'>
-                            Pole-sitter won {summary.poleSitterWon} of {summary.racesCompared} races
-                        </span>
-                    )}
-                </div>
-
-                <div className='flex bg-zinc-950 p-1 rounded-lg border border-zinc-800 w-full sm:max-w-52'>
-                    {(['drivers', 'teams'] as const).map((tab) => (
-                        <button
-                            key={tab}
-                            onClick={() => setView(tab)}
-                            className={`flex-1 py-1 text-[11px] font-bold uppercase rounded-md transition-all ${
-                                view === tab
-                                    ? 'bg-zinc-800 text-zinc-100 shadow-xs'
-                                    : 'text-zinc-400 hover:text-zinc-300'
-                            }`}
-                        >
-                            {tab}
-                        </button>
-                    ))}
-                </div>
-            </div>
+        <Card>
+            <CardHeader
+                icon={Medal}
+                title='Poles vs Wins'
+                subtitle={
+                    summary.racesCompared > 0
+                        ? `Pole-sitter won ${summary.poleSitterWon} of ${summary.racesCompared} races`
+                        : undefined
+                }
+                right={
+                    <SegmentedControl
+                        options={VIEWS}
+                        value={view}
+                        onChange={setView}
+                        label='Poles view'
+                        className='w-full sm:w-auto'
+                    />
+                }
+            />
 
             <div className={SCROLL_PANEL_CLASS}>
                 <table className='w-full text-xs'>
@@ -60,7 +56,7 @@ export function PoleStatsCard({ summary }: { summary: PoleSummary }) {
                             </th>
                             <th className={TH}>Poles</th>
                             <th className={TH}>Wins</th>
-                            <th className={TH}>Wins from pole</th>
+                            <th className={TH}>From pole</th>
                             <th className={TH}>Conversion</th>
                         </tr>
                     </thead>
@@ -105,10 +101,10 @@ export function PoleStatsCard({ summary }: { summary: PoleSummary }) {
                 </table>
             </div>
 
-            <p className='px-4 py-3 border-t border-zinc-900 text-[10px] text-zinc-400 leading-relaxed'>
+            <CardNote>
                 Pole is the fastest Qualifying time, whatever the final grid. Conversion is wins
                 from pole divided by poles.
-            </p>
-        </div>
+            </CardNote>
+        </Card>
     );
 }
