@@ -1,10 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
+import { Card, CardHeader, CardMeta } from '@/components/ui/Card';
 import { useSessionLaps } from '@/hooks/useSessionLaps';
+import { RaceControlEvent } from '@/types/results';
 import { buildPaceConsistency } from '@/utils/performace';
 import { getSafetyCarWindows } from '@/utils/raceControl';
-import { RaceControlEvent } from '@/types/results';
+import { useMemo } from 'react';
 
 interface PaceConsistencyCardProps {
     sessionKey: number;
@@ -39,17 +40,13 @@ export function PaceConsistencyCard({ sessionKey, lookup, raceControl }: PaceCon
         );
 
     return (
-        <div className='bg-zinc-950/40 border border-zinc-800/80 rounded-xl p-5 backdrop-blur-md space-y-4'>
-            <div>
-                <h3 className='text-sm font-black text-white uppercase tracking-wider'>
-                    Race Pace Consistency
-                </h3>
-                <p className='text-[11px] text-zinc-400'>
-                    Ranked by lowest lap time variability (Standard Deviation) during green flags
-                </p>
-            </div>
+        <Card>
+            <CardHeader
+                title='Race Pace Consistency'
+                right={<CardMeta>Lap-time variation, green flags</CardMeta>}
+            />
 
-            <div className='space-y-2 max-h-83.5 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent'>
+            <div className='p-4 grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-1 gap-2 content-start max-h-83.5 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent'>
                 {consistency.map((driverRow, index) => {
                     const driver = lookup[driverRow.driverNumber] || {
                         name: `Driver ${driverRow.driverNumber}`,
@@ -90,6 +87,6 @@ export function PaceConsistencyCard({ sessionKey, lookup, raceControl }: PaceCon
                     );
                 })}
             </div>
-        </div>
+        </Card>
     );
 }
