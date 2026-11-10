@@ -1,7 +1,7 @@
 'use client';
 
+import { Card, CardHeader } from '@/components/ui/Card';
 import { CellStatus, MatrixRound, ResultsMatrix as ResultsMatrixData } from '@/lib/resultsMatrix';
-import { TABLE_CONTAINER_CLASS } from '@/utils/styles';
 import { LayoutGrid } from 'lucide-react';
 
 const SPRINT_BAND = 'bg-amber-500/[0.06]';
@@ -83,18 +83,16 @@ export function ResultsMatrix({ matrix }: { matrix: ResultsMatrixData }) {
     const sprintWeekends = matrix.rounds.filter((r) => r.hasSprint).length;
 
     return (
-        <div className={TABLE_CONTAINER_CLASS}>
-            <div className='p-4 pl-5 border-b border-zinc-900 bg-zinc-900/20 flex items-center gap-2 flex-wrap'>
-                <LayoutGrid className='w-4 h-4 text-zinc-400' />
-                <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
-                    Season Results
-                </h3>
-                <span className='text-[10px] font-medium text-zinc-400'>
-                    Finishing positions
-                    {sprintWeekends > 0 &&
-                        ` · ${sprintWeekends} sprint ${sprintWeekends === 1 ? 'weekend' : 'weekends'} highlighted`}
-                </span>
-            </div>
+        <Card>
+            <CardHeader
+                icon={LayoutGrid}
+                title='Season Results'
+                subtitle={`Finishing positions${
+                    sprintWeekends > 0
+                        ? ` · ${sprintWeekends} sprint ${sprintWeekends === 1 ? 'weekend' : 'weekends'} highlighted`
+                        : ''
+                }`}
+            />
 
             <div className='overflow-x-auto'>
                 <table className='border-separate border-spacing-0 text-xs'>
@@ -203,7 +201,7 @@ export function ResultsMatrix({ matrix }: { matrix: ResultsMatrixData }) {
                     </span>
                 )}
             </div>
-        </div>
+        </Card>
     );
 }
 
