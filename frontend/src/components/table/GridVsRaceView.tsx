@@ -1,5 +1,7 @@
 'use client';
 
+import { Card, CardHeader, CardMeta, StatTile } from '@/components/ui/Card';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { RaceResult } from '@/types/results';
 import {
     GridRacePair,
@@ -8,12 +10,7 @@ import {
     pickGridRacePair,
     summarizeGridRace,
 } from '@/utils/gridVsRace';
-import {
-    SCROLL_PANEL_CLASS,
-    TABLE_CONTAINER_CLASS,
-    TABLE_THEAD_CLASS,
-    getPositionColor,
-} from '@/utils/styles';
+import { SCROLL_PANEL_CLASS, TABLE_THEAD_CLASS, getPositionColor } from '@/utils/styles';
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Minus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -124,8 +121,7 @@ function StatCard({
     const delta = row?.delta ?? null;
 
     return (
-        <div className='border border-zinc-800 rounded-xl bg-linear-to-b from-zinc-900 to-zinc-950 p-4'>
-            <p className='text-[10px] font-bold text-zinc-400 uppercase tracking-widest'>{label}</p>
+        <StatTile label={label}>
             {row && info ? (
                 <div className='mt-2 flex items-end justify-between gap-3'>
                     <div className='min-w-0'>
@@ -143,9 +139,14 @@ function StatCard({
             ) : (
                 <p className='mt-2 text-sm text-zinc-400'>{empty}</p>
             )}
-        </div>
+        </StatTile>
     );
 }
+
+const SORT_OPTIONS: { key: SortMode; label: string }[] = [
+    { key: 'finish', label: 'Finish order' },
+    { key: 'gainers', label: 'Places gained' },
+];
 
 export function GridVsRaceView({ pairs, lookup, activeSessionName }: Props) {
     const [sortMode, setSortMode] = useState<SortMode>('finish');
@@ -187,26 +188,12 @@ export function GridVsRaceView({ pairs, lookup, activeSessionName }: Props) {
                     )}
                 </div>
 
-                <div className='flex gap-1 bg-zinc-950/60 border border-zinc-800/60 rounded-lg p-1 w-fit'>
-                    {(
-                        [
-                            { key: 'finish' as const, label: 'Finish order' },
-                            { key: 'gainers' as const, label: 'Places gained' },
-                        ] as const
-                    ).map((option) => (
-                        <button
-                            key={option.key}
-                            onClick={() => setSortMode(option.key)}
-                            className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-md transition-colors ${
-                                sortMode === option.key
-                                    ? 'bg-zinc-800 text-white border border-zinc-700/60'
-                                    : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-                            }`}
-                        >
-                            {option.label}
-                        </button>
-                    ))}
-                </div>
+                <SegmentedControl
+                    options={SORT_OPTIONS}
+                    value={sortMode}
+                    onChange={setSortMode}
+                    label='Sort order'
+                />
             </div>
 
             <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
@@ -230,10 +217,7 @@ export function GridVsRaceView({ pairs, lookup, activeSessionName }: Props) {
                     lookup={lookup}
                     empty='No places lost'
                 />
-                <div className='border border-zinc-800 rounded-xl bg-linear-to-b from-zinc-900 to-zinc-950 p-4'>
-                    <p className='text-[10px] font-bold text-zinc-400 uppercase tracking-widest'>
-                        Field movement
-                    </p>
+                <StatTile label='Field movement'>
                     <div className='mt-2 flex items-end justify-between gap-3'>
                         <p className='text-sm text-zinc-400'>
                             {summary.placesChanged} drivers changed position
@@ -243,21 +227,19 @@ export function GridVsRaceView({ pairs, lookup, activeSessionName }: Props) {
                         </span>
                     </div>
                     <p className='text-[11px] text-zinc-400 mt-1'>places swapped</p>
-                </div>
+                </StatTile>
             </div>
 
-            <div className={TABLE_CONTAINER_CLASS}>
-                <div className='p-4 pl-5 border-b border-zinc-900 bg-zinc-900/20 flex items-center justify-between gap-3'>
-                    <div className='flex items-center gap-2'>
-                        <ArrowRight className='w-4 h-4 text-zinc-400' />
-                        <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
-                            Grid → Finish
-                        </h3>
-                    </div>
-                    <span className='text-[10px] text-zinc-400 font-medium uppercase tracking-wider'>
-                        {pair.gridLabel} vs {pair.raceSession.sessionName}
-                    </span>
-                </div>
+            <Card>
+                <CardHeader
+                    icon={ArrowRight}
+                    title='Grid → Finish'
+                    right={
+                        <CardMeta>
+                            {pair.gridLabel} vs {pair.raceSession.sessionName}
+                        </CardMeta>
+                    }
+                />
 
                 <div className={SCROLL_PANEL_CLASS}>
                     <table className='w-full text-left border-collapse min-w-120'>
@@ -336,7 +318,7 @@ export function GridVsRaceView({ pairs, lookup, activeSessionName }: Props) {
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </Card>
         </div>
     );
 }
