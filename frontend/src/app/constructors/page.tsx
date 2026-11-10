@@ -35,15 +35,15 @@ export default function ConstructorsPage() {
                 <div className='h-96 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
             ) : (
                 <div className='space-y-6'>
-                    <TeamTable standings={teams} />
                     <div className='grid grid-cols-1 xl:grid-cols-2 gap-6 items-start'>
+                        <TeamTable standings={teams} />
                         <QualiPaceCard
                             rows={allRaceRows}
                             drivers={drivers}
                             meetingOrder={meetingOrder}
                         />
-                        <TeammateBattles rows={allRaceRows} drivers={drivers} />
                     </div>
+                    <TeammateBattles rows={allRaceRows} drivers={drivers} />
                 </div>
             )}
         </AppLayout>
