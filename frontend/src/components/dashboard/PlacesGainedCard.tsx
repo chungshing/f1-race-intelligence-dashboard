@@ -1,7 +1,8 @@
 'use client';
 
+import { Card, CardHeader, CardMeta, CardNote } from '@/components/ui/Card';
 import { PlacesGainedSummary } from '@/lib/placesGained';
-import { TABLE_CONTAINER_CLASS } from '@/utils/styles';
+import { SCROLL_PANEL_CLASS } from '@/utils/styles';
 import { ArrowUpDown } from 'lucide-react';
 
 const TH = 'py-2.5 px-4 text-right text-[10px] font-bold text-zinc-400 uppercase tracking-wider';
@@ -27,18 +28,14 @@ export function PlacesGainedCard({ summary }: { summary: PlacesGainedSummary }) 
     const fallbackRaces = summary.racesCounted - summary.officialGridRaces;
 
     return (
-        <div className={TABLE_CONTAINER_CLASS}>
-            <div className='p-4 pl-5 border-b border-zinc-900 bg-zinc-900/20 flex items-center gap-2 flex-wrap'>
-                <ArrowUpDown className='w-4 h-4 text-zinc-400' />
-                <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
-                    Places Gained
-                </h3>
-                <span className='text-[10px] font-medium text-zinc-400'>
-                    Grid to finish, {summary.racesCounted} races
-                </span>
-            </div>
+        <Card>
+            <CardHeader
+                icon={ArrowUpDown}
+                title='Places Gained'
+                right={<CardMeta>Grid to finish, {summary.racesCounted} races</CardMeta>}
+            />
 
-            <div className='overflow-x-auto'>
+            <div className={SCROLL_PANEL_CLASS}>
                 <table className='w-full text-xs'>
                     <thead>
                         <tr className='border-b border-zinc-900'>
@@ -91,12 +88,12 @@ export function PlacesGainedCard({ summary }: { summary: PlacesGainedSummary }) 
                 </table>
             </div>
 
-            <p className='px-4 py-3 border-t border-zinc-900 text-[10px] text-zinc-400 leading-relaxed'>
+            <CardNote>
                 Counts classified finishers only, so retirements don&apos;t count as places lost.
                 Drivers who start near the front have less room to gain.
                 {fallbackRaces > 0 &&
                     ` ${summary.officialGridRaces} of ${summary.racesCounted} races use the official starting grid; the other ${fallbackRaces} use qualifying positions.`}
-            </p>
-        </div>
+            </CardNote>
+        </Card>
     );
 }
