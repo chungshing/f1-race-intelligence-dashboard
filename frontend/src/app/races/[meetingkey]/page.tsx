@@ -15,7 +15,7 @@ import { RaceResultsTable } from '@/components/table/RaceResultsTable';
 import { RaceStrategyTable } from '@/components/table/RaceStrategyTable';
 import { SectorDurationTable } from '@/components/table/SectorDurationTable';
 import { SectorSpeedTable } from '@/components/table/SectorSpeedTable';
-import { TabBar } from '@/components/ui/tabbar';
+import { TabBar } from '@/components/ui/TabBar';
 import { useDriverLookup } from '@/hooks/useDriverLookup';
 import { useMeetingResults } from '@/hooks/useMeetingResults';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -241,24 +241,20 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                 )}
                                 <WeatherPanel weather={activeRace.weather} />
                                 {isGridSession ? (
-                                    <>
-                                        <div className='grid grid-cols-1 xl:grid-cols-2 gap-6 items-start'>
-                                            <RaceResultsTable
-                                                classification={activeRace.classification}
+                                    activeGridPair ? (
+                                        <>
+                                            <GridVsRaceView
+                                                pairs={gridRacePairs}
                                                 lookup={driverLookup}
-                                                sessionName={activeRace.sessionName}
+                                                activeSessionName={activeRace.sessionName}
+                                                leftSlot={
+                                                    <RaceResultsTable
+                                                        classification={activeRace.classification}
+                                                        lookup={driverLookup}
+                                                        sessionName={activeRace.sessionName}
+                                                    />
+                                                }
                                             />
-                                            {activeGridPair ? (
-                                                <GridVsRaceView
-                                                    pairs={gridRacePairs}
-                                                    lookup={driverLookup}
-                                                    activeSessionName={activeRace.sessionName}
-                                                />
-                                            ) : (
-                                                <GridVsRaceUnavailable results={results} />
-                                            )}
-                                        </div>
-                                        {activeGridPair && (
                                             <PositionByLapChart
                                                 key={activeRace.sessionKey}
                                                 sessionKey={activeRace.sessionKey}
@@ -267,8 +263,17 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                                 lookup={driverLookup}
                                                 raceControl={activeRace.raceControl}
                                             />
-                                        )}
-                                    </>
+                                        </>
+                                    ) : (
+                                        <div className='grid grid-cols-1 xl:grid-cols-2 gap-6 items-start'>
+                                            <RaceResultsTable
+                                                classification={activeRace.classification}
+                                                lookup={driverLookup}
+                                                sessionName={activeRace.sessionName}
+                                            />
+                                            <GridVsRaceUnavailable results={results} />
+                                        </div>
+                                    )
                                 ) : (
                                     <RaceResultsTable
                                         classification={activeRace.classification}

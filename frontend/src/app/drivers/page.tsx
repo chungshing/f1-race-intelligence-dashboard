@@ -5,7 +5,7 @@ import { PoleStatsCard } from '@/components/dashboard/PoleStatsCard';
 import { ResultsMatrix } from '@/components/dashboard/ResultsMatrix';
 import AppLayout from '@/components/layout/AppLayout';
 import { DriverTable } from '@/components/table/DriverTable';
-import { TabBar } from '@/components/ui/tabbar';
+import { TabBar } from '@/components/ui/TabBar';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useRaceResults } from '@/hooks/useRaceResults';
 import { useRaceWeekends } from '@/hooks/useRaceWeekends';
