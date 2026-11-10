@@ -1,9 +1,9 @@
 'use client';
 
+import { Card, CardBody, CardHeader, CardNote } from '@/components/ui/Card';
 import { buildTeammateBattles, TeammatePair } from '@/lib/teammates';
 import { SupabaseRaceResultRow } from '@/types/results';
 import { DriverStanding } from '@/types/standing';
-import { TABLE_CONTAINER_CLASS } from '@/utils/styles';
 import { Users } from 'lucide-react';
 import { useMemo } from 'react';
 
@@ -65,18 +65,10 @@ export function TeammateBattles({ rows, drivers }: Props) {
     if (pairs.length === 0) return null;
 
     return (
-        <div className={TABLE_CONTAINER_CLASS}>
-            <div className='p-4 grid grid-cols-1 gap-3 md:max-h-152 md:overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent'>
-                <Users className='w-4 h-4 text-zinc-400' />
-                <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
-                    Teammate Battles
-                </h3>
-                <span className='text-[10px] font-medium text-zinc-400'>
-                    Head-to-head, season to date
-                </span>
-            </div>
+        <Card>
+            <CardHeader icon={Users} title='Teammate Battles' subtitle='Head-to-head, season to date' />
 
-            <div className='p-4 grid grid-cols-1 lg:grid-cols-2 gap-3'>
+            <CardBody className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3'>
                 {pairs.map((pair) => {
                     const color = toHex(pair.teamColor);
                     const gap = gapText(pair);
@@ -84,14 +76,12 @@ export function TeammateBattles({ rows, drivers }: Props) {
                     return (
                         <div
                             key={pair.key}
-                            className='rounded-lg border border-zinc-800/80 bg-zinc-950/60 p-3.5 space-y-3'
+                            className='rounded-lg border border-zinc-800/80 bg-zinc-950/60 p-3.5 space-y-3 min-w-0'
                             style={{ borderLeft: `3px solid ${color}` }}
                         >
-                            <div className='flex items-center justify-between gap-3'>
-                                <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400 truncate'>
-                                    {pair.teamName}
-                                </p>
-                            </div>
+                            <p className='text-[10px] font-bold uppercase tracking-wider text-zinc-400 truncate'>
+                                {pair.teamName}
+                            </p>
 
                             <div className='flex items-center justify-between gap-3 text-sm font-bold text-zinc-100'>
                                 <span className='truncate'>{pair.a.name}</span>
@@ -116,14 +106,14 @@ export function TeammateBattles({ rows, drivers }: Props) {
                         </div>
                     );
                 })}
-            </div>
+            </CardBody>
 
-            <p className='px-4 py-3 border-t border-zinc-900 text-[10px] text-zinc-400 leading-relaxed'>
+            <CardNote>
                 Race counts a finisher ahead of a retirement, and skips races where both retired or
                 neither started. The qualifying gap is the median over the season, using each
                 driver&apos;s best lap, so a driver knocked out earlier looks slower than they were.
                 Teams are matched by each driver&apos;s current team.
-            </p>
-        </div>
+            </CardNote>
+        </Card>
     );
 }
