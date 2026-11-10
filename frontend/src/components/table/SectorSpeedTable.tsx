@@ -1,5 +1,6 @@
 'use client';
 
+import { Card, CardHeader, CardMeta } from '@/components/ui/Card';
 import { useSessionLaps } from '@/hooks/useSessionLaps';
 import { buildSectorSpeedLeaders } from '@/utils/performace';
 import { useMemo } from 'react';
@@ -29,17 +30,13 @@ export function SectorSpeedTable({ sessionKey, lookup }: SectorSpeedTableProps) 
         );
 
     return (
-        <div className='bg-zinc-950/40 border border-zinc-800/80 rounded-xl p-5 backdrop-blur-md space-y-4 flex flex-col justify-between'>
-            <div className='shrink-0'>
-                <h3 className='text-sm font-black text-white uppercase tracking-wider'>
-                    Speed Trap Leaders
-                </h3>
-                <p className='text-[11px] text-zinc-400'>
-                    Maximum recorded trap speeds across track sectors in km/h
-                </p>
-            </div>
+        <Card className='flex flex-col'>
+            <CardHeader
+                title='Speed Trap Leaders'
+                right={<CardMeta>Max trap speed, km/h</CardMeta>}
+            />
 
-            <div className='overflow-x-auto overflow-y-auto max-h-83.5 border border-zinc-900 rounded-lg scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent flex-1 mt-1'>
+            <div className='overflow-x-auto overflow-y-auto max-h-83.5 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent flex-1'>
                 <table className='w-full text-left border-collapse text-xs table-fixed'>
                     <thead className='sticky top-0 z-10 bg-zinc-950'>
                         <tr className='bg-zinc-900/50 text-[10px] font-bold text-zinc-400 uppercase tracking-wider border-b border-zinc-800'>
@@ -85,6 +82,6 @@ export function SectorSpeedTable({ sessionKey, lookup }: SectorSpeedTableProps) 
                     </tbody>
                 </table>
             </div>
-        </div>
+        </Card>
     );
 }
