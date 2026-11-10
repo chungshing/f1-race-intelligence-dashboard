@@ -1,15 +1,21 @@
 'use client';
 
+import { Card, CardBody, CardHeader, CardNote } from '@/components/ui/Card';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { buildQualiPace } from '@/lib/qualiPace';
 import { SupabaseRaceResultRow } from '@/types/results';
 import { DriverStanding } from '@/types/standing';
-import { TABLE_CONTAINER_CLASS } from '@/utils/styles';
 import { Gauge } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 type Range = 'season' | 'recent';
 
 const RECENT_RACES = 5;
+
+const RANGES: { key: Range; label: string }[] = [
+    { key: 'season', label: 'Season' },
+    { key: 'recent', label: `Last ${RECENT_RACES}` },
+];
 
 function toHex(color: string) {
     return color.startsWith('#') ? color : `#${color}`;
@@ -35,41 +41,23 @@ export function QualiPaceCard({ rows, drivers, meetingOrder }: Props) {
     const maxGap = Math.max(...pace.map((t) => t.avgGapPct), 0.01);
 
     return (
-        <div className={TABLE_CONTAINER_CLASS}>
-            <div className='p-4 pl-5 border-b border-zinc-900 bg-zinc-900/20 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
-                <div className='flex items-center gap-2'>
-                    <Gauge className='w-4 h-4 text-zinc-400' />
-                    <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
-                        Qualifying Pace
-                    </h3>
-                    <span className='text-[10px] font-medium text-zinc-400'>
-                        Average gap to pole
-                    </span>
-                </div>
+        <Card>
+            <CardHeader
+                icon={Gauge}
+                title='Qualifying Pace'
+                subtitle='Average gap to pole'
+                right={
+                    <SegmentedControl
+                        options={RANGES}
+                        value={range}
+                        onChange={setRange}
+                        label='Qualifying pace range'
+                        className='w-full sm:w-auto'
+                    />
+                }
+            />
 
-                <div className='flex bg-zinc-950 p-1 rounded-lg border border-zinc-800 w-full sm:max-w-56'>
-                    {(
-                        [
-                            { key: 'season' as const, label: 'Season' },
-                            { key: 'recent' as const, label: `Last ${RECENT_RACES}` },
-                        ] as const
-                    ).map((option) => (
-                        <button
-                            key={option.key}
-                            onClick={() => setRange(option.key)}
-                            className={`flex-1 py-1 text-[11px] font-bold uppercase rounded-md transition-all ${
-                                range === option.key
-                                    ? 'bg-zinc-800 text-zinc-100 shadow-xs'
-                                    : 'text-zinc-400 hover:text-zinc-300'
-                            }`}
-                        >
-                            {option.label}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            <div className='p-4 space-y-3'>
+            <CardBody className='space-y-3'>
                 {pace.map((team, index) => {
                     const width = Math.max(2, (team.avgGapPct / maxGap) * 100);
                     return (
@@ -100,13 +88,13 @@ export function QualiPaceCard({ rows, drivers, meetingOrder }: Props) {
                         </div>
                     );
                 })}
-            </div>
+            </CardBody>
 
-            <p className='px-4 py-3 border-t border-zinc-900 text-[10px] text-zinc-400 leading-relaxed'>
+            <CardNote>
                 Each driver&apos;s best qualifying lap against pole, as a percentage of the pole
                 time, averaged across the team&apos;s drivers. Drivers knocked out early set their
                 lap in an earlier session, so treat gaps as a rough guide.
-            </p>
-        </div>
+            </CardNote>
+        </Card>
     );
 }
