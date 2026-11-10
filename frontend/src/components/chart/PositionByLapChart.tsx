@@ -1,12 +1,12 @@
 'use client';
 
+import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { useSessionLaps } from '@/hooks/useSessionLaps';
 import { DriverResult, RaceControlEvent } from '@/types/results';
 import { GridEntry } from '@/utils/gridVsRace';
 import { buildPositionByLap } from '@/utils/positions';
 import { getSafetyCarWindows } from '@/utils/raceControl';
 import { disambiguateTeamColors } from '@/utils/sessions';
-import { TABLE_CONTAINER_CLASS } from '@/utils/styles';
 import { Flag } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import {
@@ -83,20 +83,20 @@ export function PositionByLapChart({ sessionKey, driversList, grid, lookup, race
     if (chart.rows.length < 2) return null;
 
     return (
-        <div className={TABLE_CONTAINER_CLASS}>
-            <div className='p-4 pl-5 border-b border-zinc-900 bg-zinc-900/20 flex items-center gap-2'>
-                <Flag className='w-4 h-4 text-zinc-400' />
-                <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
-                    Position by Lap
-                </h3>
-                {safetyCarWindows.length > 0 && (
-                    <span className='ml-auto text-[9px] font-bold text-yellow-400/80 uppercase tracking-wider'>
-                        Shaded = Safety Car
-                    </span>
-                )}
-            </div>
+        <Card>
+            <CardHeader
+                icon={Flag}
+                title='Position by Lap'
+                right={
+                    safetyCarWindows.length > 0 ? (
+                        <span className='text-[10px] font-bold text-yellow-400/80 uppercase tracking-wider'>
+                            Shaded = Safety Car
+                        </span>
+                    ) : undefined
+                }
+            />
 
-            <div className='p-5 flex flex-col gap-6 min-w-0'>
+            <CardBody className='flex flex-col gap-6 min-w-0'>
                 <div className='w-full min-w-0'>
                     <div className='flex items-center justify-between mb-2.5'>
                         <h4 className='text-[10px] font-bold text-zinc-400 tracking-widest uppercase mb-2.5'>
@@ -153,7 +153,7 @@ export function PositionByLapChart({ sessionKey, driversList, grid, lookup, race
                     </div>
                 </div>
 
-                <div className='w-full min-w-0 h-120'>
+                <div className='w-full min-w-0 h-80 sm:h-120'>
                     <ResponsiveContainer width='100%' height='100%'>
                         <LineChart
                             data={chart.rows}
@@ -250,13 +250,14 @@ export function PositionByLapChart({ sessionKey, driversList, grid, lookup, race
                                         dot={false}
                                         activeDot={{ r: 4, strokeWidth: 0 }}
                                         connectNulls={false}
+                                        isAnimationActive={false}
                                     />
                                 );
                             })}
                         </LineChart>
                     </ResponsiveContainer>
                 </div>
-            </div>
-        </div>
+            </CardBody>
+        </Card>
     );
 }
