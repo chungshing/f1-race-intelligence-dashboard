@@ -100,7 +100,7 @@ export function LapPaceChart({ sessionKey, driversList, lookup, raceControl }: L
         const sorted = [...allTimes].sort((a, b) => a - b);
         const median = sorted[Math.floor(sorted.length / 2)];
 
-        return [median - 5, median + 15] as [number, number];
+        return [Math.floor(median - 5), Math.ceil(median + 15)] as [number, number];
     }, [chartData, selectedDrivers]);
 
     if (loading || !isMounted) {
@@ -250,6 +250,7 @@ export function LapPaceChart({ sessionKey, driversList, lookup, raceControl }: L
                                     fontSize={10}
                                     tickLine={false}
                                     domain={yDomain}
+                                    allowDataOverflow
                                     dx={-5}
                                 >
                                     <Label
@@ -301,6 +302,7 @@ export function LapPaceChart({ sessionKey, driversList, lookup, raceControl }: L
                                             dot={false}
                                             activeDot={{ r: 4, strokeWidth: 0 }}
                                             connectNulls
+                                            isAnimationActive={false}
                                         />
                                     );
                                 })}
