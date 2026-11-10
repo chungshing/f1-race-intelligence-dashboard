@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo } from 'react';
-import { TABLE_CONTAINER_CLASS } from '@/utils/styles';
-import { buildSessionHeatmap } from '@/utils/telemetry';
 import { useSessionLaps } from '@/hooks/useSessionLaps';
 import { DriverResult } from '@/types/results';
+import { TABLE_CONTAINER_CLASS } from '@/utils/styles';
+import { buildSessionHeatmap } from '@/utils/telemetry';
+import { useMemo } from 'react';
 
 const TELEMETRY_COLORS: Record<number, { bg: string; label: string }> = {
     2051: { bg: 'bg-purple-600', label: 'Session Best' },
@@ -52,13 +52,13 @@ export function LapHeatmapGrid({ sessionKey, driversList, lookup }: Props) {
                         Building Heatmap...
                     </div>
                 ) : (
-                    <div className='min-w-max space-y-0.75'>
+                    <div className='space-y-0.75' style={{ minWidth: totalLaps * 8 + 88 }}>
                         {/* Lap axis */}
                         <div className='flex items-center gap-0.5 mb-1 pl-22'>
                             {Array.from({ length: totalLaps }, (_, i) => i + 1).map((lap) => (
                                 <div
                                     key={lap}
-                                    className='w-2.5 text-center text-[8px] text-zinc-700 font-mono shrink-0'
+                                    className='flex-1 min-w-1.5 text-center text-[8px] text-zinc-700 font-mono whitespace-nowrap'
                                 >
                                     {lap % 5 === 0 ? lap : ''}
                                 </div>
@@ -92,7 +92,7 @@ export function LapHeatmapGrid({ sessionKey, driversList, lookup }: Props) {
                                             return (
                                                 <div
                                                     key={lap}
-                                                    className={`w-2.5 h-3.5 rounded-xs shrink-0 cursor-default ${config.bg}`}
+                                                    className={`flex-1 min-w-1.5 h-3.5 rounded-xs cursor-default ${config.bg}`}
                                                     title={`${driver?.name ?? driverNumber} · Lap ${lap} · ${config.label}`}
                                                 />
                                             );
