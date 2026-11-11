@@ -35,13 +35,17 @@ export default function ConstructorsPage() {
                 <div className='h-96 bg-zinc-900/40 border border-zinc-800/50 rounded-xl animate-pulse' />
             ) : (
                 <div className='space-y-6'>
-                    <div className='grid grid-cols-1 xl:grid-cols-2 gap-6 items-start'>
-                        <TeamTable standings={teams} />
-                        <QualiPaceCard
-                            rows={allRaceRows}
-                            drivers={drivers}
-                            meetingOrder={meetingOrder}
-                        />
+                    <div className='grid grid-cols-1 xl:grid-cols-2 gap-6 items-stretch'>
+                        <div className='flex flex-col *:flex-1'>
+                            <TeamTable standings={teams} />
+                        </div>
+                        <div className='flex flex-col *:flex-1'>
+                            <QualiPaceCard
+                                rows={allRaceRows}
+                                drivers={drivers}
+                                meetingOrder={meetingOrder}
+                            />
+                        </div>
                     </div>
                     <TeammateBattles rows={allRaceRows} drivers={drivers} />
                 </div>
