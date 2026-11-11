@@ -1,7 +1,11 @@
 'use client';
 
+import {
+    CellStatus,
+    MatrixRound,
+    ResultsMatrix as ResultsMatrixData,
+} from '@/lib/resultsMatrix';
 import { Card, CardHeader } from '@/components/ui/Card';
-import { CellStatus, MatrixRound, ResultsMatrix as ResultsMatrixData } from '@/lib/resultsMatrix';
 import { LayoutGrid } from 'lucide-react';
 
 const SPRINT_BAND = 'bg-amber-500/[0.06]';
@@ -36,12 +40,9 @@ function ResultCell({
     sprintBand: boolean;
 }) {
     return (
-        <td
-            title={title}
-            className={`border-t border-zinc-900 p-0.5 ${sprintBand ? SPRINT_BAND : ''}`}
-        >
+        <td title={title} className={`border-t border-zinc-900 p-0.5 ${sprintBand ? SPRINT_BAND : ''}`}>
             <div
-                className={`w-8 h-7 mx-auto rounded flex items-center justify-center font-mono tabular-nums text-[11px] ${resultClass(position, status, present)}`}
+                className={`w-full min-w-6 h-7 rounded flex items-center justify-center font-mono tabular-nums text-[11px] ${resultClass(position, status, present)}`}
             >
                 {present ? (status ?? position ?? '—') : '·'}
             </div>
@@ -56,18 +57,25 @@ const LEGEND = [
     { label: 'Points', className: 'bg-emerald-500/10 text-emerald-400' },
     { label: 'No points', className: 'bg-zinc-900 text-zinc-400' },
     { label: 'DNF/DSQ', className: 'bg-red-500/15 text-red-400' },
+    { label: 'Upcoming', className: 'bg-zinc-900/40 text-zinc-600' },
 ];
 
 function HeaderCell({ round }: { round: MatrixRound }) {
     return (
         <th
             colSpan={round.hasSprint ? 2 : 1}
-            title={`Round ${round.round}: ${round.country}${round.hasSprint ? ' (sprint weekend)' : ''}`}
+            title={`Round ${round.round}: ${round.country}${round.hasSprint ? ' (sprint weekend)' : ''}${round.upcoming ? ' (upcoming)' : ''}`}
             className={`px-0.5 pt-2 align-bottom ${round.hasSprint ? SPRINT_BAND : ''}`}
         >
             <span
                 className={`block mx-auto h-24 text-[10px] font-semibold whitespace-nowrap ${
-                    round.hasSprint ? 'text-amber-400' : 'text-zinc-400'
+                    round.upcoming
+                        ? round.hasSprint
+                            ? 'text-amber-400/40'
+                            : 'text-zinc-600'
+                        : round.hasSprint
+                          ? 'text-amber-400'
+                          : 'text-zinc-400'
                 }`}
                 style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
             >
@@ -81,13 +89,15 @@ export function ResultsMatrix({ matrix }: { matrix: ResultsMatrixData }) {
     if (matrix.rounds.length === 0 || matrix.rows.length === 0) return null;
 
     const sprintWeekends = matrix.rounds.filter((r) => r.hasSprint).length;
+    const completed = matrix.rounds.filter((r) => !r.upcoming).length;
+    const columns = matrix.rounds.reduce((total, r) => total + (r.hasSprint ? 2 : 1), 0);
 
     return (
         <Card>
             <CardHeader
                 icon={LayoutGrid}
                 title='Season Results'
-                subtitle={`Finishing positions${
+                subtitle={`${completed} of ${matrix.rounds.length} rounds · finishing positions${
                     sprintWeekends > 0
                         ? ` · ${sprintWeekends} sprint ${sprintWeekends === 1 ? 'weekend' : 'weekends'} highlighted`
                         : ''
@@ -95,7 +105,10 @@ export function ResultsMatrix({ matrix }: { matrix: ResultsMatrixData }) {
             />
 
             <div className='overflow-x-auto'>
-                <table className='border-separate border-spacing-0 text-xs'>
+                <table
+                    className='w-full border-separate border-spacing-0 text-xs'
+                    style={{ minWidth: 240 + columns * 28 }}
+                >
                     <thead>
                         <tr>
                             <th
@@ -208,14 +221,10 @@ export function ResultsMatrix({ matrix }: { matrix: ResultsMatrixData }) {
 function FragmentLabels() {
     return (
         <>
-            <th
-                className={`h-4 pb-1 text-[9px] font-bold text-amber-400 text-center ${SPRINT_BAND}`}
-            >
+            <th className={`h-4 pb-1 text-[9px] font-bold text-amber-400 text-center ${SPRINT_BAND}`}>
                 S
             </th>
-            <th
-                className={`h-4 pb-1 text-[9px] font-bold text-zinc-400 text-center ${SPRINT_BAND}`}
-            >
+            <th className={`h-4 pb-1 text-[9px] font-bold text-zinc-400 text-center ${SPRINT_BAND}`}>
                 R
             </th>
         </>
