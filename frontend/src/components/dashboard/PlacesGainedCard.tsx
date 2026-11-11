@@ -2,7 +2,7 @@
 
 import { Card, CardHeader, CardMeta, CardNote } from '@/components/ui/Card';
 import { PlacesGainedSummary } from '@/lib/placesGained';
-import { SCROLL_PANEL_CLASS } from '@/utils/styles';
+import { SCROLL_PANEL_SHORT_CLASS } from '@/utils/styles';
 import { ArrowUpDown } from 'lucide-react';
 
 const TH = 'py-2.5 px-4 text-right text-[10px] font-bold text-zinc-400 uppercase tracking-wider';
@@ -28,14 +28,14 @@ export function PlacesGainedCard({ summary }: { summary: PlacesGainedSummary }) 
     const fallbackRaces = summary.racesCounted - summary.officialGridRaces;
 
     return (
-        <Card>
+        <Card className='flex flex-col'>
             <CardHeader
                 icon={ArrowUpDown}
                 title='Places Gained'
                 right={<CardMeta>Grid to finish, {summary.racesCounted} races</CardMeta>}
             />
 
-            <div className={SCROLL_PANEL_CLASS}>
+            <div className={`${SCROLL_PANEL_SHORT_CLASS} flex-1`}>
                 <table className='w-full text-xs'>
                     <thead>
                         <tr className='border-b border-zinc-900'>
