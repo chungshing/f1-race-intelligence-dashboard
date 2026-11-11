@@ -12,7 +12,6 @@ import { useRaceWeekends } from '@/hooks/useRaceWeekends';
 import { useStandings } from '@/hooks/useStandings';
 import { buildPlacesGained } from '@/lib/placesGained';
 import { buildPoleStats } from '@/lib/poles';
-import { getChronologicalMeetingOrder } from '@/lib/racePoints';
 import { buildResultsMatrix } from '@/lib/resultsMatrix';
 import { buildRecentForm } from '@/utils/form';
 import Link from 'next/link';
@@ -35,8 +34,6 @@ export default function DriversPage() {
     const { data: allRaceRows } = useRaceResults();
     const { data: races = [] } = useRaceWeekends();
 
-    const meetingOrder = useMemo(() => getChronologicalMeetingOrder(races), [races]);
-
     const formMap = useMemo(() => {
         const rows = buildRecentForm(
             allRaceRows,
@@ -56,8 +53,8 @@ export default function DriversPage() {
     );
 
     const resultsMatrix = useMemo(
-        () => buildResultsMatrix(allRaceRows, standings, meetingOrder),
-        [allRaceRows, standings, meetingOrder]
+        () => buildResultsMatrix(allRaceRows, standings, races),
+        [allRaceRows, standings, races]
     );
 
     return (
@@ -98,9 +95,13 @@ export default function DriversPage() {
                         )}
                         {activeTab === 'results' && <ResultsMatrix matrix={resultsMatrix} />}
                         {activeTab === 'stats' && (
-                            <div className='grid grid-cols-1 xl:grid-cols-2 gap-6 items-start'>
-                                <PoleStatsCard summary={poleSummary} />
-                                <PlacesGainedCard summary={placesGained} />
+                            <div className='grid grid-cols-1 xl:grid-cols-2 gap-6 items-stretch'>
+                                <div className='flex flex-col *:flex-1'>
+                                    <PoleStatsCard summary={poleSummary} />
+                                </div>
+                                <div className='flex flex-col *:flex-1'>
+                                    <PlacesGainedCard summary={placesGained} />
+                                </div>
                             </div>
                         )}
                     </>
