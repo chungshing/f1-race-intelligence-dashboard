@@ -1,4 +1,5 @@
-import { groupByMeeting, isSprintSession } from '@/lib/racePoints';
+import { getChronologicalMeetingOrder, groupByMeeting, isSprintSession } from '@/lib/racePoints';
+import { RaceWeekend } from '@/types/race';
 import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
 import { DriverStanding } from '@/types/standing';
 import { parseJsonField } from '@/utils/form';
@@ -18,6 +19,8 @@ export interface MatrixRound {
     country: string;
     round: number;
     hasSprint: boolean;
+    /** Scheduled but no race result yet */
+    upcoming: boolean;
 }
 
 export interface MatrixRow {
@@ -44,34 +47,38 @@ function statusOf(entry: DriverResult): CellStatus | null {
 export function buildResultsMatrix(
     rawRows: SupabaseRaceResultRow[],
     drivers: DriverStanding[],
-    meetingOrder: number[]
+    weekends: RaceWeekend[]
 ): ResultsMatrix {
     const byMeeting = groupByMeeting(rawRows);
+    const weekendByKey = new Map(weekends.map((w) => [w.meetingKey, w]));
 
     const rounds: MatrixRound[] = [];
     const raceByRound: DriverResult[][] = [];
     const sprintByRound: DriverResult[][] = [];
 
-    for (const meetingKey of meetingOrder) {
+    // Every race on the calendar gets a column, finished or not.
+    for (const meetingKey of getChronologicalMeetingOrder(weekends)) {
+        const weekend = weekendByKey.get(meetingKey);
         const sessions = byMeeting.get(meetingKey);
-        if (!sessions) continue;
 
-        const raceSession = sessions.find((r) => r.session_name === 'Race');
-        if (!raceSession) continue;
+        const raceSession = sessions?.find((r) => r.session_name === 'Race');
+        const race = raceSession ? parseJsonField<DriverResult>(raceSession.classification_json) : [];
 
-        const race = parseJsonField<DriverResult>(raceSession.classification_json);
-        if (race.length === 0) continue;
+        const hasRaceOnCalendar = weekend?.sessions?.some((s) => s.sessionName === 'Race') ?? false;
+        if (!hasRaceOnCalendar && race.length === 0) continue;
 
-        const sprintSession = sessions.find((r) => isSprintSession(r.session_name));
+        const sprintSession = sessions?.find((r) => isSprintSession(r.session_name));
         const sprint = sprintSession
             ? parseJsonField<DriverResult>(sprintSession.classification_json)
             : [];
+        const sprintScheduled = weekend?.sessions?.some((s) => s.sessionName === 'Sprint') ?? false;
 
         rounds.push({
             meetingKey,
-            country: raceSession.country,
+            country: weekend?.country ?? raceSession?.country ?? '',
             round: rounds.length + 1,
-            hasSprint: sprint.length > 0,
+            hasSprint: sprint.length > 0 || sprintScheduled,
+            upcoming: race.length === 0,
         });
         raceByRound.push(race);
         sprintByRound.push(sprint);
@@ -80,9 +87,7 @@ export function buildResultsMatrix(
     const rows: MatrixRow[] = drivers
         .map((driver) => {
             const cells = rounds.map((_, index): MatrixCell | null => {
-                const entry = raceByRound[index].find(
-                    (r) => r.driverNumber === driver.driverNumber
-                );
+                const entry = raceByRound[index].find((r) => r.driverNumber === driver.driverNumber);
                 if (!entry) return null;
 
                 const sprintEntry = sprintByRound[index].find(
