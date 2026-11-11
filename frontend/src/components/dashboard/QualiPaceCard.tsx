@@ -41,7 +41,7 @@ export function QualiPaceCard({ rows, drivers, meetingOrder }: Props) {
     const maxGap = Math.max(...pace.map((t) => t.avgGapPct), 0.01);
 
     return (
-        <Card>
+        <Card className='flex flex-col'>
             <CardHeader
                 icon={Gauge}
                 title='Qualifying Pace'
@@ -57,7 +57,7 @@ export function QualiPaceCard({ rows, drivers, meetingOrder }: Props) {
                 }
             />
 
-            <CardBody className='space-y-3'>
+            <CardBody className='flex-1 flex flex-col justify-between gap-3'>
                 {pace.map((team, index) => {
                     const width = Math.max(2, (team.avgGapPct / maxGap) * 100);
                     return (
