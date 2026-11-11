@@ -19,7 +19,7 @@ interface CardHeaderProps {
 
 export function CardHeader({ title, icon: Icon, subtitle, right }: CardHeaderProps) {
     return (
-        <div className='p-4 pl-5 min-h-[4.125rem] border-b border-zinc-900 bg-zinc-900/20 flex flex-wrap items-center justify-between gap-x-4 gap-y-2'>
+        <div className='p-4 pl-5 min-h-16.5 border-b border-zinc-900 bg-zinc-900/20 flex flex-wrap items-center justify-between gap-x-4 gap-y-2'>
             <div className='flex flex-wrap items-center gap-x-2.5 gap-y-1 min-w-0'>
                 {Icon && <Icon className='w-4 h-4 text-zinc-400 shrink-0' />}
                 <h3 className='text-xs font-bold text-zinc-400 uppercase tracking-widest'>
