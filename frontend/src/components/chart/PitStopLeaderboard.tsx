@@ -19,7 +19,7 @@ export function PitStopLeaderboard({ pitStops, lookup }: Props) {
     const isLaneFallback = rows.some((r) => r.usingLaneDuration);
 
     return (
-        <div className={TABLE_CONTAINER_CLASS}>
+        <div className={`${TABLE_CONTAINER_CLASS} flex flex-col`}>
             <div className='p-4 pl-5 border-b border-zinc-900 bg-zinc-900/20 flex items-center justify-between'>
                 <div className='flex items-center gap-2'>
                     <Timer className='w-4 h-4 text-zinc-400' />
@@ -40,7 +40,7 @@ export function PitStopLeaderboard({ pitStops, lookup }: Props) {
                 </span>
             </div>
 
-            <div className='overflow-x-auto overflow-y-auto max-h-83.5 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent'>
+            <div className='overflow-x-auto overflow-y-auto max-h-83.5 xl:max-h-none xl:flex-1 xl:min-h-0 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent'>
                 <table className='w-full text-xs'>
                     <thead>
                         <tr className='border-b border-zinc-900'>
