@@ -3,7 +3,7 @@
 import { Card, CardHeader, CardNote } from '@/components/ui/Card';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { PoleSummary } from '@/lib/poles';
-import { SCROLL_PANEL_CLASS } from '@/utils/styles';
+import { SCROLL_PANEL_SHORT_CLASS } from '@/utils/styles';
 import { Medal } from 'lucide-react';
 import { useState } from 'react';
 
@@ -27,7 +27,7 @@ export function PoleStatsCard({ summary }: { summary: PoleSummary }) {
     if (summary.drivers.length === 0) return null;
 
     return (
-        <Card>
+        <Card className='flex flex-col'>
             <CardHeader
                 icon={Medal}
                 title='Poles vs Wins'
@@ -47,7 +47,7 @@ export function PoleStatsCard({ summary }: { summary: PoleSummary }) {
                 }
             />
 
-            <div className={SCROLL_PANEL_CLASS}>
+            <div className={`${SCROLL_PANEL_SHORT_CLASS} flex-1`}>
                 <table className='w-full text-xs'>
                     <thead>
                         <tr className='border-b border-zinc-900'>
