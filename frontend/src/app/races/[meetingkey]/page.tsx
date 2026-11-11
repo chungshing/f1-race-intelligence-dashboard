@@ -287,18 +287,22 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                             <RaceControlPanel raceControl={activeRace.raceControl} />
                         )}
                         {activeTab === 'strategy' && (
-                            <div className='grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-6 items-start'>
-                                <RaceStrategyTable
-                                    pitStops={activeRace.pitStops}
-                                    stints={activeRace.stints}
-                                    lookup={driverLookup}
-                                    results={activeRace.classification}
-                                    raceControl={activeRace.raceControl}
-                                />
-                                <PitStopLeaderboard
-                                    pitStops={activeRace.pitStops}
-                                    lookup={driverLookup}
-                                />
+                            <div className='grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-6 items-stretch'>
+                                <div className='flex flex-col *:flex-1'>
+                                    <RaceStrategyTable
+                                        pitStops={activeRace.pitStops}
+                                        stints={activeRace.stints}
+                                        lookup={driverLookup}
+                                        results={activeRace.classification}
+                                        raceControl={activeRace.raceControl}
+                                    />
+                                </div>
+                                <div className='flex flex-col *:flex-1'>
+                                    <PitStopLeaderboard
+                                        pitStops={activeRace.pitStops}
+                                        lookup={driverLookup}
+                                    />
+                                </div>
                             </div>
                         )}
                         {activeTab === 'pace' && (
