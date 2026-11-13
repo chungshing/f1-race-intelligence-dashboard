@@ -9,6 +9,7 @@ An interactive full-stack Formula 1 analytics dashboard that brings live and his
 ## ✨ Features
 
 ### Race Weekend & Session Analysis
+- Interactive race replay for exploring recorded race progression
 - Session results and classification, including Sprint and Grand Prix sessions
 - Weather conditions and race-control events
 - Official starting grid, qualifying positions, and finishing positions, accounting for penalties
@@ -21,11 +22,18 @@ An interactive full-stack Formula 1 analytics dashboard that brings live and his
 - Driver pace consistency insights
 
 ### Driver, Constructor & Championship Insights
+- Last Race recap featuring podium results, biggest grid-to-race gainer, fastest pit stop, and race summary
 - Driver and constructor profile pages
 - Season form and championship points progression
 - Head-to-head driver comparisons
 - Driver and constructor standings
 - Title-fight calculator showing championship contenders and remaining points
+
+### Progressive Web App & Offline Support
+- Installable Progressive Web App (PWA) with standalone display mode and app icons
+- Service worker caches the app shell and built static assets for offline access
+- React Query persists fetched dashboard data in IndexedDB, allowing previously loaded data to remain available
+- Cache is versioned and invalidated on production deployments
 
 ### Persistent Historical Data
 - Historical data backfilled and stored by meeting in Supabase PostgreSQL
