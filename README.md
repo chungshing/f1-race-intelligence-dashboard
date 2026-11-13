@@ -1,86 +1,150 @@
 # 🏎️ F1 Race Intelligence Dashboard
 
-A high-performance full-stack F1 analytics platform that visualizes real-time and historical Formula 1 data using the OpenF1 API and a persistent PostgreSQL backend.
+An interactive full-stack Formula 1 analytics dashboard that brings live and historical race data together. Explore race weekends, compare driver and constructor performance, and uncover insights across sessions with data powered by the [OpenF1 API](https://openf1.org/) and stored in PostgreSQL.
 
 ## 🌐 Live Demo
 
-[f1-race-intelligence-dashboard.vercel.app](https://f1-race-intelligence-dashboard.vercel.app/)
+[**f1-race-intelligence-dashboard.vercel.app**](https://f1-race-intelligence-dashboard.vercel.app/)
 
-## 🚀 Tech Stack
+## ✨ Features
 
-- **Frontend**: Next.js (React, TypeScript, Tailwind CSS, Shadcn UI, Recharts)
-- **Backend**: Spring Boot (Java, Spring Web, PostgreSQL/Supabase)
-- **Data Source**: OpenF1 API
+### Race Weekend & Session Analysis
+- Session results and classification, including Sprint and Grand Prix sessions
+- Weather conditions and race-control events
+- Official starting grid, qualifying positions, and finishing positions, accounting for penalties
+- Position-by-lap charts with safety car periods highlighted
 
-## 📊 Features
+### Strategy & Performance
+- Tyre stint and pit stop analysis
+- Pit stop leaderboard and team pit crew rankings by median stop time
+- Lap time heatmaps, pace charts, sector times, and speed analysis
+- Driver pace consistency insights
 
-- **Historical Data Persistence**: Per-meeting backfilling with stateful storage in Supabase.
-- **Session Results**: Classification, weather and race control for every session of a weekend, including sprints.
-- **Grid vs Race**: Official starting grid (with penalties) against qualifying and finishing positions, for both the Sprint and the Grand Prix.
-- **Strategy & Performance Analytics**: Tyre stints, pit stop leaderboard, lap heatmap and pace charts, sector times and speeds, pace consistency.
-- **Driver & Constructor Profiles**: Season form, points progression and head-to-head driver comparison.
-- **Standings**: Driver and constructor championship standings synced from OpenF1.
-- **Race Narrative**: Position-by-lap chart for races and sprints, with safety car periods shaded.
-- **Title Fight**: Live driver and constructor championship maths showing who is still mathematically alive and how many points are left.
-- **Pit Crew Ranking**: Team pit stop performance by race and across the season, ranked by median stop time.
+### Driver, Constructor & Championship Insights
+- Driver and constructor profile pages
+- Season form and championship points progression
+- Head-to-head driver comparisons
+- Driver and constructor standings
+- Title-fight calculator showing championship contenders and remaining points
 
-## 🧠 Architecture & Data Flow
+### Persistent Historical Data
+- Historical data backfilled and stored by meeting in Supabase PostgreSQL
+- Database-backed dashboard queries to reduce repeated upstream API calls
+- Data ingestion and normalization handled by the Spring Boot backend
+
+## 🧠 Architecture
 
 ![Architecture & Data Flow](images/Architecture.png)
 
-- **Ingestion Layer**: Spring Boot services poll, process, and normalize data from the OpenF1 API.
-- **Persistence Layer**: Data is persisted in Supabase (PostgreSQL), ensuring historical data is always available without redundant API calls.
-- **Presentation Layer**: Next.js consumes RESTful endpoints from Spring Boot, utilizing cached database records for low-latency dashboard rendering.
+The application is split into a Next.js frontend and a Spring Boot backend:
 
-## 📦 Project Structure
+1. **Data ingestion** — Spring Boot services retrieve and normalize Formula 1 data from OpenF1.
+2. **Persistence** — Processed data is stored in Supabase (PostgreSQL) for historical access.
+3. **API layer** — Spring Boot exposes REST endpoints for dashboard features.
+4. **Presentation** — Next.js fetches backend data and renders interactive charts and views.
 
-- `/frontend`: Next.js dashboard application, UI components, and API service layer.
-- `/backend`: Spring Boot application, data models, processing logic, and REST controllers.
+## 🛠️ Tech Stack
 
-## 🗺️ Roadmap & Status
+| Layer | Technologies |
+| --- | --- |
+| Frontend | Next.js, React, TypeScript, Tailwind CSS, Shadcn UI, Recharts |
+| Backend | Java, Spring Boot, Spring Web |
+| Database | PostgreSQL, Supabase |
+| Data source | OpenF1 API |
+| Deployment | Vercel (frontend), Render (backend) |
+| Data ingestion scheduling | cron-job.org |
 
-- **✅ Phase 1: Frontend Dashboard UI** – Component architecture, mock data simulation, and responsive layout.
-- **✅ Phase 2: Backend Development** – OpenF1 integration, in-memory data processing, and REST endpoints.
-- **✅ Phase 3: Full-Stack Integration** – Connected Next.js to Spring Boot, added state management, and handled loading states.
-- **✅ Phase 4: Persistent Data Layer** – Migration to Supabase/PostgreSQL for historical data storage.
-- **✅ Phase 5: Advanced Features** – Driver profile pages and historical post-race tyre strategy visualizers.
-- **✅ Phase 6: Race Narrative & Season Insights** – Position-by-lap chart, title fight calculator, and constructor pit crew ranking.
+## 🗂️ Project Structure
 
-<details>
-<summary>⚙️ <b>Local Development Setup</b> (Click to expand)</summary>
+```text
+f1-race-intelligence-dashboard/
+├── frontend/    # Next.js dashboard, UI components, and API service layer
+└── backend/     # Spring Boot application, data models, ingestion, and REST controllers
+```
 
-### Backend Setup
+## 🚀 Roadmap
 
-1. Navigate to `/backend`
-2. Create a .env file (or set these as system environment variables):
-- SUPABASE_URL=your_db_url
-- SUPABASE_USERNAME=your_username
-- SUPABASE_PASSWORD=your_password
-- SPRING_PROFILES_ACTIVE=dev
-3. Run `./mvnw spring-boot:run` to start the server on port `8080`
+- ✅ **Phase 1 — Frontend Dashboard UI:** Component architecture, mock data, and responsive layout
+- ✅ **Phase 2 — Backend Development:** OpenF1 integration, data processing, and REST endpoints
+- ✅ **Phase 3 — Full-Stack Integration:** Frontend/backend connection, state management, and loading states
+- ✅ **Phase 4 — Persistent Data Layer:** Supabase/PostgreSQL storage for historical data
+- ✅ **Phase 5 — Advanced Analytics:** Driver profiles and historical tyre strategy visualizations
+- ✅ **Phase 6 — Race & Season Insights:** Position-by-lap charts, title-fight calculator, and pit crew ranking
+- 🔜 **Phase 7 — AI F1 Race Analyst:** A conversational AI assistant that answers natural-language questions about race results, driver comparisons, standings, and performance insights using dashboard data
 
-### Frontend Setup
+### 🤖 Planned: AI F1 Race Analyst
 
-1. Navigate to `/frontend`
-2. Create a .env.local file with the following:
-- NEXT_PUBLIC_API_URL=http://localhost:8080
-- NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-- NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
-3. Run `npm install` followed by `npm run dev`
+The next planned feature is an AI assistant integrated into the dashboard. Users could ask questions such as:
 
- </details>
+- “Compare Verstappen and Norris in the 2025 season.”
+- “Who had the most consistent pace in this race?”
+- “Summarize the key moments of the Singapore Grand Prix.”
+- “How does the constructor championship look after this round?”
 
-<details>
-<summary>⚠️ <b>System Constraints & Resiliency</b> (Click to expand)</summary>
+The assistant would use tool/function calling to retrieve relevant information from the existing Spring Boot REST API and PostgreSQL data, then provide concise, data-grounded explanations. It is intended to complement the dashboard’s charts and analytics—not replace them.
 
-### 🛰️ Upstream API Access (OpenF1)
+> **Status:** Planned. The AI assistant is not implemented yet.
 
-- **Behavior**: During live Formula 1 race sessions, the public OpenF1 API rate-limits historical queries and restricts unauthenticated global access.
-- **Mitigation**: The backend utilizes Supabase (PostgreSQL) as a persistent cache. By storing and processing data asynchronously, the dashboard serves historical results instantly from the database without repeated, latency-heavy calls to the upstream API.
+## 💻 Local Development
 
-### 🐢 Infrastructure Latency & Background Workers (Free-Tier Hosting)
+### Prerequisites
 
-* **Backend Cold Starts:** Hosted on Render's free tier. Inactivity triggers a spun-down container state. The initial API request may encounter a **5–10 second delay** while the service wakes up.
-* **Frontend Performance:** Hosted on Vercel. Global delivery is highly optimized, though data-dependent components rely on the backend wake-up cycle.
-* **Cron/Automation Workarounds:** Render's free tier disables native persistent background workers and `@Scheduled` tasks when the instance spins down. To circumvent this constraint, an external webhook router (**cron-job.org**) is configured to trigger specific Spring Boot ingest endpoints every weekend for a 5-hour active window during Grand Prix sessions, keeping the instance awake and ensuring consistent database backfilling.
-</details>
+- Java and Maven (or use the included Maven Wrapper)
+- Node.js and npm
+- Supabase project credentials
+
+### Backend
+
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Configure the following environment variables (for example, in a `.env` file or your environment):
+
+   ```env
+   SUPABASE_URL=your_db_url
+   SUPABASE_USERNAME=your_username
+   SUPABASE_PASSWORD=your_password
+   SPRING_PROFILES_ACTIVE=dev
+   ```
+
+3. Start the Spring Boot server:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+
+   The backend runs on port `8080`.
+
+### Frontend
+
+1. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+2. Create a `.env.local` file:
+   ```env
+   NEXT_PUBLIC_API_URL=http://localhost:8080
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
+   ```
+3. Install dependencies and start the development server:
+   ```bash
+   npm install
+   npm run dev
+   ```
+
+## ⚙️ Hosting & Data Constraints
+
+### OpenF1 API
+
+During active race sessions, the public OpenF1 API may rate-limit historical requests or restrict unauthenticated global access. The dashboard mitigates repeated requests by persisting ingested data in PostgreSQL and serving historical information from the database.
+
+### Free-tier hosting
+
+- **Backend (Render):** The free-tier service may spin down after inactivity, resulting in a cold-start delay of approximately 5–10 seconds on the first request.
+- **Frontend (Vercel):** The frontend is deployed on Vercel; data-dependent views still rely on the backend response.
+- **Scheduled ingestion:** Render's free tier does not reliably support persistent background workers while the service is spun down. An external cron-job.org webhook is configured to trigger selected ingestion endpoints during a weekend race-session window.
+
+## 📌 Data Source
+
+Race data is provided by the [OpenF1 API](https://openf1.org/). The dashboard uses its session, timing, race-control, weather, and championship data to power the analytics and visualizations.
