@@ -6,6 +6,7 @@ import { PaceConsistencyCard } from '@/components/chart/PaceConsistencyCard';
 import { PitStopLeaderboard } from '@/components/chart/PitStopLeaderboard';
 import { PositionByLapChart } from '@/components/chart/PositionByLapChart';
 import { RaceControlPanel } from '@/components/chart/RaceControlPanel';
+import { RaceReplay } from '@/components/chart/RaceReplay';
 import { TyreDegradationCard } from '@/components/chart/TyreDegradationCard';
 import { WeatherPanel } from '@/components/chart/WeatherPanel';
 import { RaceSummaryChips } from '@/components/dashboard/RaceSummaryChips';
@@ -32,7 +33,7 @@ import { findGridRacePairs, isGridRaceSession, pickGridRacePair } from '@/utils/
 import { buildRaceSummary } from '@/utils/raceSummary';
 import { use, useEffect, useMemo, useRef, useState } from 'react';
 
-type ActiveTab = 'classification' | 'strategy' | 'pace' | 'racecontrol';
+type ActiveTab = 'classification' | 'strategy' | 'pace' | 'replay' | 'racecontrol';
 
 const TABS = [
     {
@@ -43,6 +44,13 @@ const TABS = [
     },
     { key: 'strategy' as const, label: 'Race Strategy', requiresLaps: false, requiresStints: true },
     { key: 'pace' as const, label: 'Pace', requiresLaps: true, requiresStints: false },
+    {
+        key: 'replay' as const,
+        label: 'Replay',
+        requiresLaps: true,
+        requiresStints: false,
+        requiresGridSession: true,
+    },
     {
         key: 'racecontrol' as const,
         label: 'Race Control',
@@ -129,7 +137,8 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
         (tab) =>
             (!tab.requiresLaps || hasLapData) &&
             (!tab.requiresStints || hasStintData) &&
-            (!tab.requiresRaceControl || hasRaceControlData)
+            (!tab.requiresRaceControl || hasRaceControlData) &&
+            (!tab.requiresGridSession || isGridSession)
     );
 
     const countryName = results[0]?.country || 'Race Weekend';
@@ -282,6 +291,18 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                     />
                                 )}
                             </div>
+                        )}
+                        {activeTab === 'replay' && (
+                            <RaceReplay
+                                key={activeRace.sessionKey}
+                                sessionKey={activeRace.sessionKey}
+                                driversList={activeRace.classification}
+                                grid={activeGridPair?.grid ?? []}
+                                stints={activeRace.stints}
+                                pitStops={activeRace.pitStops}
+                                raceControl={activeRace.raceControl}
+                                lookup={driverLookup}
+                            />
                         )}
                         {activeTab === 'racecontrol' && (
                             <RaceControlPanel raceControl={activeRace.raceControl} />
