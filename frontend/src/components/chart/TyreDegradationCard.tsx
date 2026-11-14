@@ -56,14 +56,14 @@ export function TyreDegradationCard({ sessionKey, stints, raceControl }: Props) 
     if (degradation.summaries.length === 0 || degradation.curve.length < 2) return null;
 
     return (
-        <Card>
+        <Card className='flex flex-col'>
             <CardHeader
                 icon={CircleDot}
                 title='Tyre Degradation'
                 subtitle='Pace vs the field as the tyre ages'
             />
 
-            <CardBody className='space-y-6'>
+            <CardBody className='flex flex-1 flex-col gap-6'>
                 <div className='grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-3'>
                     {degradation.summaries.map((summary) => {
                         const style = COMPOUND_STYLE[summary.compound];
@@ -90,85 +90,87 @@ export function TyreDegradationCard({ sessionKey, stints, raceControl }: Props) 
                     })}
                 </div>
 
-                <div className='w-full min-w-0 h-72 sm:h-96'>
-                    <ResponsiveContainer width='100%' height='100%'>
-                        <LineChart
-                            data={degradation.curve}
-                            margin={{ top: 10, right: 15, left: 10, bottom: 20 }}
-                        >
-                            <CartesianGrid
-                                strokeDasharray='3 3'
-                                stroke='#161619'
-                                vertical={false}
-                            />
-                            <ReferenceLine y={0} stroke='#3f3f46' />
-
-                            <XAxis
-                                dataKey='lapIntoStint'
-                                type='number'
-                                domain={['dataMin', 'dataMax']}
-                                stroke='#71717a'
-                                fontSize={10}
-                                tickLine={false}
-                                dy={10}
+                <div className='relative w-full min-w-0 flex-1 min-h-72 sm:min-h-96'>
+                    <div className='absolute inset-0'>
+                        <ResponsiveContainer width='100%' height='100%'>
+                            <LineChart
+                                data={degradation.curve}
+                                margin={{ top: 10, right: 15, left: 10, bottom: 20 }}
                             >
-                                <Label
-                                    value='Laps into stint'
-                                    offset={-10}
-                                    position='insideBottom'
-                                    style={{
-                                        fill: '#a1a1aa',
-                                        fontSize: '10px',
-                                        fontWeight: 'bold',
-                                        letterSpacing: '0.05em',
-                                        textTransform: 'uppercase',
+                                <CartesianGrid
+                                    strokeDasharray='3 3'
+                                    stroke='#161619'
+                                    vertical={false}
+                                />
+                                <ReferenceLine y={0} stroke='#3f3f46' />
+
+                                <XAxis
+                                    dataKey='lapIntoStint'
+                                    type='number'
+                                    domain={['dataMin', 'dataMax']}
+                                    stroke='#71717a'
+                                    fontSize={10}
+                                    tickLine={false}
+                                    dy={10}
+                                >
+                                    <Label
+                                        value='Laps into stint'
+                                        offset={-10}
+                                        position='insideBottom'
+                                        style={{
+                                            fill: '#a1a1aa',
+                                            fontSize: '10px',
+                                            fontWeight: 'bold',
+                                            letterSpacing: '0.05em',
+                                            textTransform: 'uppercase',
+                                        }}
+                                    />
+                                </XAxis>
+
+                                <YAxis
+                                    stroke='#71717a'
+                                    fontSize={10}
+                                    tickLine={false}
+                                    dx={-5}
+                                    tickFormatter={(value: number) => `${signed(value, 1)}s`}
+                                />
+
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: '#09090b',
+                                        borderColor: '#27272a',
+                                        borderRadius: '8px',
+                                        padding: '10px',
                                     }}
+                                    labelStyle={{
+                                        color: '#f4f4f5',
+                                        fontWeight: 'bold',
+                                        fontSize: '11px',
+                                    }}
+                                    itemStyle={{ fontSize: '11px', padding: '2px 0' }}
+                                    labelFormatter={(lap) => `Lap ${lap} of the stint`}
+                                    formatter={(value) =>
+                                        typeof value === 'number' ? `${signed(value)}s` : value
+                                    }
                                 />
-                            </XAxis>
 
-                            <YAxis
-                                stroke='#71717a'
-                                fontSize={10}
-                                tickLine={false}
-                                dx={-5}
-                                tickFormatter={(value: number) => `${signed(value, 1)}s`}
-                            />
-
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: '#09090b',
-                                    borderColor: '#27272a',
-                                    borderRadius: '8px',
-                                    padding: '10px',
-                                }}
-                                labelStyle={{
-                                    color: '#f4f4f5',
-                                    fontWeight: 'bold',
-                                    fontSize: '11px',
-                                }}
-                                itemStyle={{ fontSize: '11px', padding: '2px 0' }}
-                                labelFormatter={(lap) => `Lap ${lap} of the stint`}
-                                formatter={(value) =>
-                                    typeof value === 'number' ? `${signed(value)}s` : value
-                                }
-                            />
-
-                            {degradation.compounds.map((compound) => (
-                                <Line
-                                    key={compound}
-                                    type='monotone'
-                                    dataKey={compound}
-                                    name={COMPOUND_STYLE[compound].label}
-                                    stroke={COMPOUND_STYLE[compound].color}
-                                    strokeWidth={2}
-                                    dot={false}
-                                    activeDot={{ r: 4, strokeWidth: 0 }}
-                                    connectNulls
-                                    isAnimationActive={false}
-                                />
-                            ))}
-                        </LineChart>
-                    </ResponsiveContainer>
+                                {degradation.compounds.map((compound) => (
+                                    <Line
+                                        key={compound}
+                                        type='monotone'
+                                        dataKey={compound}
+                                        name={COMPOUND_STYLE[compound].label}
+                                        stroke={COMPOUND_STYLE[compound].color}
+                                        strokeWidth={2}
+                                        dot={false}
+                                        activeDot={{ r: 4, strokeWidth: 0 }}
+                                        connectNulls
+                                        isAnimationActive={false}
+                                    />
+                                ))}
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
             </CardBody>
         </Card>

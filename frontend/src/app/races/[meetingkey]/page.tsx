@@ -329,22 +329,26 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                         {activeTab === 'pace' && (
                             <div className='space-y-6'>
                                 <div
-                                    className={`grid grid-cols-1 gap-6 items-start ${
+                                    className={`grid grid-cols-1 gap-6 items-stretch ${
                                         isGridSession ? 'xl:grid-cols-2' : ''
                                     }`}
                                 >
-                                    <LapPaceChart
-                                        sessionKey={activeRace.sessionKey}
-                                        driversList={activeRace.classification}
-                                        lookup={driverLookup}
-                                        raceControl={activeRace.raceControl}
-                                    />
-                                    {isGridSession && (
-                                        <TyreDegradationCard
+                                    <div className='flex flex-col *:flex-1'>
+                                        <LapPaceChart
                                             sessionKey={activeRace.sessionKey}
-                                            stints={activeRace.stints}
+                                            driversList={activeRace.classification}
+                                            lookup={driverLookup}
                                             raceControl={activeRace.raceControl}
                                         />
+                                    </div>
+                                    {isGridSession && (
+                                        <div className='flex flex-col *:flex-1'>
+                                            <TyreDegradationCard
+                                                sessionKey={activeRace.sessionKey}
+                                                stints={activeRace.stints}
+                                                raceControl={activeRace.raceControl}
+                                            />
+                                        </div>
                                     )}
                                 </div>
                                 <LapHeatmapGrid
