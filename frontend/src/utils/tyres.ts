@@ -9,6 +9,9 @@ const MIN_CLEAN_LAPS = 6;
 const OUTLIER_FACTOR = 1.05;
 const MAX_CURVE_LAPS = 35;
 
+const MIN_STINTS_PER_POINT = 3;
+const SMOOTHING_RADIUS = 1; // laps either side, so a 3-lap moving average
+
 export interface CompoundSummary {
     compound: DryCompound;
     stints: number;
@@ -137,20 +140,37 @@ export function buildTyreDegradation(
         degPerLap: median(degByCompound.get(compound)!),
     }));
 
-    // Average delta per lap-into-stint, only where at least two stints contribute.
+    // Mean delta per lap-into-stint, only where enough stints contribute, then lightly smoothed.
+    const means = new Map<DryCompound, Map<number, number>>();
+    for (const compound of compounds) {
+        const byAge = new Map<number, number>();
+        for (const [age, values] of deltasByCompound.get(compound) ?? []) {
+            if (age <= MAX_CURVE_LAPS && values.length >= MIN_STINTS_PER_POINT) {
+                byAge.set(age, values.reduce((sum, v) => sum + v, 0) / values.length);
+            }
+        }
+        means.set(compound, byAge);
+    }
+
     const curve: DegradationCurveRow[] = [];
     for (let age = 0; age <= MAX_CURVE_LAPS; age++) {
         const row: DegradationCurveRow = { lapIntoStint: age };
         let hasValue = false;
 
         for (const compound of compounds) {
-            const values = deltasByCompound.get(compound)?.get(age);
-            if (values && values.length >= 2) {
-                row[compound] = values.reduce((sum, v) => sum + v, 0) / values.length;
-                hasValue = true;
-            } else {
+            const byAge = means.get(compound)!;
+            if (!byAge.has(age)) {
                 row[compound] = null;
+                continue;
             }
+
+            const window: number[] = [];
+            for (let offset = -SMOOTHING_RADIUS; offset <= SMOOTHING_RADIUS; offset++) {
+                const value = byAge.get(age + offset);
+                if (value !== undefined) window.push(value);
+            }
+            row[compound] = window.reduce((sum, v) => sum + v, 0) / window.length;
+            hasValue = true;
         }
 
         if (hasValue) curve.push(row);
