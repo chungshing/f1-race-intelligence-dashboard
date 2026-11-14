@@ -6,7 +6,7 @@ import {
 import { bestTime } from '@/lib/qualiPace';
 import { getChronologicalMeetingOrder } from '@/lib/racePoints';
 import { RaceWeekend } from '@/types/race';
-import { DriverResult, SupabaseRaceResultRow } from '@/types/results';
+import { DriverResult, PitStop, SupabaseRaceResultRow } from '@/types/results';
 import { DriverStanding, Team } from '@/types/standing';
 import { parseJsonField } from '@/utils/form';
 import { isQualifyingSession } from '@/utils/gridVsRace';
@@ -46,11 +46,17 @@ export interface ConstructorComparisonResult {
     profileB: ConstructorProfile;
     rounds: TeamCompareRound[];
     summary: TeamCompareSummary;
-    usingLaneDuration: boolean;
 }
 
 const mean = (values: number[]) => values.reduce((sum, v) => sum + v, 0) / values.length;
 
+function median(values: number[]): number {
+    const sorted = [...values].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+// Average gap to pole in seconds per team, per qualifying session.
 function qualiGapsByMeeting(
     rows: SupabaseRaceResultRow[],
     drivers: DriverStanding[]
@@ -75,7 +81,7 @@ function qualiGapsByMeeting(
             const team = teamByDriver.get(driverNumber);
             if (!team) continue;
             const list = gaps.get(team) ?? [];
-            list.push(((time - pole) / pole) * 100);
+            list.push(time - pole);
             gaps.set(team, list);
         }
 
@@ -85,6 +91,41 @@ function qualiGapsByMeeting(
     }
 
     return out;
+}
+
+// Pit lane time is used for every stop: stationary time is missing for later races.
+function laneTimesByTeam(
+    rows: SupabaseRaceResultRow[],
+    drivers: DriverStanding[]
+): Map<string, Map<number, number[]>> {
+    const teamByDriver = new Map<number, string>(
+        drivers.map((d): [number, string] => [d.driverNumber, d.teamName])
+    );
+    const out = new Map<string, Map<number, number[]>>();
+
+    for (const row of rows) {
+        if (row.session_name !== 'Race') continue;
+
+        for (const pit of parseJsonField<PitStop>(row.pit_stops_json)) {
+            const team = teamByDriver.get(pit.driver_number);
+            const lane = pit.lane_duration;
+            if (!team || lane == null || !(lane > 0)) continue;
+
+            const byMeeting = out.get(team) ?? new Map<number, number[]>();
+            const list = byMeeting.get(row.meeting_key) ?? [];
+            list.push(lane);
+            byMeeting.set(row.meeting_key, list);
+            out.set(team, byMeeting);
+        }
+    }
+
+    return out;
+}
+
+function teamLaneMedian(byMeeting: Map<number, number[]> | undefined): number | null {
+    if (!byMeeting) return null;
+    const all = [...byMeeting.values()].flat();
+    return all.length ? median(all) : null;
 }
 
 function avg(values: (number | null)[]): number | null {
@@ -105,8 +146,18 @@ export function buildConstructorComparison(
 
     const resultsA = new Map(profileA.seasonResults.map((r) => [r.meetingKey, r]));
     const resultsB = new Map(profileB.seasonResults.map((r) => [r.meetingKey, r]));
-    const pitA = new Map(profileA.pitStops.rounds.map((r) => [r.meetingKey, r.median]));
-    const pitB = new Map(profileB.pitStops.rounds.map((r) => [r.meetingKey, r.median]));
+
+    const lanes = laneTimesByTeam(raceRows, drivers);
+    const laneA = lanes.get(teamA.teamName);
+    const laneB = lanes.get(teamB.teamName);
+    const pitRanking = [...lanes.entries()]
+        .map(([team, byMeeting]) => ({ team, median: teamLaneMedian(byMeeting) ?? Infinity }))
+        .sort((a, b) => a.median - b.median)
+        .map((r) => r.team);
+    const rankOf = (team: string) => {
+        const i = pitRanking.indexOf(team);
+        return i >= 0 ? i + 1 : null;
+    };
 
     const rounds: TeamCompareRound[] = [];
     let round = 0;
@@ -129,6 +180,8 @@ export function buildConstructorComparison(
         else if (bPoints > aPoints) bRoundsWon++;
 
         const gaps = quali.get(meetingKey);
+        const aLane = laneA?.get(meetingKey);
+        const bLane = laneB?.get(meetingKey);
 
         rounds.push({
             round,
@@ -140,8 +193,8 @@ export function buildConstructorComparison(
             bCumulative,
             aQualiGap: gaps?.get(teamA.teamName) ?? null,
             bQualiGap: gaps?.get(teamB.teamName) ?? null,
-            aPit: pitA.get(meetingKey) ?? null,
-            bPit: pitB.get(meetingKey) ?? null,
+            aPit: aLane?.length ? median(aLane) : null,
+            bPit: bLane?.length ? median(bLane) : null,
             aDrivers: a?.driverBreakdown ?? [],
             bDrivers: b?.driverBreakdown ?? [],
         });
@@ -153,15 +206,14 @@ export function buildConstructorComparison(
         profileA,
         profileB,
         rounds,
-        usingLaneDuration: profileA.pitStops.usingLaneDuration,
         summary: {
             points: [aCumulative, bCumulative],
             wins: [profileA.stats.wins, profileB.stats.wins],
             podiums: [profileA.stats.podiums, profileB.stats.podiums],
             dnfs: [profileA.stats.dnfCount, profileB.stats.dnfCount],
             avgQualiGap: [avg(rounds.map((r) => r.aQualiGap)), avg(rounds.map((r) => r.bQualiGap))],
-            medianPit: [profileA.pitStops.medianStop, profileB.pitStops.medianStop],
-            pitRank: [profileA.pitStops.rank, profileB.pitStops.rank],
+            medianPit: [teamLaneMedian(laneA), teamLaneMedian(laneB)],
+            pitRank: [rankOf(teamA.teamName), rankOf(teamB.teamName)],
             pointsRoundsWon: [aRoundsWon, bRoundsWon],
             roundsCompared: rounds.length,
         },
