@@ -1,4 +1,11 @@
-import { getRaceResults, getRaces, getStandings, getTeamStandings } from '@/lib/app';
+import {
+    getLapsBySession,
+    getRaceResults,
+    getRaces,
+    getStandings,
+    getTeamStandings,
+} from '@/lib/app';
+import { buildRaceStory } from '@/lib/raceStory';
 import { DriverResult, PitStop, RaceControlEvent, StartingGridEntry, Stint } from '@/types/results';
 import { parseJsonField } from '@/utils/form';
 import { isQualifyingSession } from '@/utils/gridVsRace';
@@ -8,8 +15,11 @@ const MAX_STEPS = 6;
 const RATE_LIMIT = 15; // requests per minute per IP
 const hits = new Map<string, number[]>();
 
-const SYSTEM = `You are the analyst for an F1 race intelligence dashboard. Answer only from tool data; never invent results, times or events. Use tools to look up the race, then explain with concrete evidence: grid position, pace/gap, pit stops, tyre stints, safety cars, penalties and retirements. If the data cannot explain something, say so. Be concise.`;
+const SYSTEM = `You are the analyst for an F1 race intelligence dashboard. Answer only from tool data; never invent results, times or events. 
+For "why didn't X win / why did X finish there" questions: call get_session_results for the grid and result, then get_race_story for X (and rivals if relevant). 
+Explain with evidence in this order: where they started and why, which stint(s) lost time (secondsPerLapVsWinner), pit stop timing, safety car windows and position changes. 
 
+Quote numbers from the tools. If the data cannot explain something, say so. Be concise.`;
 type Args = Record<string, unknown>;
 
 const readTools = [
@@ -43,6 +53,23 @@ const readTools = [
             required: ['country'],
         },
     },
+    {
+        name: 'get_race_story',
+        description:
+            'Lap-by-lap race analysis for selected drivers: position every lap, per-stint clean-lap pace, pace delta versus the winner on the same laps, gap to leader, pit stops and safety car windows. Use this to explain WHY a driver finished where they did or lost time. The winner is always included for comparison.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                country: { type: 'STRING', description: 'Race country or circuit, e.g. Brazil' },
+                drivers: {
+                    type: 'STRING',
+                    description:
+                        'Comma-separated driver surnames, e.g. "Verstappen, Norris". Max 4. Omit for the top 3.',
+                },
+            },
+            required: ['country'],
+        },
+    },
 ];
 
 const syncTool = {
@@ -53,8 +80,14 @@ const syncTool = {
 
 async function driverNames() {
     const standings = await getStandings();
-    return new Map(
-        standings.map((d) => [d.driver_number, { name: d.driver_name, team: d.team_name }])
+    return new Map<number, { name: string; team: string }>(
+        standings.map((d): [number, { name: string; team: string }] => [
+            Number(d.driver_number),
+            {
+                name: d.driver_name ?? `Driver ${d.driver_number}`,
+                team: d.team_name ?? 'Unknown',
+            },
+        ])
     );
 }
 
@@ -75,41 +108,41 @@ async function sessionResults(args: Args) {
     const names = await driverNames();
     const who = (n: number) => names.get(n)?.name ?? `Driver ${n}`;
 
-        let gridEntries = parseJsonField<StartingGridEntry>(row.starting_grid_json)
-            .filter((g) => g.position != null)
-            .map((g) => ({ driverNumber: g.driverNumber, pos: g.position as number }));
-        let gridSource = 'starting grid';
+    let gridEntries = parseJsonField<StartingGridEntry>(row.starting_grid_json)
+        .filter((g) => g.position != null)
+        .map((g) => ({ driverNumber: g.driverNumber, pos: g.position as number }));
+    let gridSource = 'starting grid';
 
-        if (gridEntries.length === 0 && sessionName === 'race') {
-            const quali = rows.find((r) => isQualifyingSession(r.session_name));
-            if (quali) {
-                gridEntries = parseJsonField<DriverResult>(quali.classification_json)
-                    .filter((r) => r.position != null)
-                    .map((r) => ({ driverNumber: r.driverNumber, pos: r.position as number }));
-                gridSource = 'qualifying classification (grid penalties not included)';
-            }
+    if (gridEntries.length === 0 && sessionName === 'race') {
+        const quali = rows.find((r) => isQualifyingSession(r.session_name));
+        if (quali) {
+            gridEntries = parseJsonField<DriverResult>(quali.classification_json)
+                .filter((r) => r.position != null)
+                .map((r) => ({ driverNumber: r.driverNumber, pos: r.position as number }));
+            gridSource = 'qualifying classification (grid penalties not included)';
         }
+    }
 
-        const gridPos = new Map(gridEntries.map((g) => [g.driverNumber, g.pos]));
+    const gridPos = new Map(gridEntries.map((g) => [g.driverNumber, g.pos]));
 
-        const classification = parseJsonField<DriverResult>(row.classification_json).map((r) => {
-            const start = gridPos.get(r.driverNumber) ?? null;
-            return {
-                pos: r.position,
-                driver: who(r.driverNumber),
-                team: names.get(r.driverNumber)?.team,
-                time: r.formattedDuration,
-                gap: r.gapToLeader,
-                status: r.dsq ? 'DSQ' : r.dnf ? 'DNF' : r.dns ? 'DNS' : 'Finished',
-                grid: start,
-                placesGained: start !== null && r.position !== null ? start - r.position : null,
-            };
-        });
+    const classification = parseJsonField<DriverResult>(row.classification_json).map((r) => {
+        const start = gridPos.get(r.driverNumber) ?? null;
+        return {
+            pos: r.position,
+            driver: who(r.driverNumber),
+            team: names.get(r.driverNumber)?.team,
+            time: r.formattedDuration,
+            gap: r.gapToLeader,
+            status: r.dsq ? 'DSQ' : r.dnf ? 'DNF' : r.dns ? 'DNS' : 'Finished',
+            grid: start,
+            placesGained: start !== null && r.position !== null ? start - r.position : null,
+        };
+    });
 
-        const grid = gridEntries
-            .sort((a, b) => a.pos - b.pos)
-            .map((g) => ({ pos: g.pos, driver: who(g.driverNumber) }));
-            
+    const grid = gridEntries
+        .sort((a, b) => a.pos - b.pos)
+        .map((g) => ({ pos: g.pos, driver: who(g.driverNumber) }));
+
     const pitStops = parseJsonField<PitStop>(row.pit_stops_json).map((p) => ({
         driver: who(p.driver_number),
         lap: p.lap_number,
@@ -145,6 +178,48 @@ async function sessionResults(args: Args) {
     };
 }
 
+async function raceStory(args: Args) {
+    const query = String(args.country ?? '').toLowerCase();
+    const races = await getRaces();
+    const race = races.find(
+        (r) => r.country?.toLowerCase().includes(query) || r.circuit?.toLowerCase().includes(query)
+    );
+    if (!race) return { error: `No race found for "${args.country}"` };
+
+    const rows = await getRaceResults(race.meeting_key);
+    const row = rows.find((r) => r.session_name.toLowerCase() === 'race');
+    if (!row) return { error: 'Race session not found' };
+
+    let grid = parseJsonField<StartingGridEntry>(row.starting_grid_json)
+        .filter((g) => g.position != null)
+        .map((g) => ({ driverNumber: g.driverNumber, position: g.position }));
+    if (grid.length === 0) {
+        const quali = rows.find((r) => isQualifyingSession(r.session_name));
+        if (quali) {
+            grid = parseJsonField<DriverResult>(quali.classification_json)
+                .filter((r) => r.position != null)
+                .map((r) => ({ driverNumber: r.driverNumber, position: r.position }));
+        }
+    }
+
+    const laps = await getLapsBySession(row.session_key);
+    if (laps.length === 0) return { error: 'No lap data for this race' };
+
+    return {
+        country: race.country,
+        ...buildRaceStory({
+            laps,
+            grid,
+            stints: parseJsonField<Stint>(row.stints_json),
+            pitStops: parseJsonField<PitStop>(row.pit_stops_json),
+            raceControl: parseJsonField<RaceControlEvent>(row.race_control_json),
+            classification: parseJsonField<DriverResult>(row.classification_json),
+            names: await driverNames(),
+            requested: String(args.drivers ?? ''),
+        }),
+    };
+}
+
 async function triggerSync() {
     const backendUrl =
         process.env.BACKEND_BASE_URL ?? 'https://f1-race-intelligence-dashboard.onrender.com';
@@ -176,6 +251,8 @@ async function runTool(name: string, args: Args, isAdmin: boolean) {
                     : { drivers: await getStandings() };
             case 'get_session_results':
                 return await sessionResults(args);
+            case 'get_race_story':
+                return await raceStory(args);
             case 'trigger_sync':
                 return isAdmin ? await triggerSync() : { error: 'Admin token required' };
             default:
