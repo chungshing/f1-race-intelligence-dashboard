@@ -4,7 +4,7 @@ import { Card, CardBody, CardHeader, CardNote, StatTile } from '@/components/ui/
 import { useSessionLaps } from '@/hooks/useSessionLaps';
 import { RaceControlEvent, Stint } from '@/types/results';
 import { getSafetyCarWindows } from '@/utils/raceControl';
-import { DryCompound, buildTyreDegradation } from '@/utils/tyres';
+import { Compound, buildTyreDegradation } from '@/utils/tyres';
 import { CircleDot } from 'lucide-react';
 import { useMemo } from 'react';
 import {
@@ -25,10 +25,12 @@ interface Props {
     raceControl?: RaceControlEvent[] | null;
 }
 
-const COMPOUND_STYLE: Record<DryCompound, { label: string; color: string }> = {
+const COMPOUND_STYLE: Record<Compound, { label: string; color: string }> = {
     SOFT: { label: 'Soft', color: '#ef4444' },
     MEDIUM: { label: 'Medium', color: '#eab308' },
     HARD: { label: 'Hard', color: '#e4e4e7' },
+    INTERMEDIATE: { label: 'Intermediate', color: '#22c55e' },
+    WET: { label: 'Wet', color: '#3b82f6' },
 };
 
 const signed = (value: number, digits = 3) => `${value > 0 ? '+' : ''}${value.toFixed(digits)}`;
@@ -62,7 +64,7 @@ export function TyreDegradationCard({ sessionKey, stints, raceControl }: Props) 
             />
 
             <CardBody className='space-y-6'>
-                <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
+                <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3'>
                     {degradation.summaries.map((summary) => {
                         const style = COMPOUND_STYLE[summary.compound];
                         return (
@@ -171,11 +173,13 @@ export function TyreDegradationCard({ sessionKey, stints, raceControl }: Props) 
             </CardBody>
 
             <CardNote>
-                The curve is the average lap time against the first three clean laps of each stint,
-                shown only where at least three stints contribute and smoothed over three laps. Lap
+                The curve is the median lap time against the first three clean laps of each stint,
+                smoothed over five laps. Points where only one stint contributes are indicative. Lap
                 1, pit in and out laps, safety car laps and slow outliers are left out. It&apos;s
                 not fuel-corrected: cars get lighter and quicker as fuel burns off, so real tyre
-                wear is steeper than shown. Stints with under six clean laps are skipped.
+                wear is steeper than shown. Stints with under four clean laps are skipped. On wet
+                and mixed races the lap-time change also reflects the track drying or getting
+                wetter, so intermediate and wet curves show conditions as much as tyre wear.
             </CardNote>
         </Card>
     );
