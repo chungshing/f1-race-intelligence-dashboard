@@ -1,7 +1,7 @@
 'use client';
 
-import { TeamComparisonChart } from '@/components/dashboard/TeamComparisonChart';
 import AppLayout from '@/components/layout/AppLayout';
+import { TeamComparisonChart } from '@/components/dashboard/TeamComparisonChart';
 import { useConstructorComparison } from '@/hooks/useConstructorComparison';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { DriverContribution } from '@/lib/constructorProfile';
@@ -35,7 +35,7 @@ function Finishes({ drivers }: { drivers: DriverContribution[] }) {
     return (
         <div className='flex flex-col items-center gap-0.5'>
             {drivers.map((d) => (
-                <span key={d.driverNumber} className='text-xs'>
+                <span key={d.driverNumber} className='text-xs whitespace-nowrap'>
                     <span className='text-zinc-500'>{lastName(d.driverName)} </span>
                     <span className={`font-bold ${finishClass(d)}`}>{finishLabel(d)}</span>
                 </span>
@@ -71,7 +71,7 @@ function TeamPickerRow({
                             key={t.teamName}
                             disabled={isDisabled}
                             onClick={() => onSelect(t.teamName)}
-                            className={`px-2.5 py-1.5 text-[11px] font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap border ${
+                            className={`min-h-9 px-2.5 py-1.5 text-[11px] font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap border ${
                                 isSelected
                                     ? 'bg-zinc-800 text-zinc-100 font-bold border-zinc-700'
                                     : isDisabled
@@ -97,14 +97,17 @@ function StatRow({
     a,
     b,
     lowerIsBetter = false,
+    decimals = 0,
+    unit = '',
 }: {
     label: string;
     a: number | null;
     b: number | null;
     lowerIsBetter?: boolean;
+    decimals?: number;
+    unit?: string;
 }) {
-    const aText = a === null ? '—' : Number.isInteger(a) ? String(a) : a.toFixed(3);
-    const bText = b === null ? '—' : Number.isInteger(b) ? String(b) : b.toFixed(3);
+    const fmt = (v: number | null) => (v === null ? '—' : `${v.toFixed(decimals)}${unit}`);
     const aWins = a !== null && b !== null && a !== b && (lowerIsBetter ? a < b : a > b);
     const bWins = a !== null && b !== null && a !== b && (lowerIsBetter ? b < a : b > a);
 
@@ -113,7 +116,7 @@ function StatRow({
             <span
                 className={`text-right font-mono text-sm ${aWins ? 'text-emerald-400 font-bold' : 'text-zinc-300'}`}
             >
-                {aText}
+                {fmt(a)}
             </span>
             <span className='text-center text-[10px] text-zinc-500 uppercase tracking-wider'>
                 {label}
@@ -121,15 +124,23 @@ function StatRow({
             <span
                 className={`text-left font-mono text-sm ${bWins ? 'text-emerald-400 font-bold' : 'text-zinc-300'}`}
             >
-                {bText}
+                {fmt(b)}
             </span>
         </div>
     );
 }
 
-function ChartSection({ title, children }: { title: string; children: React.ReactNode }) {
+function ChartSection({
+    title,
+    children,
+    className = 'border-b border-zinc-900',
+}: {
+    title: string;
+    children: React.ReactNode;
+    className?: string;
+}) {
     return (
-        <div className='p-4 border-b border-zinc-900'>
+        <div className={`p-4 min-w-0 ${className}`}>
             <h3 className='text-[10px] font-bold text-zinc-400 tracking-widest uppercase mb-2'>
                 {title}
             </h3>
@@ -250,16 +261,20 @@ export default function ConstructorComparePage() {
                                 lowerIsBetter
                             />
                             <StatRow
-                                label='Avg quali gap %'
+                                label='Avg quali gap to pole'
                                 a={data.summary.avgQualiGap[0]}
                                 b={data.summary.avgQualiGap[1]}
                                 lowerIsBetter
+                                decimals={3}
+                                unit='s'
                             />
                             <StatRow
-                                label={`Median pit (${data.usingLaneDuration ? 'lane' : 'stationary'}) s`}
+                                label='Median pit lane time'
                                 a={data.summary.medianPit[0]}
                                 b={data.summary.medianPit[1]}
                                 lowerIsBetter
+                                decimals={2}
+                                unit='s'
                             />
                         </div>
 
@@ -275,98 +290,106 @@ export default function ConstructorComparePage() {
                             />
                         </ChartSection>
 
-                        <ChartSection title='Qualifying Gap to Pole (%)'>
-                            <TeamComparisonChart
-                                data={data.rounds}
-                                keyA='aQualiGap'
-                                keyB='bQualiGap'
-                                nameA={data.teamA.teamName}
-                                nameB={data.teamB.teamName}
-                                colorA={data.teamA.teamColor}
-                                colorB={data.teamB.teamColor}
-                                decimals={2}
-                                unit='%'
-                            />
-                        </ChartSection>
+                        <div className='grid grid-cols-1 sm:grid-cols-2 border-b border-zinc-900'>
+                            <ChartSection
+                                title='Qualifying Gap to Pole (s)'
+                                className='border-b sm:border-b-0 sm:border-r border-zinc-900'
+                            >
+                                <TeamComparisonChart
+                                    data={data.rounds}
+                                    keyA='aQualiGap'
+                                    keyB='bQualiGap'
+                                    nameA={data.teamA.teamName}
+                                    nameB={data.teamB.teamName}
+                                    colorA={data.teamA.teamColor}
+                                    colorB={data.teamB.teamColor}
+                                    decimals={3}
+                                    unit='s'
+                                />
+                            </ChartSection>
+                            <ChartSection title='Median Pit Lane Time (s)' className=''>
+                                <TeamComparisonChart
+                                    data={data.rounds}
+                                    keyA='aPit'
+                                    keyB='bPit'
+                                    nameA={data.teamA.teamName}
+                                    nameB={data.teamB.teamName}
+                                    colorA={data.teamA.teamColor}
+                                    colorB={data.teamB.teamColor}
+                                    decimals={2}
+                                    unit='s'
+                                />
+                            </ChartSection>
+                        </div>
 
-                        <ChartSection title='Median Pit Stop (s)'>
-                            <TeamComparisonChart
-                                data={data.rounds}
-                                keyA='aPit'
-                                keyB='bPit'
-                                nameA={data.teamA.teamName}
-                                nameB={data.teamB.teamName}
-                                colorA={data.teamA.teamColor}
-                                colorB={data.teamB.teamColor}
-                                decimals={2}
-                                unit='s'
-                            />
-                        </ChartSection>
-
-                        <table className='w-full text-left border-collapse text-sm'>
-                            <thead>
-                                <tr className={TABLE_THEAD_CLASS}>
-                                    <th className='p-3 w-16 text-center'>Rd</th>
-                                    <th className='p-3'>Race</th>
-                                    <th className='p-3 text-center'>{data.teamA.teamName}</th>
-                                    <th className='p-3 text-center'>{data.teamB.teamName}</th>
-                                    <th className='p-3 text-right w-28'>Gap</th>
-                                </tr>
-                            </thead>
-                            <tbody className='divide-y divide-zinc-800/50'>
-                                {data.rounds.map((r) => {
-                                    const diff = r.aPoints - r.bPoints;
-                                    return (
-                                        <tr
-                                            key={r.meetingKey}
-                                            className='hover:bg-zinc-800/20 transition-colors'
-                                        >
-                                            <td className='p-3 text-center font-mono text-zinc-500'>
-                                                {r.round}
-                                            </td>
-                                            <td className='p-3 text-zinc-200'>
-                                                <Link
-                                                    href={`/races/${r.meetingKey}`}
-                                                    className='hover:text-red-400 transition-colors'
-                                                >
-                                                    {r.country}
-                                                </Link>
-                                            </td>
-                                            <td className='p-3 text-center'>
-                                                <Finishes drivers={r.aDrivers} />
-                                                <span className='block text-[10px] font-mono text-zinc-500 mt-0.5'>
-                                                    {r.aPoints} pts
-                                                </span>
-                                            </td>
-                                            <td className='p-3 text-center'>
-                                                <Finishes drivers={r.bDrivers} />
-                                                <span className='block text-[10px] font-mono text-zinc-500 mt-0.5'>
-                                                    {r.bPoints} pts
-                                                </span>
-                                            </td>
-                                            <td className='p-3 text-right font-mono'>
-                                                {diff === 0 ? (
-                                                    <span className='text-zinc-500'>—</span>
-                                                ) : (
-                                                    <span
-                                                        className={
-                                                            diff > 0
-                                                                ? 'text-emerald-400'
-                                                                : 'text-amber-400'
-                                                        }
+                        <div className='overflow-x-auto'>
+                            <table className='w-full min-w-140 text-left border-collapse text-sm'>
+                                <thead>
+                                    <tr className={TABLE_THEAD_CLASS}>
+                                        <th className='p-3 w-12 text-center'>Rd</th>
+                                        <th className='p-3'>Race</th>
+                                        <th className='p-3 text-center'>{data.teamA.teamName}</th>
+                                        <th className='p-3 text-right w-14'>Pts</th>
+                                        <th className='p-3 text-center'>{data.teamB.teamName}</th>
+                                        <th className='p-3 text-right w-14'>Pts</th>
+                                        <th className='p-3 text-right w-28'>Gap</th>
+                                    </tr>
+                                </thead>
+                                <tbody className='divide-y divide-zinc-800/50'>
+                                    {data.rounds.map((r) => {
+                                        const diff = r.aPoints - r.bPoints;
+                                        return (
+                                            <tr
+                                                key={r.meetingKey}
+                                                className='hover:bg-zinc-800/20 transition-colors'
+                                            >
+                                                <td className='p-3 text-center font-mono text-zinc-500'>
+                                                    {r.round}
+                                                </td>
+                                                <td className='p-3 text-zinc-200'>
+                                                    <Link
+                                                        href={`/races/${r.meetingKey}`}
+                                                        className='hover:text-red-400 transition-colors'
                                                     >
-                                                        +{Math.abs(diff)}{' '}
-                                                        {diff > 0
-                                                            ? data.teamA.teamName
-                                                            : data.teamB.teamName}
-                                                    </span>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                                                        {r.country}
+                                                    </Link>
+                                                </td>
+                                                <td className='p-3 text-center'>
+                                                    <Finishes drivers={r.aDrivers} />
+                                                </td>
+                                                <td className='p-3 text-right font-mono font-bold text-zinc-200'>
+                                                    {r.aPoints}
+                                                </td>
+                                                <td className='p-3 text-center'>
+                                                    <Finishes drivers={r.bDrivers} />
+                                                </td>
+                                                <td className='p-3 text-right font-mono font-bold text-zinc-200'>
+                                                    {r.bPoints}
+                                                </td>
+                                                <td className='p-3 text-right font-mono'>
+                                                    {diff === 0 ? (
+                                                        <span className='text-zinc-500'>—</span>
+                                                    ) : (
+                                                        <span
+                                                            className={
+                                                                diff > 0
+                                                                    ? 'text-emerald-400'
+                                                                    : 'text-amber-400'
+                                                            }
+                                                        >
+                                                            +{Math.abs(diff)}{' '}
+                                                            {diff > 0
+                                                                ? data.teamA.teamName
+                                                                : data.teamB.teamName}
+                                                        </span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
             </div>
