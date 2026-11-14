@@ -171,10 +171,11 @@ export function TyreDegradationCard({ sessionKey, stints, raceControl }: Props) 
             </CardBody>
 
             <CardNote>
-                The curve is the average lap time against the first three clean laps of each stint.
-                Lap 1, pit in and out laps, safety car laps and slow outliers are left out. It&apos;s
-                not fuel-corrected: cars get lighter and quicker as fuel burns off, so real tyre wear
-                is steeper than shown. Stints with under six clean laps are skipped.
+                The curve is the average lap time against the first three clean laps of each stint,
+                shown only where at least three stints contribute and smoothed over three laps. Lap
+                1, pit in and out laps, safety car laps and slow outliers are left out. It&apos;s
+                not fuel-corrected: cars get lighter and quicker as fuel burns off, so real tyre
+                wear is steeper than shown. Stints with under six clean laps are skipped.
             </CardNote>
         </Card>
     );
