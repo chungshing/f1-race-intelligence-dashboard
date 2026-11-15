@@ -1,5 +1,8 @@
 'use client';
 
+import { WEATHER_ICONS } from '@/components/dashboard/weatherIcons';
+import { useRaceWeather } from '@/hooks/useRaceWeather';
+import { rainRisk } from '@/lib/weather';
 import { RaceWeekend } from '@/types/race';
 import { buildWeekendIcs, downloadIcs } from '@/utils/calender';
 import { getNextSession, getTimeRemaining, getWeekendLabel } from '@/utils/race';
@@ -13,8 +16,15 @@ type Props = {
     data: RaceWeekend | null;
 };
 
+const RAIN_TEXT = {
+    Low: 'text-zinc-500',
+    Medium: 'text-amber-400',
+    High: 'text-red-400',
+} as const;
+
 export default function RaceWeekendCard({ variant = 'card', data }: Props) {
     const [now, setNow] = useState(() => Date.now());
+    const { data: weather } = useRaceWeather(variant === 'card' ? data : null);
 
     useEffect(() => {
         const interval = setInterval(() => setNow(Date.now()), 60000);
@@ -112,7 +122,6 @@ export default function RaceWeekendCard({ variant = 'card', data }: Props) {
     }
 
     /* Full Card Mode */
-    /* Full Card Mode */
     return (
         <div className='border border-zinc-800 rounded-xl p-5 bg-linear-to-b from-zinc-900 to-zinc-950 shadow-2xl space-y-5'>
             <div className='border-b border-zinc-800/60 pb-3'>
@@ -209,15 +218,14 @@ export default function RaceWeekendCard({ variant = 'card', data }: Props) {
                     const sessionTime = new Date(s.dateStart).getTime();
                     const isDone = sessionTime < now;
                     const isNext = nextSession && s.dateStart === nextSession.dateStart;
+                    const sessionWeather = weather?.sessions[s.sessionName];
+                    const WeatherIcon = sessionWeather ? WEATHER_ICONS[sessionWeather.kind] : null;
 
                     return (
-                        <div
-                            key={s.sessionName}
-                            className='flex justify-between items-center text-sm group'
-                        >
-                            <div className='flex items-center gap-3'>
+                        <div key={s.sessionName} className='flex items-center gap-3 text-sm group'>
+                            <div className='flex items-center gap-3 flex-1 min-w-0'>
                                 <span
-                                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors border
+                                    className={`w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors border
                                     ${
                                         isDone
                                             ? 'bg-emerald-950 text-emerald-400 border-emerald-800/30'
@@ -236,14 +244,37 @@ export default function RaceWeekendCard({ variant = 'card', data }: Props) {
                                 </span>
 
                                 <span
-                                    className={`font-medium tracking-tight transition-colors
+                                    className={`font-medium tracking-tight truncate transition-colors
                                     ${isNext ? 'text-zinc-100 font-bold' : isDone ? 'text-zinc-400 line-through decoration-zinc-800' : 'text-zinc-400'}`}
                                 >
                                     {s.sessionName}
                                 </span>
                             </div>
 
-                            <span className='text-zinc-400 font-mono text-xs font-medium group-hover:text-zinc-400 transition-colors'>
+                            <span
+                                className='flex items-center justify-end gap-1.5 w-18 shrink-0 font-mono text-[11px]'
+                                title={
+                                    sessionWeather
+                                        ? `${sessionWeather.description} · ${weather?.place}`
+                                        : undefined
+                                }
+                            >
+                                {sessionWeather && WeatherIcon && (
+                                    <>
+                                        <WeatherIcon className='w-3.5 h-3.5 text-zinc-400' />
+                                        <span className='text-zinc-300 tabular-nums'>
+                                            {Math.round(sessionWeather.temp)}°
+                                        </span>
+                                        <span
+                                            className={`tabular-nums ${RAIN_TEXT[rainRisk(sessionWeather.rainChance)]}`}
+                                        >
+                                            {sessionWeather.rainChance}%
+                                        </span>
+                                    </>
+                                )}
+                            </span>
+
+                            <span className='text-zinc-400 font-mono text-xs font-medium shrink-0'>
                                 {new Date(s.dateStart).toLocaleString('en-GB', {
                                     day: '2-digit',
                                     month: 'short',
