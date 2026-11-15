@@ -4,7 +4,6 @@ const GEOCODING_URL = 'https://geocoding-api.open-meteo.com/v1/search';
 const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
 const MAX_FORECAST_DAYS = 15;
 const DAY_MS = 24 * 60 * 60 * 1000;
-const RACE_WINDOW_HOURS = 2;
 
 export type WeatherKind =
     | 'clear'
@@ -18,36 +17,19 @@ export type WeatherKind =
 
 export type RainRisk = 'Low' | 'Medium' | 'High';
 
-export interface WeatherDay {
-    date: string;
-    label: string;
-    isRaceDay: boolean;
+export interface SessionWeather {
     kind: WeatherKind;
     description: string;
-    tempMax: number;
-    tempMin: number;
-    rainChance: number;
-    rainMm: number;
-    windMax: number;
-}
-
-export interface RaceHourWeather {
-    localTime: string;
     temp: number;
     rainChance: number;
-    rainMm: number;
-    wind: number;
-    kind: WeatherKind;
-    description: string;
-    risk: RainRisk;
 }
 
 export interface RaceWeather {
     status: 'ok' | 'too-far';
     place: string;
     availableFrom?: string;
-    days: WeatherDay[];
-    race: RaceHourWeather | null;
+    /** Forecast for the hour each session starts, keyed by session name */
+    sessions: Record<string, SessionWeather>;
 }
 
 interface GeoResult {
@@ -59,21 +41,10 @@ interface GeoResult {
 
 interface ForecastResponse {
     utc_offset_seconds: number;
-    daily: {
-        time: string[];
-        weather_code: number[];
-        temperature_2m_max: number[];
-        temperature_2m_min: number[];
-        precipitation_probability_max: (number | null)[];
-        precipitation_sum: (number | null)[];
-        wind_speed_10m_max: number[];
-    };
     hourly: {
         time: string[];
         temperature_2m: number[];
         precipitation_probability: (number | null)[];
-        precipitation: (number | null)[];
-        wind_speed_10m: number[];
         weather_code: number[];
     };
 }
@@ -148,8 +119,7 @@ export async function fetchRaceWeather(race: RaceWeekend): Promise<RaceWeather> 
             status: 'too-far',
             place: geo.place,
             availableFrom: isoDate(firstStart - MAX_FORECAST_DAYS * DAY_MS),
-            days: [],
-            race: null,
+            sessions: {},
         };
     }
 
@@ -159,88 +129,35 @@ export async function fetchRaceWeather(race: RaceWeekend): Promise<RaceWeather> 
         timezone: 'auto',
         start_date: isoDate(Math.max(firstStart - DAY_MS, now - DAY_MS)),
         end_date: isoDate(Math.min(lastEnd + DAY_MS, now + MAX_FORECAST_DAYS * DAY_MS)),
-        daily: [
-            'weather_code',
-            'temperature_2m_max',
-            'temperature_2m_min',
-            'precipitation_probability_max',
-            'precipitation_sum',
-            'wind_speed_10m_max',
-        ].join(','),
-        hourly: [
-            'temperature_2m',
-            'precipitation_probability',
-            'precipitation',
-            'wind_speed_10m',
-            'weather_code',
-        ].join(','),
+        hourly: 'temperature_2m,precipitation_probability,weather_code',
     });
 
     const res = await fetch(`${FORECAST_URL}?${params}`);
     if (!res.ok) throw new Error('Forecast unavailable');
     const data: ForecastResponse = await res.json();
 
-    // Session times are UTC; shift by the venue's offset to get the local date and hour.
+    // Session times are UTC; shift by the venue's offset to get the local hour.
     const toLocal = (ms: number) => new Date(ms + data.utc_offset_seconds * 1000).toISOString();
 
-    const raceSession = race.sessions.find((s) => s.sessionName === 'Race');
-    const raceLocalDate = raceSession
-        ? toLocal(Date.parse(raceSession.dateStart)).slice(0, 10)
-        : null;
-
-    const localDates = [...new Set(starts.map((ms) => toLocal(ms).slice(0, 10)))].sort();
-
-    const days: WeatherDay[] = [];
-    for (const date of localDates) {
-        const i = data.daily.time.indexOf(date);
+    const sessions: Record<string, SessionWeather> = {};
+    for (const session of race.sessions) {
+        const local = toLocal(Date.parse(session.dateStart));
+        const i = data.hourly.time.indexOf(`${local.slice(0, 13)}:00`);
         if (i === -1) continue;
 
-        const weather = describeWeather(data.daily.weather_code[i]);
-        days.push({
-            date,
-            label: new Date(`${date}T12:00:00Z`).toLocaleDateString('en-GB', {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short',
-                timeZone: 'UTC',
-            }),
-            isRaceDay: date === raceLocalDate,
+        // Rain chance is the worst of the session's first two hours.
+        const window = [i, i + 1].filter((k) => k < data.hourly.time.length);
+        const weather = describeWeather(data.hourly.weather_code[i]);
+
+        sessions[session.sessionName] = {
             kind: weather.kind,
             description: weather.label,
-            tempMax: data.daily.temperature_2m_max[i],
-            tempMin: data.daily.temperature_2m_min[i],
-            rainChance: data.daily.precipitation_probability_max[i] ?? 0,
-            rainMm: data.daily.precipitation_sum[i] ?? 0,
-            windMax: data.daily.wind_speed_10m_max[i],
-        });
+            temp: data.hourly.temperature_2m[i],
+            rainChance: Math.max(
+                ...window.map((k) => data.hourly.precipitation_probability[k] ?? 0)
+            ),
+        };
     }
 
-    let raceHour: RaceHourWeather | null = null;
-    if (raceSession) {
-        const local = toLocal(Date.parse(raceSession.dateStart));
-        const start = data.hourly.time.indexOf(`${local.slice(0, 13)}:00`);
-
-        if (start !== -1) {
-            const idx = Array.from({ length: RACE_WINDOW_HOURS }, (_, k) => start + k).filter(
-                (k) => k < data.hourly.time.length
-            );
-            const rainChance = Math.max(
-                ...idx.map((k) => data.hourly.precipitation_probability[k] ?? 0)
-            );
-            const weather = describeWeather(data.hourly.weather_code[start]);
-
-            raceHour = {
-                localTime: local.slice(11, 16),
-                temp: data.hourly.temperature_2m[start],
-                rainChance,
-                rainMm: idx.reduce((sum, k) => sum + (data.hourly.precipitation[k] ?? 0), 0),
-                wind: Math.max(...idx.map((k) => data.hourly.wind_speed_10m[k])),
-                kind: weather.kind,
-                description: weather.label,
-                risk: rainRisk(rainChance),
-            };
-        }
-    }
-
-    return { status: 'ok', place: geo.place, days, race: raceHour };
+    return { status: 'ok', place: geo.place, sessions };
 }
