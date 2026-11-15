@@ -8,6 +8,7 @@ export const STALE = {
     schedule: 60 * MINUTE,
     results: 10 * MINUTE,
     meeting: 30 * MINUTE,
+    weather: 30 * MINUTE,
 };
 
 // How long data is kept in memory and in the browser's IndexedDB between visits.
