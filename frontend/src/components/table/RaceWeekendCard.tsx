@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 type Props = {
     variant?: 'card' | 'sticky';
     data: RaceWeekend | null;
+    label?: string;
 };
 
 const RAIN_TEXT = {
@@ -22,7 +23,11 @@ const RAIN_TEXT = {
     High: 'text-red-400',
 } as const;
 
-export default function RaceWeekendCard({ variant = 'card', data }: Props) {
+export default function RaceWeekendCard({
+    variant = 'card',
+    data,
+    label = 'Next Grand Prix',
+}: Props) {
     const [now, setNow] = useState(() => Date.now());
     const { data: weather } = useRaceWeather(variant === 'card' ? data : null);
 
@@ -128,6 +133,9 @@ export default function RaceWeekendCard({ variant = 'card', data }: Props) {
                 <div className='flex items-center justify-between'>
                     <span className='text-[10px] font-bold text-red-500 uppercase tracking-widest'>
                         Next Grand Prix
+                    </span>
+                    <span className='text-[10px] font-bold text-red-500 uppercase tracking-widest'>
+                        {label}
                     </span>
                     <div className='flex items-center gap-2'>
                         {isSprintWeekend && (
