@@ -22,7 +22,7 @@ export default function RacesPage() {
     const weekends = useMemo(
         () =>
             (data ?? [])
-                .filter((w) => w.sessions?.length)
+                .filter((w) => w.sessions?.some((s) => s.sessionName === 'Race'))
                 .sort(
                     (a, b) =>
                         Math.min(...a.sessions.map((s) => Date.parse(s.dateStart))) -
