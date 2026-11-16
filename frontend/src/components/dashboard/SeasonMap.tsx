@@ -19,6 +19,96 @@ const projection = geoNaturalEarth1().fitExtent(
 );
 const pathGen = geoPath(projection);
 
+interface Pin {
+    key: number;
+    country: string;
+    lat: number;
+    lon: number;
+    x: number;
+    y: number;
+}
+
+interface Placement {
+    dx: number;
+    dy: number;
+    anchor: 'start' | 'end';
+}
+
+interface Box {
+    l: number;
+    r: number;
+    t: number;
+    b: number;
+}
+
+// Label offsets in screen pixels, tried in order until one doesn't collide.
+const CHAR_W = 5.6;
+const CANDIDATES: Placement[] = [
+    { dx: 8, dy: 3, anchor: 'start' },
+    { dx: -8, dy: 3, anchor: 'end' },
+    { dx: 6, dy: -8, anchor: 'start' },
+    { dx: -6, dy: -8, anchor: 'end' },
+    { dx: 6, dy: 16, anchor: 'start' },
+    { dx: -6, dy: 16, anchor: 'end' },
+    { dx: 8, dy: -20, anchor: 'start' },
+    { dx: -8, dy: -20, anchor: 'end' },
+    { dx: 8, dy: 28, anchor: 'start' },
+    { dx: -8, dy: 28, anchor: 'end' },
+];
+
+const overlaps = (a: Box, b: Box) => a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t;
+
+function placeLabels(pins: Pin[], k: number, cx: number, cy: number, selectedKey: number | null) {
+    const out = new Map<number, Placement>();
+    const halfW = W / (2 * k);
+    const halfH = H / (2 * k);
+
+    const visible = pins.filter((p) => Math.abs(p.x - cx) <= halfW && Math.abs(p.y - cy) <= halfH);
+
+    const dots: Box[] = visible.map((p) => {
+        const r = p.key === selectedKey ? 12 : 5;
+        return { l: p.x * k - r, r: p.x * k + r, t: p.y * k - r, b: p.y * k + r };
+    });
+
+    // Selected pin first, then outward from the centre of the view.
+    const order = [...visible].sort(
+        (a, b) =>
+            (a.key === selectedKey ? -1 : b.key === selectedKey ? 1 : 0) ||
+            Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy)
+    );
+
+    const placed: Box[] = [];
+    for (const pin of order) {
+        const width = pin.country.length * CHAR_W;
+        const px = pin.x * k;
+        const py = pin.y * k;
+
+        let best = CANDIDATES[0];
+        let bestBox: Box | null = null;
+        let bestScore = Infinity;
+
+        for (const c of CANDIDATES) {
+            const left = c.anchor === 'start' ? px + c.dx : px + c.dx - width;
+            const box: Box = { l: left, r: left + width, t: py + c.dy - 9, b: py + c.dy + 2 };
+            const score =
+                placed.filter((p) => overlaps(box, p)).length * 2 +
+                dots.filter((d) => overlaps(box, d)).length;
+
+            if (score < bestScore) {
+                best = c;
+                bestBox = box;
+                bestScore = score;
+                if (score === 0) break;
+            }
+        }
+
+        if (bestBox) placed.push(bestBox);
+        out.set(pin.key, best);
+    }
+
+    return out;
+}
+
 interface Props {
     weekends: RaceWeekend[];
     selectedKey: number | null;
@@ -57,7 +147,7 @@ export default function SeasonMap({
         };
     }, []);
 
-    const pins = useMemo(
+    const pins = useMemo<Pin[]>(
         () =>
             weekends.flatMap((w) => {
                 const venue = findVenue(w);
@@ -104,6 +194,12 @@ export default function SeasonMap({
             ? { cx: selected.x, cy: selected.y, k: ZOOM }
             : { cx: W / 2, cy: H / 2, k: 1 };
     }, [pins, selectedKey, zoomed]);
+
+    // Labels are placed for the view we're heading to, so they don't jump during the zoom.
+    const placements = useMemo(
+        () => placeLabels(pins, target.k, target.cx, target.cy, selectedKey),
+        [pins, target, selectedKey]
+    );
 
     const [view, setView] = useState<View>(target);
     const viewRef = useRef<View>(view);
@@ -163,6 +259,7 @@ export default function SeasonMap({
                 const isPast = pastKeys.has(pin.key);
                 const isNext = pin.key === nextKey;
                 const fill = isSelected ? '#ef4444' : isPast ? '#10b981' : '#52525b';
+                const label = placements.get(pin.key) ?? CANDIDATES[0];
 
                 return (
                     <g
@@ -198,8 +295,9 @@ export default function SeasonMap({
                         />
                         {showLabels && (
                             <text
-                                x={8 / view.k}
-                                y={3 / view.k}
+                                x={label.dx / view.k}
+                                y={label.dy / view.k}
+                                textAnchor={label.anchor}
                                 fontSize={10 / view.k}
                                 fill={isSelected ? '#f4f4f5' : '#a1a1aa'}
                                 fontWeight={isSelected ? 700 : 400}
