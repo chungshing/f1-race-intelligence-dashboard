@@ -202,6 +202,18 @@ public class OpenF1Service {
                         .toList());
     }
 
+    public List<OpenF1DriverDto> fetchDriversForSession(int sessionKey) {
+        try {
+            delayBetweenRequests();
+            OpenF1DriverDto[] drivers = restTemplate.getForObject(
+                    openF1BaseUrl + "/drivers?session_key=" + sessionKey, OpenF1DriverDto[].class);
+            return drivers == null ? List.of() : Arrays.asList(drivers);
+        } catch (Exception e) {
+            log.warn("Could not fetch drivers for session {}", sessionKey, e);
+            return List.of();
+        }
+    }
+
     public List<RaceWeekend> fetchRaceWeekends(int year) {
         try {
             // 1. Fetch OpenF1 Sessions
@@ -555,6 +567,7 @@ public class OpenF1Service {
         log.info("Cache validation check passed for active meeting key: {}", meetingKey);
         return localRecords;
     }
+
     @Transactional
     public List<Lap> fetchSessionLapTelemetry(int sessionKey) {
         try {
