@@ -13,7 +13,7 @@ export interface JolpicaRace {
     raceName: string;
     date: string;
     Circuit: { circuitId: string };
-    Results?: { Driver: JolpicaDriver; Constructor: { name: string } }[];
+    Results?: { grid: string; Driver: JolpicaDriver; Constructor: { name: string } }[];
 }
 
 export interface JolpicaResponse {

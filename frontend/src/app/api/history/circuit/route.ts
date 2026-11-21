@@ -30,6 +30,7 @@ export async function GET(request: Request) {
             raceName: r.raceName,
             driver: `${r.Results![0].Driver.givenName} ${r.Results![0].Driver.familyName}`,
             team: r.Results![0].Constructor.name,
+            grid: Number(r.Results![0].grid),
         }))
         .sort((a, b) => b.season - a.season);
 

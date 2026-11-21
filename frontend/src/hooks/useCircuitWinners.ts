@@ -2,7 +2,7 @@ import { STALE } from '@/lib/cacheTimes';
 import { useQuery } from '@tanstack/react-query';
 
 export interface CircuitHistory {
-    winners: { season: number; raceName: string; driver: string; team: string }[];
+    winners: { season: number; raceName: string; driver: string; team: string; grid: number }[];
     totalRaces: number;
     mostWins: { driver: string; wins: number } | null;
 }

@@ -28,12 +28,18 @@ export function PastWinnersCard({ meetingKey }: { meetingKey: number }) {
                 title='Past Winners'
                 subtitle={weekend?.circuit}
                 right={
-                    data.mostWins ? (
+                    <div className='flex items-center gap-3'>
                         <CardMeta>
-                            Most wins: {data.mostWins.driver.split(' ').pop()} ({data.mostWins.wins}
-                            )
+                            From pole: {data.winners.filter((w) => w.grid === 1).length}/
+                            {data.winners.length}
                         </CardMeta>
-                    ) : undefined
+                        {data.mostWins && (
+                            <CardMeta>
+                                Most wins: {data.mostWins.driver.split(' ').pop()} (
+                                {data.mostWins.wins})
+                            </CardMeta>
+                        )}
+                    </div>
                 }
             />
             <CardBody className='p-0'>
@@ -48,6 +54,9 @@ export function PastWinnersCard({ meetingKey }: { meetingKey: number }) {
                             </span>
                             <span className='min-w-0 flex-1 truncate font-bold text-zinc-100'>
                                 {winner.driver}
+                            </span>
+                            <span className='w-14 shrink-0 text-right font-mono text-xs text-zinc-500'>
+                                {winner.grid > 0 ? `P${winner.grid}` : 'Pit'}
                             </span>
                             <span className='shrink-0 text-xs text-zinc-400'>{winner.team}</span>
                         </div>
