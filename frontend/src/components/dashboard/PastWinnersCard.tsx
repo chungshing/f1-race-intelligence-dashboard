@@ -74,7 +74,7 @@ export function PastWinnersCard({ meetingKey }: { meetingKey: number }) {
     const raceDate =
         weekend?.sessions.find((s) => s.sessionName === 'Race')?.dateStart.slice(0, 10) ?? null;
 
-    const { data, isPending } = useCircuitWinners(raceDate);
+    const { data, isPending, isError } = useCircuitWinners(raceDate);
 
     if (!raceDate) return null;
     if (isPending) {
@@ -82,7 +82,15 @@ export function PastWinnersCard({ meetingKey }: { meetingKey: number }) {
             <div className='h-48 animate-pulse rounded-xl border border-zinc-800/50 bg-zinc-900/40' />
         );
     }
-    if (!data || data.winners.length === 0) return null;
+    if (isError || !data || data.winners.length === 0) {
+        return (
+            <p className='rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm text-zinc-400'>
+                {isError
+                    ? 'Circuit history is unavailable right now.'
+                    : 'No previous races at this circuit.'}
+            </p>
+        );
+    }
 
     const known = data.winners.filter((w) => typeof w.grid === 'number');
     const fromPole = known.filter((w) => w.grid === 1).length;

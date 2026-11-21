@@ -34,7 +34,7 @@ import { findGridRacePairs, isGridRaceSession, pickGridRacePair } from '@/utils/
 import { buildRaceSummary } from '@/utils/raceSummary';
 import { use, useEffect, useMemo, useRef, useState } from 'react';
 
-type ActiveTab = 'classification' | 'strategy' | 'pace' | 'replay' | 'racecontrol';
+type ActiveTab = 'classification' | 'strategy' | 'pace' | 'replay' | 'racecontrol' | 'history';
 
 const TABS = [
     {
@@ -58,6 +58,13 @@ const TABS = [
         requiresLaps: false,
         requiresStints: false,
         requiresRaceControl: true,
+    },
+    {
+        key: 'history' as const,
+        label: 'History',
+        requiresLaps: false,
+        requiresStints: false,
+        requiresGridSession: true,
     },
 ];
 
@@ -377,10 +384,12 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                 </div>
                             </div>
                         )}
+                        {activeTab === 'history' && (
+                            <PastWinnersCard meetingKey={activeRace.meetingKey} />
+                        )}
                     </section>
                 )}
             </div>
-            {isGridSession && <PastWinnersCard meetingKey={activeRace.meetingKey} />}
         </AppLayout>
     );
 }
