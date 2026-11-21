@@ -31,7 +31,7 @@ export function PastWinnersCard({ meetingKey }: { meetingKey: number }) {
                     <div className='flex items-center gap-3'>
                         <CardMeta>
                             From pole: {data.winners.filter((w) => w.grid === 1).length}/
-                            {data.winners.length}
+                            {data.winners.filter((w) => typeof w.grid === 'number').length}
                         </CardMeta>
                         {data.mostWins && (
                             <CardMeta>
@@ -56,7 +56,11 @@ export function PastWinnersCard({ meetingKey }: { meetingKey: number }) {
                                 {winner.driver}
                             </span>
                             <span className='w-14 shrink-0 text-right font-mono text-xs text-zinc-500'>
-                                {winner.grid > 0 ? `P${winner.grid}` : 'Pit'}
+                                {typeof winner.grid !== 'number'
+                                    ? '—'
+                                    : winner.grid === 0
+                                      ? 'Pit'
+                                      : `P${winner.grid}`}
                             </span>
                             <span className='shrink-0 text-xs text-zinc-400'>{winner.team}</span>
                         </div>
