@@ -9,6 +9,7 @@ import { RaceControlPanel } from '@/components/chart/RaceControlPanel';
 import { RaceReplay } from '@/components/chart/RaceReplay';
 import { TyreDegradationCard } from '@/components/chart/TyreDegradationCard';
 import { WeatherPanel } from '@/components/chart/WeatherPanel';
+import { PastWinnersCard } from '@/components/dashboard/PastWinnersCard';
 import { RaceSummaryChips } from '@/components/dashboard/RaceSummaryChips';
 import AppLayout from '@/components/layout/AppLayout';
 import { GridVsRaceUnavailable, GridVsRaceView } from '@/components/table/GridVsRaceView';
@@ -379,6 +380,7 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                     </section>
                 )}
             </div>
+            {isGridSession && <PastWinnersCard meetingKey={activeRace.meetingKey} />}
         </AppLayout>
     );
 }
