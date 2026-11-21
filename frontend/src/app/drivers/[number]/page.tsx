@@ -126,7 +126,7 @@ export default function DriverProfilePage({ params }: { params: Promise<{ number
                         </div>
                     </div>
                 </div>
-                <CareerStats driverName={profile.driverName} />
+                <CareerStats driverName={profile.driverName} teamColor={profile.teamColor} />
 
                 <h3 className='text-[11px] font-bold uppercase tracking-widest text-zinc-400'>
                     This season
