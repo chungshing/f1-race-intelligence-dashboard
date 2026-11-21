@@ -1,5 +1,6 @@
 'use client';
 
+import { CareerStats } from '@/components/dashboard/CareerStats';
 import { SeasonSection } from '@/components/dashboard/SeasonSection';
 import AppLayout from '@/components/layout/AppLayout';
 import { useDriverProfile } from '@/hooks/useDriverProfile';
@@ -125,6 +126,11 @@ export default function DriverProfilePage({ params }: { params: Promise<{ number
                         </div>
                     </div>
                 </div>
+                <CareerStats driverName={profile.driverName} />
+
+                <h3 className='text-[11px] font-bold uppercase tracking-widest text-zinc-400'>
+                    This season
+                </h3>
 
                 <div className='grid grid-cols-2 gap-3 lg:grid-cols-[repeat(5,1fr)_2fr]'>
                     <div className={STAT_CARD}>
