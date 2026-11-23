@@ -1,3 +1,4 @@
+import { mapRaceWeekends } from '@/hooks/useRaceWeekends';
 import {
     getLapsBySession,
     getRaceResults,
@@ -10,22 +11,23 @@ import { DriverResult, PitStop, RaceControlEvent, StartingGridEntry, Stint } fro
 import { parseJsonField } from '@/utils/form';
 import { isQualifyingSession } from '@/utils/gridVsRace';
 
-const MODEL = process.env.GEMINI_MODEL ?? 'gemini-3.1-flash-lite';
+const MODEL = process.env.GEMINI_MODEL ?? 'gemini-flash-lite-latest';
 const MAX_STEPS = 6;
 const RATE_LIMIT = 15; // requests per minute per IP
 const hits = new Map<string, number[]>();
 
-const SYSTEM = `You are the analyst for an F1 race intelligence dashboard. Answer only from tool data; never invent results, times or events. 
-For "why didn't X win / why did X finish there" questions: call get_session_results for the grid and result, then get_race_story for X (and rivals if relevant). 
-Explain with evidence in this order: where they started and why, which stint(s) lost time (secondsPerLapVsWinner), pit stop timing, safety car windows and position changes. 
+const SYSTEM = `You are the analyst for an F1 race intelligence dashboard. Answer only from tool data; never invent results, times or events. For "why didn't X win / why did X finish there" questions: call get_session_results for the grid and result, then get_race_story for X (and rivals if relevant). Explain with evidence in this order: where they started and why, which stint(s) lost time (secondsPerLapVsWinner), pit stop timing, safety car windows and position changes. Quote numbers from the tools. If the data cannot explain something, say so. Be concise. When the user says "last", "latest" or "most recent" race, pass country "latest".`;
 
-Quote numbers from the tools. If the data cannot explain something, say so. Be concise.`;
 type Args = Record<string, unknown>;
+
+const COUNTRY_DESCRIPTION =
+    'Race country or circuit, e.g. Brazil. Use "latest" for the most recent completed race.';
 
 const readTools = [
     {
         name: 'list_races',
-        description: 'List race weekends (country, circuit, meeting_key, year) in the database.',
+        description:
+            'List race weekends in chronological order (round, country, circuit, year, race date).',
         parameters: { type: 'OBJECT', properties: {} },
     },
     {
@@ -40,11 +42,11 @@ const readTools = [
     {
         name: 'get_session_results',
         description:
-            'Classification, starting grid, pit stops, tyre stints and key race control events (safety cars, red flags, penalties) for one session of a race weekend.',
+            'Classification, starting grid, places gained, pit stops, tyre stints and key race control events (safety cars, red flags, penalties) for one session of a race weekend.',
         parameters: {
             type: 'OBJECT',
             properties: {
-                country: { type: 'STRING', description: 'Race country or circuit, e.g. Brazil' },
+                country: { type: 'STRING', description: COUNTRY_DESCRIPTION },
                 session: {
                     type: 'STRING',
                     description: 'Session name: Race (default), Qualifying, Sprint',
@@ -60,7 +62,7 @@ const readTools = [
         parameters: {
             type: 'OBJECT',
             properties: {
-                country: { type: 'STRING', description: 'Race country or circuit, e.g. Brazil' },
+                country: { type: 'STRING', description: COUNTRY_DESCRIPTION },
                 drivers: {
                     type: 'STRING',
                     description:
@@ -91,17 +93,40 @@ async function driverNames() {
     );
 }
 
+async function findRace(query: string) {
+    const races = mapRaceWeekends(await getRaces()); // chronological
+    const q = query.trim().toLowerCase();
+
+    if (/^(latest|last|recent|previous|newest)/.test(q)) {
+        const now = Date.now();
+        const finished = races.filter((r) => {
+            const race = r.sessions.find((s) => s.sessionName === 'Race');
+            return race && new Date(race.dateEnd).getTime() <= now;
+        });
+        for (let i = finished.length - 1; i >= 0; i--) {
+            const rows = await getRaceResults(finished[i].meetingKey);
+            const row = rows.find((r) => r.session_name === 'Race');
+            if (row && parseJsonField<DriverResult>(row.classification_json).length > 0) {
+                return finished[i];
+            }
+        }
+        return null;
+    }
+
+    return (
+        races.find(
+            (r) => r.country.toLowerCase().includes(q) || r.circuit.toLowerCase().includes(q)
+        ) ?? null
+    );
+}
+
 async function sessionResults(args: Args) {
-    const query = String(args.country ?? '').toLowerCase();
     const sessionName = String(args.session ?? 'Race').toLowerCase();
 
-    const races = await getRaces();
-    const race = races.find(
-        (r) => r.country?.toLowerCase().includes(query) || r.circuit?.toLowerCase().includes(query)
-    );
+    const race = await findRace(String(args.country ?? ''));
     if (!race) return { error: `No race found for "${args.country}"` };
 
-    const rows = await getRaceResults(race.meeting_key);
+    const rows = await getRaceResults(race.meetingKey);
     const row = rows.find((r) => r.session_name.toLowerCase() === sessionName);
     if (!row) return { error: 'Session not found', available: rows.map((r) => r.session_name) };
 
@@ -179,14 +204,10 @@ async function sessionResults(args: Args) {
 }
 
 async function raceStory(args: Args) {
-    const query = String(args.country ?? '').toLowerCase();
-    const races = await getRaces();
-    const race = races.find(
-        (r) => r.country?.toLowerCase().includes(query) || r.circuit?.toLowerCase().includes(query)
-    );
+    const race = await findRace(String(args.country ?? ''));
     if (!race) return { error: `No race found for "${args.country}"` };
 
-    const rows = await getRaceResults(race.meeting_key);
+    const rows = await getRaceResults(race.meetingKey);
     const row = rows.find((r) => r.session_name.toLowerCase() === 'race');
     if (!row) return { error: 'Race session not found' };
 
@@ -235,14 +256,16 @@ async function runTool(name: string, args: Args, isAdmin: boolean) {
     try {
         switch (name) {
             case 'list_races': {
-                const races = await getRaces();
+                const races = mapRaceWeekends(await getRaces());
                 return {
-                    races: races.map((r) => ({
-                        meeting_key: r.meeting_key,
+                    races: races.map((r, i) => ({
+                        round: i + 1,
                         country: r.country,
                         circuit: r.circuit,
                         year: r.year,
+                        raceDate: r.sessions.find((s) => s.sessionName === 'Race')?.dateStart,
                     })),
+                    note: 'Chronological. To analyse the most recent completed race, pass country "latest" to the other tools.',
                 };
             }
             case 'get_standings':
