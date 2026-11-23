@@ -3,6 +3,17 @@ import { jolpica } from '@/lib/jolpica';
 const CACHE = 'public, s-maxage=86400, stale-while-revalidate=604800';
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WINNERS_SHOWN = 10;
+const LEADERBOARD_SIZE = 5;
+
+function tally(names: string[]) {
+    const counts = new Map<string, number>();
+    for (const name of names) counts.set(name, (counts.get(name) ?? 0) + 1);
+
+    return [...counts.entries()]
+        .map(([name, wins]) => ({ name, wins }))
+        .sort((a, b) => b.wins - a.wins || a.name.localeCompare(b.name))
+        .slice(0, LEADERBOARD_SIZE);
+}
 
 export async function GET(request: Request) {
     const date = new URL(request.url).searchParams.get('date') ?? '';
@@ -34,15 +45,32 @@ export async function GET(request: Request) {
         }))
         .sort((a, b) => b.season - a.season);
 
-    const counts = new Map<string, number>();
-    for (const winner of past) counts.set(winner.driver, (counts.get(winner.driver) ?? 0) + 1);
-    const [topDriver, topWins] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0] ?? [];
+    // Where the winners started from, across every past race here.
+    const known = past.filter((w) => Number.isFinite(w.grid));
+    const onGrid = known.filter((w) => w.grid > 0);
+    const starts = {
+        pole: known.filter((w) => w.grid === 1).length,
+        front: known.filter((w) => w.grid >= 2 && w.grid <= 3).length,
+        midfield: known.filter((w) => w.grid >= 4 && w.grid <= 10).length,
+        back: known.filter((w) => w.grid > 10).length,
+        pit: known.filter((w) => w.grid === 0).length,
+        known: known.length,
+        average: onGrid.length ? onGrid.reduce((sum, w) => sum + w.grid, 0) / onGrid.length : null,
+    };
+
+    const topDrivers = tally(past.map((w) => w.driver));
+    const topTeams = tally(past.map((w) => w.team));
 
     return Response.json(
         {
             winners: past.slice(0, WINNERS_SHOWN),
             totalRaces: past.length,
-            mostWins: topDriver ? { driver: topDriver, wins: topWins } : null,
+            mostWins: topDrivers[0]
+                ? { driver: topDrivers[0].name, wins: topDrivers[0].wins }
+                : null,
+            topDrivers,
+            topTeams,
+            starts,
         },
         { headers: { 'Cache-Control': CACHE } }
     );
