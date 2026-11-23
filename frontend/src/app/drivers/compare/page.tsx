@@ -1,15 +1,16 @@
 'use client';
 
-import AppLayout from '@/components/layout/AppLayout';
+import { CareerComparison } from '@/components/dashboard/CareerComparison';
 import { ComparisonPointsChart } from '@/components/dashboard/ComparisonPointsChart';
+import AppLayout from '@/components/layout/AppLayout';
 import { useDriverComparison } from '@/hooks/useDriverComparison';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { PositionStatus } from '@/lib/driverComparison';
 import { formatHexColor } from '@/utils/sessions';
 import { getPositionColor, TABLE_CONTAINER_CLASS, TABLE_THEAD_CLASS } from '@/utils/styles';
 import NextImage from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
-import { usePageTitle } from '@/hooks/usePageTitle';
 
 function formatPosition(position: number | null, status: PositionStatus | null): string {
     if (status) return status;
@@ -193,6 +194,11 @@ export default function DriverComparePage() {
                                 </p>
                             </div>
                         </div>
+
+                        <CareerComparison
+                            driverAName={comparison.driverA.driverName}
+                            driverBName={comparison.driverB.driverName}
+                        />
 
                         <div className='p-4 border-b border-zinc-900'>
                             <div className='flex items-center justify-between mb-2'>

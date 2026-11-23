@@ -9,6 +9,7 @@ import { RaceControlPanel } from '@/components/chart/RaceControlPanel';
 import { RaceReplay } from '@/components/chart/RaceReplay';
 import { TyreDegradationCard } from '@/components/chart/TyreDegradationCard';
 import { WeatherPanel } from '@/components/chart/WeatherPanel';
+import { PastWinnersCard } from '@/components/dashboard/PastWinnersCard';
 import { RaceSummaryChips } from '@/components/dashboard/RaceSummaryChips';
 import AppLayout from '@/components/layout/AppLayout';
 import { GridVsRaceUnavailable, GridVsRaceView } from '@/components/table/GridVsRaceView';
@@ -33,7 +34,7 @@ import { findGridRacePairs, isGridRaceSession, pickGridRacePair } from '@/utils/
 import { buildRaceSummary } from '@/utils/raceSummary';
 import { use, useEffect, useMemo, useRef, useState } from 'react';
 
-type ActiveTab = 'classification' | 'strategy' | 'pace' | 'replay' | 'racecontrol';
+type ActiveTab = 'classification' | 'strategy' | 'pace' | 'replay' | 'racecontrol' | 'history';
 
 const TABS = [
     {
@@ -57,6 +58,13 @@ const TABS = [
         requiresLaps: false,
         requiresStints: false,
         requiresRaceControl: true,
+    },
+    {
+        key: 'history' as const,
+        label: 'History',
+        requiresLaps: false,
+        requiresStints: false,
+        requiresGridSession: true,
     },
 ];
 
@@ -375,6 +383,9 @@ export default function RacePage({ params }: { params: Promise<{ meetingkey: str
                                     </div>
                                 </div>
                             </div>
+                        )}
+                        {activeTab === 'history' && (
+                            <PastWinnersCard meetingKey={activeRace.meetingKey} />
                         )}
                     </section>
                 )}
