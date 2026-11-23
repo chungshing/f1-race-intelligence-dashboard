@@ -7,7 +7,14 @@ import {
     getTeamStandings,
 } from '@/lib/app';
 import { buildRaceStory } from '@/lib/raceStory';
-import { DriverResult, PitStop, RaceControlEvent, StartingGridEntry, Stint } from '@/types/results';
+import {
+    DriverResult,
+    PitStop,
+    RaceControlEvent,
+    StartingGridEntry,
+    Stint,
+    WeatherSnapshot,
+} from '@/types/results';
 import { parseJsonField } from '@/utils/form';
 import { isQualifyingSession } from '@/utils/gridVsRace';
 
@@ -16,7 +23,18 @@ const MAX_STEPS = 6;
 const RATE_LIMIT = 15; // requests per minute per IP
 const hits = new Map<string, number[]>();
 
-const SYSTEM = `You are the analyst for an F1 race intelligence dashboard. Answer only from tool data; never invent results, times or events. For "why didn't X win / why did X finish there" questions: call get_session_results for the grid and result, then get_race_story for X (and rivals if relevant). Explain with evidence in this order: where they started and why, which stint(s) lost time (secondsPerLapVsWinner), pit stop timing, safety car windows and position changes. Quote numbers from the tools. If the data cannot explain something, say so. Be concise. When the user says "last", "latest" or "most recent" race, pass country "latest".`;
+const SYSTEM = `You are the race analyst for an F1 dashboard.
+
+Rules:
+- Use only data from the tools. Never guess or invent results, times or events.
+- If the data can't answer something, say so.
+- Keep answers short and clear. Use bullet points, and bold for key numbers.
+- "last", "latest" or "most recent" race means country "latest".
+
+How to answer:
+- "Why didn't X win?" or "Why did X finish there?": get the result with get_session_results, then get_race_story for X. Explain in this order: starting position, which stint lost time, pit stops, safety cars, position changes. Include the numbers.
+- For wet or mixed races, check the weather in get_session_results.
+- For a driver's whole season, use get_driver_season.`;
 
 type Args = Record<string, unknown>;
 
@@ -70,6 +88,18 @@ const readTools = [
                 },
             },
             required: ['country'],
+        },
+    },
+    {
+        name: 'get_driver_season',
+        description:
+            "A driver's whole season: qualifying, sprint and race result per round, plus championship position and points. Use for questions about form, consistency or how a season has gone.",
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                driver: { type: 'STRING', description: 'Driver surname, e.g. "Norris"' },
+            },
+            required: ['driver'],
         },
     },
 ];
@@ -190,6 +220,28 @@ async function sessionResults(args: Args) {
         .slice(0, 30)
         .map((e) => ({ lap: e.lapNumber, message: e.message }));
 
+    const snapshots = parseJsonField<WeatherSnapshot>(row.weather_json);
+    const mean = (values: (number | null)[]) => {
+        const present = values.filter((v): v is number => typeof v === 'number');
+        return present.length
+            ? Number((present.reduce((sum, v) => sum + v, 0) / present.length).toFixed(1))
+            : null;
+    };
+    const weather = snapshots.length
+        ? {
+              airTempC: mean(snapshots.map((w) => w.airTemperature)),
+              trackTempC: mean(snapshots.map((w) => w.trackTemperature)),
+              humidityPct: mean(snapshots.map((w) => w.humidity)),
+              windMs: mean(snapshots.map((w) => w.windSpeed)),
+              rainDuringSession: snapshots.some((w) => (w.rainfall ?? 0) > 0),
+              shareOfTimeRaining: Number(
+                  (
+                      snapshots.filter((w) => (w.rainfall ?? 0) > 0).length / snapshots.length
+                  ).toFixed(2)
+              ),
+          }
+        : null;
+
     return {
         country: race.country,
         circuit: race.circuit,
@@ -200,6 +252,7 @@ async function sessionResults(args: Args) {
         pitStops,
         stints: Object.fromEntries(stintsByDriver),
         raceControl,
+        weather,
     };
 }
 
@@ -241,6 +294,72 @@ async function raceStory(args: Args) {
     };
 }
 
+async function driverSeason(args: Args) {
+    const query = String(args.driver ?? '')
+        .toLowerCase()
+        .trim();
+    if (!query) return { error: 'driver is required' };
+
+    const names = await driverNames();
+    const match = [...names.entries()].find(([, v]) => v.name.toLowerCase().includes(query));
+    if (!match) return { error: `No driver found for "${args.driver}"` };
+    const [driverNumber, info] = match;
+
+    const weekends = mapRaceWeekends(await getRaces());
+    const roundOf = new Map(weekends.map((w, i) => [w.meetingKey, i + 1]));
+
+    const byMeeting = new Map<
+        number,
+        {
+            round: number;
+            country: string;
+            qualifying?: number | string | null;
+            sprint?: number | string | null;
+            race?: number | string | null;
+        }
+    >();
+
+    for (const row of await getRaceResults()) {
+        const name = row.session_name.toLowerCase();
+        const kind = isQualifyingSession(row.session_name)
+            ? 'qualifying'
+            : name === 'race'
+              ? 'race'
+              : name === 'sprint'
+                ? 'sprint'
+                : null;
+        if (!kind) continue;
+
+        const result = parseJsonField<DriverResult>(row.classification_json).find(
+            (r) => r.driverNumber === driverNumber
+        );
+        if (!result) continue;
+
+        const entry = byMeeting.get(row.meeting_key) ?? {
+            round: roundOf.get(row.meeting_key) ?? 0,
+            country: row.country,
+        };
+        entry[kind] = result.dsq
+            ? 'DSQ'
+            : result.dnf
+              ? 'DNF'
+              : result.dns
+                ? 'DNS'
+                : result.position;
+        byMeeting.set(row.meeting_key, entry);
+    }
+
+    const standing = (await getStandings()).find((d) => Number(d.driver_number) === driverNumber);
+
+    return {
+        driver: info.name,
+        team: info.team,
+        championshipPosition: standing ? Number(standing.position) : null,
+        points: standing?.points != null ? Number(standing.points) : null,
+        rounds: [...byMeeting.values()].sort((a, b) => a.round - b.round),
+    };
+}
+
 async function triggerSync() {
     const backendUrl =
         process.env.BACKEND_BASE_URL ?? 'https://f1-race-intelligence-dashboard.onrender.com';
@@ -276,6 +395,8 @@ async function runTool(name: string, args: Args, isAdmin: boolean) {
                 return await sessionResults(args);
             case 'get_race_story':
                 return await raceStory(args);
+            case 'get_driver_season':
+                return await driverSeason(args);
             case 'trigger_sync':
                 return isAdmin ? await triggerSync() : { error: 'Admin token required' };
             default:
