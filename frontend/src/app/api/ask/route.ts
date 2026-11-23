@@ -312,7 +312,7 @@ export async function POST(request: Request) {
     } | null;
     if (!body?.messages?.length) return Response.json({ error: 'No messages' }, { status: 400 });
 
-    const adminSecret = process.env.ADMIN_TOKEN;
+    const adminSecret = process.env.ADMIN_PASSWORD;
     const isAdmin = !!adminSecret && body.adminToken === adminSecret;
 
     const contents: unknown[] = body.messages.slice(-12).map((m) => ({
