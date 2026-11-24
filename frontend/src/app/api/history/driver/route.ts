@@ -1,5 +1,6 @@
 import { fetchDriverCareer } from '@/lib/history';
 
+export const maxDuration = 60;
 const CACHE = 'public, s-maxage=86400, stale-while-revalidate=604800';
 
 export async function GET(request: Request) {

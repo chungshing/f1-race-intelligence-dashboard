@@ -22,6 +22,8 @@ import {
 import { parseJsonField } from '@/utils/form';
 import { isQualifyingSession } from '@/utils/gridVsRace';
 
+export const maxDuration = 60;
+
 const MODEL = process.env.GEMINI_MODEL ?? 'gemini-flash-lite-latest';
 const MAX_STEPS = 6;
 const RATE_LIMIT = 15; // requests per minute per IP
