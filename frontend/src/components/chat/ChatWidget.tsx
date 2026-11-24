@@ -1,6 +1,6 @@
 'use client';
 
-import { MessageCircle, Send, SquarePen, X } from 'lucide-react';
+import { MessageCircle, Send, SquarePen, TriangleAlert, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -278,7 +278,7 @@ export default function ChatWidget() {
                             e.preventDefault();
                             send(input);
                         }}
-                        className='flex gap-2 border-t border-zinc-700 bg-zinc-950 p-3'
+                        className='flex gap-2 border-t border-zinc-700 bg-zinc-950 p-3 pb-1.5'
                     >
                         <input
                             ref={inputRef}
@@ -296,6 +296,13 @@ export default function ChatWidget() {
                             <Send className='h-4 w-4' />
                         </button>
                     </form>
+                    <p className='flex items-start gap-1.5 border-t border-amber-500/20 bg-amber-500/10 px-3 py-2 text-[11px] leading-snug text-amber-200'>
+                        <TriangleAlert className='mt-0.5 h-3 w-3 shrink-0 text-amber-400' />
+                        <span>
+                            Public demo, not a private or protected AI. Messages are sent to
+                            Google&apos;s Gemini, so don&apos;t share personal information.
+                        </span>
+                    </p>
                 </div>
             )}
 
