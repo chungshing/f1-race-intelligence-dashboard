@@ -10,6 +10,7 @@ import {
 import { buildConstructorProfile } from '@/lib/constructorProfile';
 import { fetchCircuitHistory, fetchDriverCareer } from '@/lib/history';
 import { buildRaceStory } from '@/lib/raceStory';
+import { fetchRaceWeather, rainRisk } from '@/lib/weather';
 import {
     DriverResult,
     PitStop,
@@ -137,6 +138,16 @@ const readTools = [
                 driver: { type: 'STRING', description: 'Driver surname, e.g. "Hamilton"' },
             },
             required: ['driver'],
+        },
+    },
+    {
+        name: 'get_race_forecast',
+        description:
+            'Weather forecast for an upcoming race weekend: conditions, temperature and chance of rain for each session. Only works for races that have not happened yet and are within about 15 days. For a race that already happened, use get_session_results instead.',
+        parameters: {
+            type: 'OBJECT',
+            properties: { country: { type: 'STRING', description: COUNTRY_DESCRIPTION } },
+            required: ['country'],
         },
     },
 ];
@@ -506,6 +517,50 @@ async function driverCareer(args: Args) {
     };
 }
 
+async function raceForecast(args: Args) {
+    const race = await findRace(String(args.country ?? 'next'));
+    if (!race) return { error: `No race found for "${args.country}"` };
+
+    const raceSession = race.sessions.find((s) => s.sessionName === 'Race');
+    const raceEnd = Date.parse(raceSession?.dateEnd || raceSession?.dateStart || '');
+    if (Number.isFinite(raceEnd) && raceEnd < Date.now()) {
+        return {
+            error: 'This race has already happened. Use get_session_results for the weather it had.',
+        };
+    }
+
+    const weather = await fetchRaceWeather(race);
+    if (weather.status === 'too-far') {
+        return {
+            country: race.country,
+            forecast: 'not available yet',
+            availableFrom: weather.availableFrom,
+        };
+    }
+
+    const sessions = race.sessions
+        .filter((s) => weather.sessions[s.sessionName])
+        .sort((a, b) => Date.parse(a.dateStart) - Date.parse(b.dateStart))
+        .map((s) => {
+            const w = weather.sessions[s.sessionName];
+            return {
+                session: s.sessionName,
+                conditions: w.description,
+                tempC: Math.round(w.temp),
+                rainChancePct: w.rainChance,
+                wetRisk: rainRisk(w.rainChance),
+            };
+        });
+
+    return {
+        country: race.country,
+        circuit: race.circuit,
+        forecastFor: weather.place,
+        sessions,
+        note: 'Forecast for the hour each session starts, in local time at the circuit.',
+    };
+}
+
 async function triggerSync() {
     const backendUrl =
         process.env.BACKEND_BASE_URL ?? 'https://f1-race-intelligence-dashboard.onrender.com';
@@ -549,6 +604,8 @@ async function runTool(name: string, args: Args, isAdmin: boolean) {
                 return await circuitHistory(args);
             case 'get_driver_career':
                 return await driverCareer(args);
+            case 'get_race_forecast':
+                return await raceForecast(args);
             case 'trigger_sync':
                 return isAdmin ? await triggerSync() : { error: 'Admin token required' };
             default:
