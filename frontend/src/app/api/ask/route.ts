@@ -625,7 +625,19 @@ export async function POST(request: Request) {
     } | null;
     if (!body?.messages?.length) return Response.json({ error: 'No messages' }, { status: 400 });
 
-    const contents: unknown[] = body.messages.slice(-12).map((m) => ({
+    const history = body.messages
+        .filter(
+            (m) =>
+                (m.role === 'user' || m.role === 'assistant') &&
+                typeof m.text === 'string' &&
+                m.text.trim()
+        )
+        .slice(-12);
+    // Gemini needs the conversation to start with a user turn.
+    while (history.length > 0 && history[0].role !== 'user') history.shift();
+    if (history.length === 0) return Response.json({ error: 'No messages' }, { status: 400 });
+
+    const contents: unknown[] = history.map((m) => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: String(m.text).slice(0, 2000) }],
     }));
