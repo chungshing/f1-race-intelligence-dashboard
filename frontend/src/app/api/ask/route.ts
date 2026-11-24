@@ -663,9 +663,11 @@ export async function POST(request: Request) {
                 { status: 429 }
             );
         if (!res.ok) {
-            const detail = await res.text();
+            console.error(`Gemini ${res.status} (${MODEL})`, (await res.text()).slice(0, 500));
             return Response.json(
-                { error: `Gemini ${res.status} (${MODEL}): ${detail.slice(0, 300)}` },
+                {
+                    error: 'The analyst is unavailable right now. Please try again shortly.',
+                },
                 { status: 502 }
             );
         }
