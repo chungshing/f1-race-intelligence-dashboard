@@ -155,12 +155,6 @@ const readTools = [
     },
 ];
 
-const syncTool = {
-    name: 'trigger_sync',
-    description: 'Trigger the data sync pipeline. Only call when the user explicitly asks to sync.',
-    parameters: { type: 'OBJECT', properties: {} },
-};
-
 async function driverNames() {
     const standings = await getStandings();
     return new Map<number, { name: string; team: string }>(
@@ -564,18 +558,7 @@ async function raceForecast(args: Args) {
     };
 }
 
-async function triggerSync() {
-    const backendUrl =
-        process.env.BACKEND_BASE_URL ?? 'https://f1-race-intelligence-dashboard.onrender.com';
-    const res = await fetch(`${backendUrl}/api/v1/automation/trigger`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: process.env.CRON_SECRET_TOKEN }),
-    });
-    return { status: res.status, started: res.status === 202 };
-}
-
-async function runTool(name: string, args: Args, isAdmin: boolean) {
+async function runTool(name: string, args: Args) {
     try {
         switch (name) {
             case 'list_races': {
@@ -609,8 +592,6 @@ async function runTool(name: string, args: Args, isAdmin: boolean) {
                 return await driverCareer(args);
             case 'get_race_forecast':
                 return await raceForecast(args);
-            case 'trigger_sync':
-                return isAdmin ? await triggerSync() : { error: 'Admin token required' };
             default:
                 return { error: `Unknown tool ${name}` };
         }
@@ -641,19 +622,14 @@ export async function POST(request: Request) {
 
     const body = (await request.json().catch(() => null)) as {
         messages?: ChatMessage[];
-        adminToken?: string;
     } | null;
     if (!body?.messages?.length) return Response.json({ error: 'No messages' }, { status: 400 });
-
-    const adminSecret = process.env.ADMIN_PASSWORD;
-    const isAdmin = !!adminSecret && body.adminToken === adminSecret;
 
     const contents: unknown[] = body.messages.slice(-12).map((m) => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: String(m.text).slice(0, 2000) }],
     }));
-
-    const tools = [{ functionDeclarations: isAdmin ? [...readTools, syncTool] : readTools }];
+    const tools = [{ functionDeclarations: readTools }];
 
     for (let step = 0; step < MAX_STEPS; step++) {
         const res = await fetch(
@@ -703,11 +679,7 @@ export async function POST(request: Request) {
             calls.map(async (c) => ({
                 functionResponse: {
                     name: c.functionCall!.name,
-                    response: await runTool(
-                        c.functionCall!.name,
-                        c.functionCall!.args ?? {},
-                        isAdmin
-                    ),
+                    response: await runTool(c.functionCall!.name, c.functionCall!.args ?? {}),
                 },
             }))
         );
