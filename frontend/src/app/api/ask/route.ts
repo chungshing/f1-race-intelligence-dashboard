@@ -33,12 +33,15 @@ Rules:
 - Use only data from the tools. Never guess or invent results, times or events.
 - If the data can't answer something, say so.
 - Keep answers short and clear. Use bullet points, and bold for key numbers.
-- "last", "latest" or "most recent" race means country "latest".
+- "last", "latest" or "most recent" race means country "latest". "next" race means country "next".
 
 How to answer:
 - "Why didn't X win?" or "Why did X finish there?": get the result with get_session_results, then get_race_story for X. Explain in this order: starting position, which stint lost time, pit stops, safety cars, position changes. Include the numbers.
 - For wet or mixed races, check the weather in get_session_results.
-- For a driver's whole season, use get_driver_season.`;
+- For a driver's whole season, use get_driver_season. For their career totals (titles, wins, poles), use get_driver_career.
+- For a team's whole season, use get_team_season.
+- For a circuit's history (past winners, who wins here, does pole matter), use get_circuit_history.
+- For the weather forecast of an upcoming race, use get_race_forecast.`;
 
 type Args = Record<string, unknown>;
 
