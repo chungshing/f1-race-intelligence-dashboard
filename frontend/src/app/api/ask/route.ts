@@ -8,6 +8,7 @@ import {
     getTeamStandings,
 } from '@/lib/app';
 import { buildConstructorProfile } from '@/lib/constructorProfile';
+import { fetchCircuitHistory, fetchDriverCareer } from '@/lib/history';
 import { buildRaceStory } from '@/lib/raceStory';
 import {
     DriverResult,
@@ -41,7 +42,7 @@ How to answer:
 type Args = Record<string, unknown>;
 
 const COUNTRY_DESCRIPTION =
-    'Race country or circuit, e.g. Brazil. Use "latest" for the most recent completed race.';
+    'Race country or circuit, e.g. Singapore. Use "latest" for the most recent completed race and "next" for the upcoming one.';
 
 const readTools = [
     {
@@ -116,6 +117,28 @@ const readTools = [
             required: ['team'],
         },
     },
+    {
+        name: 'get_circuit_history',
+        description:
+            "A circuit's racing history: past winners, who has won most (drivers and teams), and where winners started on the grid (pole, front row, midfield, back). Use for questions about a track, such as who wins here or whether pole matters.",
+        parameters: {
+            type: 'OBJECT',
+            properties: { country: { type: 'STRING', description: COUNTRY_DESCRIPTION } },
+            required: ['country'],
+        },
+    },
+    {
+        name: 'get_driver_career',
+        description:
+            "A current driver's career totals: titles, wins, poles, podiums and race starts. Use for questions about a driver's overall record or experience.",
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                driver: { type: 'STRING', description: 'Driver surname, e.g. "Hamilton"' },
+            },
+            required: ['driver'],
+        },
+    },
 ];
 
 const syncTool = {
@@ -140,6 +163,16 @@ async function driverNames() {
 async function findRace(query: string) {
     const races = mapRaceWeekends(await getRaces()); // chronological
     const q = query.trim().toLowerCase();
+
+    if (/^(next|upcoming)/.test(q)) {
+        const now = Date.now();
+        return (
+            races.find((r) => {
+                const race = r.sessions.find((s) => s.sessionName === 'Race');
+                return race && new Date(race.dateEnd || race.dateStart).getTime() > now;
+            }) ?? null
+        );
+    }
 
     if (/^(latest|last|recent|previous|newest)/.test(q)) {
         const now = Date.now();
@@ -439,6 +472,40 @@ async function teamSeason(args: Args) {
     };
 }
 
+async function circuitHistory(args: Args) {
+    const race = await findRace(String(args.country ?? ''));
+    if (!race) return { error: `No race found for "${args.country}"` };
+
+    const date = race.sessions.find((s) => s.sessionName === 'Race')?.dateStart.slice(0, 10);
+    if (!date) return { error: 'This weekend has no race session' };
+
+    const result = await fetchCircuitHistory(date);
+    if (!result.ok) return { error: result.error };
+
+    return { circuit: race.circuit, country: race.country, ...result.data };
+}
+
+async function driverCareer(args: Args) {
+    const query = String(args.driver ?? '')
+        .toLowerCase()
+        .trim();
+    if (!query) return { error: 'driver is required' };
+
+    const names = await driverNames();
+    const match = [...names.values()].find((v) => v.name.toLowerCase().includes(query));
+    if (!match) return { error: `No driver found for "${args.driver}"` };
+
+    const result = await fetchDriverCareer(match.name);
+    if (!result.ok) return { error: result.error };
+
+    const { wins, starts } = result.data;
+    return {
+        driver: match.name,
+        ...result.data,
+        winRatePct: wins !== null && starts ? Number(((wins / starts) * 100).toFixed(1)) : null,
+    };
+}
+
 async function triggerSync() {
     const backendUrl =
         process.env.BACKEND_BASE_URL ?? 'https://f1-race-intelligence-dashboard.onrender.com';
@@ -478,6 +545,10 @@ async function runTool(name: string, args: Args, isAdmin: boolean) {
                 return await driverSeason(args);
             case 'get_team_season':
                 return await teamSeason(args);
+            case 'get_circuit_history':
+                return await circuitHistory(args);
+            case 'get_driver_career':
+                return await driverCareer(args);
             case 'trigger_sync':
                 return isAdmin ? await triggerSync() : { error: 'Admin token required' };
             default:
