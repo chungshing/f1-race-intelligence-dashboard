@@ -1,5 +1,8 @@
 export async function POST(request: Request) {
     const { meetingKey } = await request.json();
+    if (!Number.isInteger(meetingKey)) {
+        return Response.json({ error: 'meetingKey must be an integer' }, { status: 400 });
+    }
     const backendUrl =
         process.env.BACKEND_BASE_URL ?? 'https://f1-race-intelligence-dashboard.onrender.com';
 
