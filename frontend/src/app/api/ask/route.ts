@@ -1,4 +1,5 @@
 import { mapRaceWeekends } from '@/hooks/useRaceWeekends';
+import { mapDriverStandings, mapTeamStandings } from '@/hooks/useStandings';
 import {
     getLapsBySession,
     getRaceResults,
@@ -6,6 +7,7 @@ import {
     getStandings,
     getTeamStandings,
 } from '@/lib/app';
+import { buildConstructorProfile } from '@/lib/constructorProfile';
 import { buildRaceStory } from '@/lib/raceStory';
 import {
     DriverResult,
@@ -100,6 +102,18 @@ const readTools = [
                 driver: { type: 'STRING', description: 'Driver surname, e.g. "Norris"' },
             },
             required: ['driver'],
+        },
+    },
+    {
+        name: 'get_team_season',
+        description:
+            "A team's whole season: championship position and points, wins, podiums, DNFs, points per driver, pit stop speed and a round-by-round breakdown of both drivers' results. Use for questions about how a team is doing.",
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                team: { type: 'STRING', description: 'Team name, e.g. "Ferrari" or "Red Bull"' },
+            },
+            required: ['team'],
         },
     },
 ];
@@ -360,6 +374,71 @@ async function driverSeason(args: Args) {
     };
 }
 
+async function teamSeason(args: Args) {
+    const query = String(args.team ?? '')
+        .toLowerCase()
+        .trim();
+    if (!query) return { error: 'team is required' };
+
+    const teams = mapTeamStandings(await getTeamStandings());
+    const team = teams.find((t) => t.teamName.toLowerCase().includes(query));
+    if (!team) {
+        return {
+            error: `No team found for "${args.team}"`,
+            available: teams.map((t) => t.teamName),
+        };
+    }
+
+    const drivers = mapDriverStandings(await getStandings());
+    const weekends = mapRaceWeekends(await getRaces());
+    const profile = buildConstructorProfile(team, drivers, await getRaceResults(), weekends);
+
+    const round = (value: number | null) => (value === null ? null : Number(value.toFixed(2)));
+
+    return {
+        team: profile.teamName,
+        championshipPosition: profile.currentPosition,
+        points: profile.currentPoints,
+        wins: profile.stats.wins,
+        podiums: profile.stats.podiums,
+        dnfs: profile.stats.dnfCount,
+        bestFinish: profile.stats.bestFinish,
+        pointsByDriver: profile.driverContributions.map((d) => ({
+            driver: d.driverName,
+            points: d.totalPoints,
+        })),
+        pitStops: {
+            medianSeconds: round(profile.pitStops.medianStop),
+            bestSeconds: round(profile.pitStops.bestStop),
+            rank:
+                profile.pitStops.rank !== null
+                    ? `${profile.pitStops.rank} of ${profile.pitStops.teamsRanked}`
+                    : null,
+            measuredAs: profile.pitStops.usingLaneDuration ? 'pit lane time' : 'stationary time',
+        },
+        rounds: profile.seasonResults.map((r) => ({
+            round: r.round,
+            country: r.country,
+            teamPoints: r.teamPoints,
+            cumulativePoints: r.cumulativePoints,
+            drivers: r.driverBreakdown.map((d) => ({
+                driver: d.driverName,
+                result: d.dsq
+                    ? 'DSQ'
+                    : d.dnf
+                      ? 'DNF'
+                      : d.dns
+                        ? 'DNS'
+                        : d.position !== null
+                          ? `P${d.position}`
+                          : null,
+                sprint: d.sprintPosition !== null ? `P${d.sprintPosition}` : undefined,
+                points: d.points,
+            })),
+        })),
+    };
+}
+
 async function triggerSync() {
     const backendUrl =
         process.env.BACKEND_BASE_URL ?? 'https://f1-race-intelligence-dashboard.onrender.com';
@@ -397,6 +476,8 @@ async function runTool(name: string, args: Args, isAdmin: boolean) {
                 return await raceStory(args);
             case 'get_driver_season':
                 return await driverSeason(args);
+            case 'get_team_season':
+                return await teamSeason(args);
             case 'trigger_sync':
                 return isAdmin ? await triggerSync() : { error: 'Admin token required' };
             default:
