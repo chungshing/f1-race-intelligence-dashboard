@@ -25,9 +25,17 @@ import { isQualifyingSession } from '@/utils/gridVsRace';
 export const maxDuration = 60;
 
 const MODEL = process.env.GEMINI_MODEL ?? 'gemini-flash-lite-latest';
+// Gemini limits are per model, so a second model is a second allowance.
+const MODELS = [
+    ...new Set([MODEL, process.env.GEMINI_FALLBACK_MODEL ?? 'gemini-3.1-flash-lite']),
+];
 const MAX_STEPS = 6;
 const RATE_LIMIT = 15; // requests per minute per IP
 const hits = new Map<string, number[]>();
+
+const CACHE_TTL_MS = 30 * 60 * 1000;
+const CACHE_MAX_ENTRIES = 100;
+const replyCache = new Map<string, { reply: string; at: number }>();
 
 const SYSTEM = `You are the race analyst for an F1 dashboard.
 
@@ -36,6 +44,7 @@ Rules:
 - If the data can't answer something, say so.
 - Keep answers short and clear. Use bullet points, and bold for key numbers.
 - "last", "latest" or "most recent" race means country "latest". "next" race means country "next".
+- Call every tool you need in the same step, not one after another.
 
 How to answer:
 - "Why didn't X win?" or "Why did X finish there?": get the result with get_session_results, then get_race_story for X. Explain in this order: starting position, which stint lost time, pit stops, safety cars, position changes. Include the numbers.
@@ -69,7 +78,7 @@ const readTools = [
     {
         name: 'get_session_results',
         description:
-            'Classification, starting grid, places gained, pit stops, tyre stints and key race control events (safety cars, red flags, penalties) for one session of a race weekend.',
+            'Classification, starting grid, places gained, pit stops, tyre stints, key race control events (safety cars, red flags, penalties) and weather for one session of a race weekend.',
         parameters: {
             type: 'OBJECT',
             properties: {
@@ -610,6 +619,26 @@ function rateLimited(ip: string): boolean {
     return recent.length > RATE_LIMIT;
 }
 
+/** Calls Gemini, moving to the next model if one has run out of its free allowance. */
+async function generate(apiKey: string, body: unknown) {
+    let last: Response | null = null;
+
+    for (const model of MODELS) {
+        const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+                body: JSON.stringify(body),
+            }
+        );
+        if (res.status !== 429) return res;
+        last = res;
+    }
+
+    return last!;
+}
+
 interface ChatMessage {
     role: 'user' | 'assistant';
     text: string;
@@ -625,7 +654,9 @@ export async function POST(request: Request) {
     const body = (await request.json().catch(() => null)) as {
         messages?: ChatMessage[];
     } | null;
-    if (!body?.messages?.length) return Response.json({ error: 'No messages' }, { status: 400 });
+    if (!Array.isArray(body?.messages)) {
+        return Response.json({ error: 'No messages' }, { status: 400 });
+    }
 
     const history = body.messages
         .filter(
@@ -639,6 +670,13 @@ export async function POST(request: Request) {
     while (history.length > 0 && history[0].role !== 'user') history.shift();
     if (history.length === 0) return Response.json({ error: 'No messages' }, { status: 400 });
 
+    // A conversation's first question is cached, so repeats cost no Gemini calls.
+    const cacheKey = history.length === 1 ? history[0].text.trim().toLowerCase() : null;
+    const cached = cacheKey ? replyCache.get(cacheKey) : undefined;
+    if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
+        return Response.json({ reply: cached.reply });
+    }
+
     const contents: unknown[] = history.map((m) => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: String(m.text).slice(0, 2000) }],
@@ -646,30 +684,28 @@ export async function POST(request: Request) {
     const tools = [{ functionDeclarations: readTools }];
 
     for (let step = 0; step < MAX_STEPS; step++) {
-        const res = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-                body: JSON.stringify({
-                    systemInstruction: { parts: [{ text: SYSTEM }] },
-                    contents,
-                    tools,
-                }),
-            }
-        );
+        const res = await generate(apiKey, {
+            systemInstruction: { parts: [{ text: SYSTEM }] },
+            contents,
+            tools,
+        });
 
-        if (res.status === 429)
-            return Response.json(
-                { error: 'Gemini free-tier limit reached. Try again shortly.' },
-                { status: 429 }
-            );
-        if (!res.ok) {
-            console.error(`Gemini ${res.status} (${MODEL})`, (await res.text()).slice(0, 500));
+        if (res.status === 429) {
+            // A daily quota error names "PerDay"; a per-minute one clears in under a minute.
+            const daily = /PerDay/i.test(await res.text());
             return Response.json(
                 {
-                    error: 'The analyst is unavailable right now. Please try again shortly.',
+                    error: daily
+                        ? 'The analyst has reached its daily limit. It resets at midnight Pacific time.'
+                        : 'The analyst is busy right now. Please try again in a minute.',
                 },
+                { status: 429 }
+            );
+        }
+        if (!res.ok) {
+            console.error(`Gemini ${res.status}`, (await res.text()).slice(0, 500));
+            return Response.json(
+                { error: 'The analyst is unavailable right now. Please try again shortly.' },
                 { status: 502 }
             );
         }
@@ -687,6 +723,14 @@ export async function POST(request: Request) {
                 .map((p) => p.text ?? '')
                 .join('')
                 .trim();
+
+            if (cacheKey && reply) {
+                if (replyCache.size >= CACHE_MAX_ENTRIES) {
+                    replyCache.delete(replyCache.keys().next().value!);
+                }
+                replyCache.set(cacheKey, { reply, at: Date.now() });
+            }
+
             return Response.json({ reply: reply || 'No answer.' });
         }
 
