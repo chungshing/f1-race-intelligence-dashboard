@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1560 700" width="1560" height="700" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, 'DejaVu Sans', sans-serif" xmlns:c2pa="http://c2pa.org/manifest">
+<defs>
+<marker id="a-slate" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#334155"/></marker>
+<marker id="a-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7C3AED"/></marker>
+</defs>
+<rect width="1560" height="700" fill="#F8FAFC"/>
+<text x="780.0" y="46" text-anchor="middle" font-size="28" font-weight="700" fill="#0F172A">F1 Race Intelligence Dashboard Architecture</text>
+<rect x="300" y="200" width="240" height="330" rx="22" fill="#EEF2F7" stroke="#94A3B8" stroke-width="2"/>
+<text x="318" y="228" font-size="15" font-weight="700" fill="#475569">Backend · Render</text>
+<rect x="850" y="100" width="440" height="520" rx="22" fill="#EEF2F7" stroke="#94A3B8" stroke-width="2"/>
+<text x="870" y="598" font-size="15" font-weight="700" fill="#475569">Frontend · Vercel</text>
+<path d="M210,142 C265,142 265,330 320,330" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#a-slate)"/>
+<path d="M210,592 C265,592 265,395 320,395" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#a-slate)"/>
+<path d="M520,360 L670,360" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#a-slate)"/>
+<path d="M790,360 L870,360" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#a-slate)"/>
+<path d="M965,130 L965,92 L480,92 L480,300" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#a-slate)"/>
+<path d="M1040,350 L1120,330" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#a-slate)"/>
+<path d="M1040,410 C1085,410 1085,548 1120,548" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#a-slate)"/>
+<path d="M1260,548 L1380,548" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#a-slate)"/>
+<path d="M1260,330 L1380,330" fill="none" stroke="#7C3AED" stroke-width="2" marker-end="url(#a-purple)" marker-start="url(#a-purple)"/>
+<path d="M1250,356 C1310,420 1400,450 1430,520" fill="none" stroke="#7C3AED" stroke-width="2" marker-end="url(#a-purple)"/>
+<path d="M1210,300 C1210,240 1455,270 1455,200" fill="none" stroke="#7C3AED" stroke-width="2" marker-end="url(#a-purple)"/>
+<path d="M1000,330 L1000,250 L1085,250 L1085,172 L1380,172" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#a-slate)"/>
+<path d="M1140,356 L1140,478 L730,478 L730,423" fill="none" stroke="#7C3AED" stroke-width="2" marker-end="url(#a-purple)"/>
+<rect x="40" y="110" width="170" height="64" rx="12" fill="#EDE9FE" stroke="#7C3AED" stroke-width="2"/>
+<text x="125.0" y="137.5" text-anchor="middle" font-size="15" font-weight="700" fill="#0F172A">cron-job.org</text>
+<text x="125.0" y="156.5" text-anchor="middle" font-size="12" font-weight="400" fill="#475569">Scheduler</text>
+<rect x="40" y="560" width="170" height="64" rx="12" fill="#DBEAFE" stroke="#2563EB" stroke-width="2"/>
+<text x="125.0" y="587.5" text-anchor="middle" font-size="15" font-weight="700" fill="#0F172A">OpenF1 API</text>
+<text x="125.0" y="606.5" text-anchor="middle" font-size="12" font-weight="400" fill="#475569">External API</text>
+<rect x="320" y="300" width="200" height="120" rx="12" fill="#CCFBF1" stroke="#0D9488" stroke-width="2"/>
+<text x="420.0" y="355.5" text-anchor="middle" font-size="15" font-weight="700" fill="#0F172A">Spring Boot</text>
+<text x="420.0" y="374.5" text-anchor="middle" font-size="12" font-weight="400" fill="#475569">sync pipeline</text>
+<rect x="880" y="130" width="170" height="68" rx="12" fill="#CCFBF1" stroke="#0D9488" stroke-width="2"/>
+<text x="965.0" y="150.0" text-anchor="middle" font-size="15" font-weight="700" fill="#0F172A">Admin tools</text>
+<text x="965.0" y="169.0" text-anchor="middle" font-size="12" font-weight="400" fill="#475569">sync · backfill</text>
+<text x="965.0" y="188.0" text-anchor="middle" font-size="12" font-weight="400" fill="#475569">password protected</text>
+<rect x="870" y="330" width="170" height="100" rx="12" fill="#CCFBF1" stroke="#0D9488" stroke-width="2"/>
+<text x="955.0" y="375.5" text-anchor="middle" font-size="15" font-weight="700" fill="#0F172A">Next.js UI</text>
+<text x="955.0" y="394.5" text-anchor="middle" font-size="12" font-weight="400" fill="#475569">+ PWA cache</text>
+<rect x="1120" y="300" width="140" height="56" rx="12" fill="#CCFBF1" stroke="#0D9488" stroke-width="2"/>
+<text x="1190.0" y="323.5" text-anchor="middle" font-size="15" font-weight="700" fill="#0F172A">/api/ask</text>
+<text x="1190.0" y="342.5" text-anchor="middle" font-size="12" font-weight="400" fill="#475569">AI analyst</text>
+<rect x="1120" y="520" width="140" height="56" rx="12" fill="#CCFBF1" stroke="#0D9488" stroke-width="2"/>
+<text x="1190.0" y="543.5" text-anchor="middle" font-size="15" font-weight="700" fill="#0F172A">/api/history</text>
+<text x="1190.0" y="562.5" text-anchor="middle" font-size="12" font-weight="400" fill="#475569">Jolpica stats</text>
+<rect x="1380" y="140" width="150" height="60" rx="12" fill="#DBEAFE" stroke="#2563EB" stroke-width="2"/>
+<text x="1455.0" y="165.5" text-anchor="middle" font-size="15" font-weight="700" fill="#0F172A">Open-Meteo</text>
+<text x="1455.0" y="184.5" text-anchor="middle" font-size="12" font-weight="400" fill="#475569">Forecast API</text>
+<rect x="1380" y="300" width="150" height="60" rx="12" fill="#DBEAFE" stroke="#2563EB" stroke-width="2"/>
+<text x="1455.0" y="325.5" text-anchor="middle" font-size="15" font-weight="700" fill="#0F172A">Google Gemini</text>
+<text x="1455.0" y="344.5" text-anchor="middle" font-size="12" font-weight="400" fill="#475569">generateContent</text>
+<rect x="1380" y="520" width="150" height="60" rx="12" fill="#DBEAFE" stroke="#2563EB" stroke-width="2"/>
+<text x="1455.0" y="545.5" text-anchor="middle" font-size="15" font-weight="700" fill="#0F172A">Jolpica</text>
+<text x="1455.0" y="564.5" text-anchor="middle" font-size="12" font-weight="400" fill="#475569">Historical F1 data</text>
+<path d="M670,315 L670,405 A60,16 0 0 0 790,405 L790,315 Z" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+<ellipse cx="730" cy="315" rx="60" ry="16" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+<text x="730" y="268" text-anchor="middle" font-size="15" font-weight="700" fill="#0F172A">Supabase</text>
+<text x="730" y="285" text-anchor="middle" font-size="12" fill="#475569">PostgreSQL</text>
+<rect x="214.4" y="181.0" width="95.19999999999999" height="38" rx="10" fill="#FFFFFF" stroke="#334155" stroke-width="1.3"/>
+<text x="262" y="196.0" text-anchor="middle" font-size="11.5" font-weight="600" fill="#334155">POST trigger</text>
+<text x="262" y="211.0" text-anchor="middle" font-size="11.5" font-weight="600" fill="#334155">+ token</text>
+<rect x="167.6" y="476.0" width="134.8" height="38" rx="10" fill="#FFFFFF" stroke="#334155" stroke-width="1.3"/>
+<text x="235" y="491.0" text-anchor="middle" font-size="11.5" font-weight="600" fill="#334155">calendar, results,</text>
+<text x="235" y="506.0" text-anchor="middle" font-size="11.5" font-weight="600" fill="#334155">laps, standings</text>
+<rect x="530.9" y="326.5" width="128.2" height="23" rx="11.5" fill="#FFFFFF" stroke="#334155" stroke-width="1.3"/>
+<text x="595" y="341.5" text-anchor="middle" font-size="11.5" font-weight="600" fill="#334155">normalize + write</text>
+<rect x="808.8" y="330.5" width="42.4" height="23" rx="11.5" fill="#FFFFFF" stroke="#334155" stroke-width="1.3"/>
+<text x="830" y="345.5" text-anchor="middle" font-size="11.5" font-weight="600" fill="#334155">read</text>
+<rect x="654.6" y="80.5" width="134.8" height="23" rx="11.5" fill="#FFFFFF" stroke="#334155" stroke-width="1.3"/>
+<text x="722" y="95.5" text-anchor="middle" font-size="11.5" font-weight="600" fill="#334155">trigger / backfill</text>
+<rect x="1058.8" y="310.5" width="42.4" height="23" rx="11.5" fill="#FFFFFF" stroke="#334155" stroke-width="1.3"/>
+<text x="1080" y="325.5" text-anchor="middle" font-size="11.5" font-weight="600" fill="#334155">chat</text>
+<rect x="1056.9" y="488.5" width="62.199999999999996" height="23" rx="11.5" fill="#FFFFFF" stroke="#334155" stroke-width="1.3"/>
+<text x="1088" y="503.5" text-anchor="middle" font-size="11.5" font-weight="600" fill="#334155">history</text>
+<rect x="1282.3" y="524.5" width="75.4" height="23" rx="11.5" fill="#FFFFFF" stroke="#334155" stroke-width="1.3"/>
+<text x="1320" y="539.5" text-anchor="middle" font-size="11.5" font-weight="600" fill="#334155">24h cache</text>
+<rect x="1279.0" y="304.5" width="82.0" height="23" rx="11.5" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.3"/>
+<text x="1320" y="319.5" text-anchor="middle" font-size="11.5" font-weight="600" fill="#7C3AED">tool calls</text>
+<rect x="1334.1" y="443.5" width="101.8" height="23" rx="11.5" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.3"/>
+<text x="1385" y="458.5" text-anchor="middle" font-size="11.5" font-weight="600" fill="#7C3AED">history tools</text>
+<rect x="1263.8" y="240.5" width="108.39999999999999" height="23" rx="11.5" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.3"/>
+<text x="1318" y="255.5" text-anchor="middle" font-size="11.5" font-weight="600" fill="#7C3AED">forecast tools</text>
+<rect x="1200.6" y="148.5" width="68.8" height="23" rx="11.5" fill="#FFFFFF" stroke="#334155" stroke-width="1.3"/>
+<text x="1235" y="163.5" text-anchor="middle" font-size="11.5" font-weight="600" fill="#334155">forecast</text>
+<rect x="889.0" y="466.5" width="82.0" height="23" rx="11.5" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.3"/>
+<text x="930" y="481.5" text-anchor="middle" font-size="11.5" font-weight="600" fill="#7C3AED">data tools</text>
+<rect x="40" y="655" width="26" height="18" rx="5" fill="#CCFBF1" stroke="#0D9488" stroke-width="1.5"/>
+<text x="74" y="669" font-size="13" fill="#334155">Your services</text>
+<rect x="194.8" y="655" width="26" height="18" rx="5" fill="#DBEAFE" stroke="#2563EB" stroke-width="1.5"/>
+<text x="228.8" y="669" font-size="13" fill="#334155">External API</text>
+<rect x="342.0" y="655" width="26" height="18" rx="5" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+<text x="376.0" y="669" font-size="13" fill="#334155">Database</text>
+<rect x="458.8" y="655" width="26" height="18" rx="5" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.5"/>
+<text x="492.8" y="669" font-size="13" fill="#334155">Scheduler</text>
+<line x1="583.2" y1="664" x2="617.2" y2="664" stroke="#7C3AED" stroke-width="2"/>
+<text x="625.2" y="669" font-size="13" fill="#334155">AI analyst calls</text>
+<line x1="768.8000000000001" y1="664" x2="802.8000000000001" y2="664" stroke="#334155" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="810.8000000000001" y="669" font-size="13" fill="#334155">Admin / manual sync</text>
+<metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTozN2YwNWE1Mi02OTkyLTQ4NzYtYjY4OC1iZmFjNjI4YWU5OWEAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaJMaQkRX5YFI/YpoBayawvUAAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDphNTM3YzkwNy0zYzAxLTQzMTQtODg0YS1jNDcwMTgwOTZhZWNscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNolZlGBhMKOcAklvSbgiEyjgAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggReQILXZtTCTUZ247LK/Mdeqo0aLDxyc+npoRwVvvssikZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaKgBxXp/z/VW5mVWdL5F+D4AAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRMAAAAAAAAAAAAAAAAZGhhc2hYIPiedvS5eozm91RNEx0ObOq2qNC7pPZ16L5F9+/fH+tbZG5hbWVuanVtYmYgbWFuaWZlc3RqZXhjbHVzaW9uc4GiZXN0YXJ0GSrnZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOjM3ZjA1YTUyLTY5OTItNDg3Ni1iNjg4LWJmYWM2MjhhZTk5YS9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOmU3Y2I3N2UwLWM1OGMtNGViMy05NTdmLWYzZWQwNTFlZGE3NXJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCBF5Agtdm1MJNRnbjssr8x16qjRosPHJz6emhHBW++yyKJjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFggnEhltqY08x8aAk0cq0KQ9z6V5BzrsbZ092tR5FFHnF2iY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFggRJ9E8f6YQjVMMbMgRXkcb8yTrZpR0yPa1D3cahrtjHh0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQDhQKW7W24XxKjzOpJ4vxX+zt6oAoG5dkAf/QFt/hIesVendUSNGIOJq802ljLcUR6MHUAeBvFKsHwUr2bXKidQ=</c2pa:manifest></metadata></svg>
