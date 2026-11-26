@@ -20,12 +20,19 @@ See the [frontend README](frontend/README.md) for the full feature list.
 
 ## 🧠 Architecture
 
-![Architecture & Data Flow](images/Architecture.png)
+![System overview](images/architecture-overview.svg)
 
-1. **Ingestion:** the Spring Boot backend retrieves and normalizes Formula 1 data from OpenF1 on a schedule.
+1. **Ingestion:** the Spring Boot backend fetches and normalizes Formula 1 data from OpenF1 on a schedule.
 2. **Persistence:** processed data is stored in Supabase (PostgreSQL).
 3. **Presentation:** the Next.js frontend reads the stored data and renders the charts and views.
 4. **Extras:** Next.js route handlers add historical statistics (Jolpica), weather forecasts (Open-Meteo), and the AI analyst (Gemini).
+
+<details>
+<summary>Detailed architecture</summary>
+
+![Detailed architecture](images/architecture.svg)
+
+</details>
 
 ## 🛠️ Tech Stack
 
