@@ -48,6 +48,8 @@ The Next.js application: dashboard UI, server-side API routes, and the AI race a
 
 A floating chat assistant on every page. It's an agent, not a general chatbot: for each question Gemini picks which tools to call, the server runs them against the dashboard's data, and the model answers only from the results.
 
+![AI analyst flow](../images/ai-analyst-flow.svg)
+
 | Tool                  | What it answers                                                                         |
 | --------------------- | --------------------------------------------------------------------------------------- |
 | `list_races`          | The season calendar                                                                     |
