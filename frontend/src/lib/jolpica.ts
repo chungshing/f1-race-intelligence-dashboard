@@ -1,6 +1,12 @@
 const BASE = 'https://api.jolpi.ca/ergast/f1';
 const ONE_DAY = 24 * 60 * 60;
 
+const HEADERS = {
+    // Identifies this app to Jolpica instead of a generic runtime user agent.
+    'User-Agent': 'F1PitwallDashboard/1.0 (+https://f1-race-intelligence-dashboard.vercel.app)',
+    Accept: 'application/json',
+};
+
 export interface JolpicaDriver {
     driverId: string;
     givenName: string;
@@ -44,7 +50,9 @@ export async function jolpica(path: string): Promise<JolpicaResponse | null> {
             await throttle();
             const res = await fetch(
                 `${BASE}${path}`,
-                attempt === 0 ? { next: { revalidate: ONE_DAY } } : { cache: 'no-store' }
+                attempt === 0
+                    ? { headers: HEADERS, next: { revalidate: ONE_DAY } }
+                    : { headers: HEADERS, cache: 'no-store' }
             );
 
             if (res.status === 429) {

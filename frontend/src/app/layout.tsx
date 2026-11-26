@@ -1,3 +1,4 @@
+import ChatWidget from '@/components/chat/ChatWidget';
 import RegisterServiceWorker from '@/components/pwa/RegisterServiceWorker';
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
@@ -44,6 +45,7 @@ export default function RootLayout({
         >
             <body className='min-h-full flex flex-col'>
                 <Providers>{children}</Providers>
+                <ChatWidget />
                 <RegisterServiceWorker />
             </body>
         </html>
