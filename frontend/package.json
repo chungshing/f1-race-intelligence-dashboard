@@ -8,7 +8,8 @@
         "start": "next start",
         "lint": "eslint",
         "lint:fast": "oxlint",
-        "lint:fast:fix": "oxlint --fix"
+        "lint:fast:fix": "oxlint --fix",
+        "test": "vitest run"
     },
     "dependencies": {
         "@supabase/supabase-js": "^2.108.1",
