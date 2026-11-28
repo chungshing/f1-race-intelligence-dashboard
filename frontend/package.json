@@ -38,6 +38,7 @@
         "oxlint": "^1.86.0",
         "tailwindcss": "^4",
         "typescript": "^5",
+        "vitest": "^4.1.12",
         "world-atlas": "^2.0.2"
     }
 }
